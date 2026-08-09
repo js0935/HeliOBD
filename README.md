@@ -2,6 +2,10 @@
 
 機車 OBD-II 車機檢測 App（Android 8.0+，橫向車機介面）。
 
+## 下載 APK
+
+最新安裝檔：**`HeliOBD.apk`**（repo 根目錄，與最新 Release 同步）；亦可到 [Releases](https://github.com/js0935/HeliOBD/releases) 下載版本化安裝檔。
+
 ## 授權系統
 
 App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選擇性套用：
