@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色車機主題配色 -->
+    <color name="bg">#0F1419</color>
+    <color name="surface">#1A222B</color>
+    <color name="surface_alt">#232E3A</color>
+    <color name="stroke">#2E3B48</color>
+    <color name="primary">#00B4D8</color>
+    <color name="primary_dark">#0A7E99</color>
+    <color name="accent">#FF6B35</color>
+    <color name="text_primary">#E8EDF2</color>
+    <color name="text_secondary">#8A99A8</color>
+    <color name="success">#2ECC71</color>
+    <color name="danger">#E74C3C</color>
+    <color name="lock">#F1C40F</color>
+    <color name="amber">#FFC107</color>
+</resources>

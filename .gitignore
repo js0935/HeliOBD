@@ -1,0 +1,19 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+
+# IDE
+.idea/
+*.iml
+
+# Local
+local.properties
+
+# 編譯日誌
+build_log.txt
+build_log2.txt
+build_err.txt
+
+# OS
+.DS_Store

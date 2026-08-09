@@ -1,0 +1,237 @@
+package com.heli.obd.ui
+
+import android.graphics.Typeface
+import android.os.Bundle
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.heli.obd.MainActivity
+import com.heli.obd.R
+import com.heli.obd.vehicles.VehicleStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/**
+ * 多車管理：新增/編輯/刪除車籍資料，並指定目前使用的車輛。
+ */
+class VehiclesActivity : AppCompatActivity() {
+
+    private val store by lazy { VehicleStore(this) }
+    private lateinit var container: LinearLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_vehicles)
+
+        container = findViewById(R.id.vehicle_container)
+        findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btn_add).setOnClickListener { showEditDialog(null) }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        renderList()
+    }
+
+    private fun renderList() {
+        container.removeAllViews()
+        val vehicles = store.load()
+        if (vehicles.isEmpty()) {
+            val empty = TextView(this)
+            empty.text = getString(R.string.vehicles_empty)
+            empty.textSize = 14f
+            empty.setTextColor(getColor(R.color.text_secondary))
+            empty.setPadding(0, dp(16), 0, 0)
+            empty.gravity = Gravity.CENTER
+            container.addView(empty)
+            return
+        }
+        val currentId = store.currentId()
+        vehicles.forEach { vehicle ->
+            container.addView(buildCard(vehicle, vehicle.id == currentId))
+        }
+    }
+
+    private fun buildCard(vehicle: VehicleStore.Vehicle, isCurrent: Boolean): View {
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.setPadding(dp(14), dp(12), dp(14), dp(12))
+        card.setBackgroundResource(R.drawable.bg_card)
+
+        val lp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
+        lp.topMargin = dp(8)
+        card.layoutParams = lp
+
+        val head = LinearLayout(this)
+        head.orientation = LinearLayout.HORIZONTAL
+        head.gravity = Gravity.CENTER_VERTICAL
+
+        val name = TextView(this)
+        name.text = vehicle.name
+        name.textSize = 16f
+        name.setTypeface(name.typeface, Typeface.BOLD)
+        name.setTextColor(getColor(R.color.text_primary))
+        name.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        head.addView(name)
+
+        if (isCurrent) {
+            val badge = TextView(this)
+            badge.text = getString(R.string.vehicles_current)
+            badge.textSize = 12f
+            badge.setPadding(dp(8), dp(3), dp(8), dp(3))
+            badge.setBackgroundResource(R.drawable.bg_button_accent)
+            badge.setTextColor(android.graphics.Color.WHITE)
+            head.addView(badge)
+        }
+        card.addView(head)
+
+        val detail = TextView(this)
+        val parts = listOf(vehicle.brand, vehicle.engineCc, vehicle.note).filter { it.isNotBlank() }
+        detail.text = if (parts.isEmpty()) "" else parts.joinToString(" ｜ ")
+        detail.textSize = 13f
+        detail.setTextColor(getColor(R.color.text_secondary))
+        detail.setPadding(0, dp(6), 0, 0)
+        card.addView(detail)
+
+        val ops = LinearLayout(this)
+        ops.orientation = LinearLayout.HORIZONTAL
+        ops.gravity = Gravity.END
+        ops.setPadding(0, dp(8), 0, 0)
+
+        fun opButton(textRes: Int, colorRes: Int): TextView = TextView(this).apply {
+            text = getString(textRes)
+            textSize = 13f
+            setPadding(dp(12), dp(4), dp(12), dp(4))
+            setTextColor(getColor(colorRes))
+        }
+
+        if (!isCurrent) {
+            val setCurrent = opButton(R.string.vehicles_set_current, R.color.primary)
+            setCurrent.setOnClickListener {
+                store.setCurrent(vehicle.id)
+                renderList()
+                Toast.makeText(this, R.string.vehicles_current_set, Toast.LENGTH_SHORT).show()
+            }
+            ops.addView(setCurrent)
+        }
+
+        val readVin = opButton(R.string.vehicles_read_vin, R.color.primary)
+        readVin.setOnClickListener { readVinFor(vehicle) }
+        ops.addView(readVin)
+
+        val edit = opButton(R.string.common_edit, R.color.text_secondary)
+        edit.setOnClickListener { showEditDialog(vehicle) }
+        ops.addView(edit)
+
+        val del = opButton(R.string.common_delete, R.color.danger)
+        del.setOnClickListener {
+            AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                .setMessage(getString(R.string.vehicles_confirm_delete, vehicle.name))
+                .setPositiveButton(R.string.common_delete) { _, _ ->
+                    store.delete(vehicle.id)
+                    renderList()
+                    Toast.makeText(this, R.string.trip_deleted, Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton(R.string.common_cancel, null)
+                .show()
+        }
+        ops.addView(del)
+
+        card.addView(ops)
+        return card
+    }
+
+    private fun readVinFor(vehicle: VehicleStore.Vehicle) {
+        val obd = MainActivity.ObdManagerHolder.obd(this)
+        if (!obd.isConnected()) {
+            Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_LONG).show()
+            return
+        }
+        Toast.makeText(this, R.string.obd_connecting, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            val vin = withContext(Dispatchers.IO) { obd.readVin() }
+            if (vin == null || vin.length < 11) {
+                Toast.makeText(this@VehiclesActivity, R.string.diag_vin_failed, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            AlertDialog.Builder(this@VehiclesActivity, R.style.Theme_HeliOBD_Dialog)
+                .setTitle(R.string.vehicles_read_vin)
+                .setMessage(vin)
+                .setPositiveButton(R.string.common_ok) { _, _ ->
+                    store.upsert(vehicle.copy(note = vin))
+                    renderList()
+                    Toast.makeText(this@VehiclesActivity, R.string.vehicles_vin_loaded, Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton(R.string.common_cancel, null)
+                .show()
+        }
+    }
+
+    private fun showEditDialog(existing: VehicleStore.Vehicle?) {
+        val form = LinearLayout(this)
+        form.orientation = LinearLayout.VERTICAL
+        form.setPadding(dp(24), dp(16), dp(24), 0)
+
+        fun field(hintRes: Int, initial: String): EditText =
+            EditText(this).apply {
+                hint = getString(hintRes)
+                setText(initial)
+                textSize = 15f
+                setSingleLine(true)
+                setPadding(0, dp(8), 0, dp(4))
+                setTextColor(getColor(R.color.text_primary))
+                setHintTextColor(getColor(R.color.text_secondary))
+            }
+
+        val nameField = field(R.string.vehicles_name_hint, existing?.name.orEmpty())
+        val brandField = field(R.string.vehicles_brand_hint, existing?.brand.orEmpty())
+        val ccField = field(R.string.vehicles_cc_hint, existing?.engineCc.orEmpty())
+        val noteField = field(R.string.vehicles_note_hint, existing?.note.orEmpty())
+
+        form.addView(nameField)
+        form.addView(brandField)
+        form.addView(ccField)
+        form.addView(noteField)
+
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(
+                if (existing == null) R.string.vehicles_add
+                else R.string.vehicles_edit
+            )
+            .setView(form)
+            .setPositiveButton(R.string.common_save) { _, _ ->
+                val name = nameField.text.toString().trim()
+                if (name.isEmpty()) {
+                    Toast.makeText(this, R.string.vehicles_name_required, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                store.upsert(
+                    VehicleStore.Vehicle(
+                        id = existing?.id ?: System.currentTimeMillis(),
+                        name = name,
+                        brand = brandField.text.toString().trim(),
+                        engineCc = ccField.text.toString().trim(),
+                        note = noteField.text.toString().trim(),
+                    )
+                )
+                renderList()
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+}

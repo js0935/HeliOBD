@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">HeliOBD</string>
+
+    <!-- Main screen -->
+    <string name="nav_obd">Live Data</string>
+    <string name="nav_dtc">DTC Codes</string>
+    <string name="nav_license">License</string>
+
+    <!-- Free feature descriptions -->
+    <string name="obd_desc">Live RPM, speed &amp; coolant</string>
+    <string name="dtc_desc">Read and clear trouble codes</string>
+
+    <!-- Feature names -->
+    <string name="feat_engine_sound">Engine Sound</string>
+    <string name="feat_ai_diag">AI Diagnosis</string>
+    <string name="feat_trip_review">Trip Review</string>
+    <string name="feat_data_compare">Data Compare</string>
+    <string name="feat_multi_car">Multi-Vehicle</string>
+
+    <!-- Feature descriptions -->
+    <string name="feat_desc_engine_sound">Simulated exhaust sound</string>
+    <string name="feat_desc_ai_diag">AI analysis of diagnostic data</string>
+    <string name="feat_desc_trip_review">Full recording of every ride</string>
+    <string name="feat_desc_data_compare">Compare snapshots &amp; spot trends</string>
+    <string name="feat_desc_multi_car">Manage multiple bikes on one device</string>
+
+    <!-- License -->
+    <string name="license_enter">Enter license key</string>
+    <string name="license_hint">Enter a license key starting with OBD-</string>
+    <string name="license_device_id">Device ID</string>
+    <string name="license_activate">Activate</string>
+    <string name="license_copy_id">Copy Device ID</string>
+    <string name="license_copied">Device ID copied</string>
+    <string name="license_deactivate">Remove license</string>
+    <string name="license_activated_features">Activated features</string>
+    <string name="license_status_valid">✓ License valid</string>
+    <string name="license_status_expired">License expired</string>
+    <string name="license_status_mismatch">License bound to another device</string>
+    <string name="license_status_invalid">Invalid license (signature check failed)</string>
+    <string name="license_status_rollback">System clock rollback detected, license cleared</string>
+    <string name="license_status_none">Not licensed</string>
+    <string name="license_unknown">License status unknown</string>
+    <string name="locked_feature">This feature is locked</string>
+    <string name="locked_go_license">Go to License</string>
+    <string name="license_empty">Enter a license key first</string>
+
+    <!-- OBD -->
+    <string name="obd_connect">Connect OBD</string>
+    <string name="obd_disconnect">Disconnect</string>
+    <string name="obd_scanning">Scanning…</string>
+    <string name="obd_connecting">Connecting…</string>
+    <string name="obd_connected">Connected</string>
+    <string name="obd_disconnected">Not connected</string>
+    <string name="monitor_customize">Customize</string>
+    <string name="monitor_tile_title">Select data to display</string>
+    <string name="monitor_unit_metric">Metric</string>
+    <string name="monitor_unit_imperial">Imperial</string>
+    <string name="monitor_page">%1$d/%2$d</string>
+    <string name="monitor_drag_hint">Long-press &amp; drag to reorder</string>
+    <string name="monitor_chart">Chart</string>
+    <string name="obd_select_device">Select ELM327 device</string>
+    <string name="obd_no_device">No ELM327 device found</string>
+    <string name="obd_scan">Scan Bluetooth</string>
+    <string name="obd_rpm">RPM</string>
+    <string name="obd_speed">Speed</string>
+    <string name="obd_temp">Coolant</string>
+    <string name="obd_voltage">Battery</string>
+    <string name="obd_init_failed">OBD initialization failed</string>
+    <string name="obd_permission_denied">Bluetooth permission required to connect</string>
+    <string name="obd_connect_failed">Connection failed: %1$s</string>
+    <string name="obd_connect_error">Connection failed</string>
+
+    <!-- DTC -->
+    <string name="dtc_read">Read Codes</string>
+    <string name="dtc_clear">Clear Codes</string>
+    <string name="dtc_clear_confirm">Clearing DTCs also clears:\n• Diagnostic trouble codes\n• Freeze frame data\n• Oxygen sensor test data\n• Monitor test status\n• On-board monitoring results\n• Distance travelled with MIL on\n• Warm-ups / distance / time since last clear\n\nClear anyway?</string>
+    <string name="dtc_cleared">Trouble codes cleared</string>
+    <string name="dtc_empty">No trouble codes, all systems OK</string>
+    <string name="dtc_read_error">Failed to read trouble codes</string>
+    <string name="dtc_tab_current">Stored Codes</string>
+    <string name="dtc_tab_pending">Pending</string>
+    <string name="dtc_tab_permanent">Permanent</string>
+    <string name="dtc_pending_empty">No pending codes</string>
+    <string name="dtc_permanent_empty">No permanent codes</string>
+
+    <!-- Engine sound -->
+    <string name="engine_sound_mode_real">OBD live RPM</string>
+    <string name="engine_sound_mode_sim">Demo mode (no OBD)</string>
+    <string name="engine_sound_rpm_label">Simulated RPM (when not connected)</string>
+    <string name="engine_sound_rpm_value">%1$d RPM</string>
+    <string name="common_play">Play</string>
+    <string name="common_stop">Stop</string>
+
+    <!-- AI diagnosis -->
+    <string name="ai_diag_symptoms">Select symptoms (multi-select)</string>
+    <string name="ai_diag_dtc_section">Trouble codes (optional)</string>
+    <string name="ai_diag_read_dtc">Read from OBD</string>
+    <string name="ai_diag_add_dtc">Add</string>
+    <string name="ai_diag_dtc_hint">Enter DTC manually (e.g. P0113), comma-separated</string>
+    <string name="ai_diag_selected_dtc">Added codes</string>
+    <string name="ai_diag_start">Start Diagnosis</string>
+    <string name="ai_diag_empty">Select symptoms or enter a code first</string>
+    <string name="ai_diag_no_dtc">No trouble codes read</string>
+    <string name="ai_diag_no_result">No issues found, vehicle is healthy</string>
+    <string name="ai_diag_confidence">Confidence: %1$d%%</string>
+
+    <!-- Trip review -->
+    <string name="trip_record_start">Start Recording</string>
+    <string name="trip_record_stop">Stop Recording</string>
+    <string name="trip_recording">Recording…</string>
+    <string name="trip_idle">Idle</string>
+    <string name="trip_current">Current Trip</string>
+    <string name="trip_history">History</string>
+    <string name="trip_duration">Duration</string>
+    <string name="trip_distance">Distance</string>
+    <string name="trip_max_speed">Max Speed</string>
+    <string name="trip_avg_speed">Avg Speed</string>
+    <string name="trip_max_rpm">Max RPM</string>
+    <string name="trip_avg_rpm">Avg RPM</string>
+    <string name="trip_avg_coolant">Avg Coolant</string>
+    <string name="trip_samples">Samples</string>
+    <string name="trip_empty">No trips recorded yet</string>
+    <string name="trip_saved">Trip saved: %1$s, %2$.1f km</string>
+    <string name="trip_no_data">No OBD data, trip not saved</string>
+    <string name="trip_deleted">Deleted</string>
+    <string name="trip_confirm_delete">Delete this trip?</string>
+    <string name="trip_detail">Trip details: %1$s</string>
+    <string name="trip_card_info">%1$s | %2$s km | Max %3$d km/h</string>
+    <string name="trip_fuel_rate">Fuel</string>
+    <string name="trip_fuel_total">Fuel Used</string>
+    <string name="trip_track">Track</string>
+    <string name="trip_export_csv">Export CSV</string>
+    <string name="trip_chart">Charts</string>
+    <string name="trip_no_track">No GPS track for this trip</string>
+    <string name="trip_exported">Exported: %1$s</string>
+    <string name="trip_no_samples">No sample data to export</string>
+    <string name="trip_fuel_unit">%1$s L/100km</string>
+    <string name="trip_fuel_liter">%1$s L</string>
+    <string name="trip_gps_on">GPS track recording enabled</string>
+    <string name="trip_duration_hms">%1$dh %2$dm %3$ds</string>
+    <string name="trip_duration_ms">%1$dm %2$ds</string>
+    <string name="trip_km"> km</string>
+    <string name="common_delete">Delete</string>
+
+    <!-- Data compare -->
+    <string name="compare_capture_a">Capture Snapshot A</string>
+    <string name="compare_capture_b">Capture Snapshot B</string>
+    <string name="compare_clear">Clear</string>
+    <string name="compare_empty_a">Snapshot A not captured</string>
+    <string name="compare_empty_b">Snapshot B not captured</string>
+    <string name="compare_failed">Read failed, try again later</string>
+    <string name="compare_metric">Metric</string>
+    <string name="compare_snap_a_short">Snap A</string>
+    <string name="compare_snap_b_short">Snap B</string>
+    <string name="compare_diff">Diff</string>
+    <string name="compare_hint">Tip: connect OBD, capture once in each state (idle / riding) and compare load and electrical data.</string>
+    <string name="compare_snapshot_info">%1$s | RPM %2$s | %3$s km/h | %4$s °C | %5$s V</string>
+
+    <!-- Vehicles -->
+    <string name="vehicles_add">Add Vehicle</string>
+    <string name="vehicles_edit">Edit Vehicle</string>
+    <string name="vehicles_empty">No vehicles yet, add one first</string>
+    <string name="vehicles_current">Current</string>
+    <string name="vehicles_set_current">Set Current</string>
+    <string name="vehicles_confirm_delete">Delete "%1$s"?</string>
+    <string name="vehicles_current_set">Set as current vehicle</string>
+    <string name="vehicles_read_vin">Read VIN</string>
+    <string name="vehicles_vin_loaded">VIN read from OBD</string>
+    <string name="vehicles_name_hint">Name (required)</string>
+    <string name="vehicles_brand_hint">Brand / Model</string>
+    <string name="vehicles_cc_hint">Displacement (cc)</string>
+    <string name="vehicles_note_hint">Notes</string>
+    <string name="vehicles_name_required">Enter a vehicle name</string>
+    <string name="common_edit">Edit</string>
+    <string name="common_save">Save</string>
+
+    <!-- Remove ads -->
+    <string name="noads_status">Enabled</string>
+    <string name="noads_desc">This build contains no ads.</string>
+    <string name="noads_note">If future builds add ads, this toggle disables them.</string>
+
+    <!-- Phase 2 features -->
+    <string name="feat_hud">Head-Up Display</string>
+    <string name="feat_desc_hud">Large night-riding display, eyes on the road</string>
+    <string name="feat_alerts">Threshold Alerts</string>
+    <string name="feat_desc_alerts">Overheat &amp; over-rev warnings</string>
+    <string name="feat_custom_pid">Custom PIDs</string>
+    <string name="feat_desc_custom_pid">Add sensors &amp; formulas</string>
+    <string name="feat_accel">Acceleration Test</string>
+    <string name="feat_desc_accel">0-100 timing, best records</string>
+    <string name="feat_demo">Demo Mode</string>
+    <string name="feat_desc_demo">Experience everything without hardware</string>
+    <string name="demo_on">Demo mode on: simulating OBD data</string>
+    <string name="demo_off">Demo mode off</string>
+
+    <!-- New features (diagnostics / charts / fuel / score / maintenance) -->
+    <string name="feat_chart">Data Charts</string>
+    <string name="feat_desc_chart">Real-time charts, record &amp; replay</string>
+    <string name="feat_fuel">Fuel Stats</string>
+    <string name="feat_desc_fuel">Dynamic/idle fuel split &amp; cost</string>
+    <string name="feat_score">Driving Score</string>
+    <string name="feat_desc_score">Score your riding style</string>
+    <string name="feat_maintenance">Maintenance</string>
+    <string name="feat_desc_maintenance">Service reminders &amp; battery health</string>
+
+    <!-- Diagnostic trio -->
+    <string name="diag_vin_section">VIN</string>
+    <string name="diag_freeze_section">Freeze Frame (data at fault time)</string>
+    <string name="diag_freeze_none">(No freeze frame data)</string>
+    <string name="diag_freeze_trigger">Trigger DTC: %1$s</string>
+    <string name="ff_rule_overheat">Freeze frame: engine overheating</string>
+    <string name="ff_advice_overheat">Coolant exceeded 110°C when the fault occurred; check coolant and cooling fan</string>
+    <string name="ff_rule_coolant_high">Freeze frame: coolant high</string>
+    <string name="ff_advice_coolant_high">Coolant was in the 101-110°C range when the fault occurred; watch the cooling system</string>
+    <string name="ff_rule_high_load">Freeze frame: high load, low speed</string>
+    <string name="ff_advice_high_load">High load with low speed when the fault occurred; possible hill climb, heavy load or drivetrain drag</string>
+    <string name="ff_rule_overrev">Freeze frame: engine over-rev</string>
+    <string name="ff_advice_overrev">RPM exceeded 8500 when the fault occurred; check oil level and engine condition</string>
+    <string name="ff_rule_cold_high_rpm">Freeze frame: cold engine, high RPM</string>
+    <string name="ff_advice_cold_high_rpm">Engine was below operating temperature at high RPM when the fault occurred</string>
+    <string name="ff_normal">Freeze frame data is near normal; cannot determine the cause from this snapshot</string>
+    <string name="diag_im_section">I/M Readiness</string>
+    <string name="diag_im_none">(No I/M data)</string>
+    <string name="diag_im_mil">MIL: %1$s | Stored: %2$d | Ready: %3$d/%4$d</string>
+    <string name="diag_mil_on">ON</string>
+    <string name="diag_mil_off">OFF</string>
+    <string name="diag_im_ready">Ready</string>
+    <string name="diag_im_not_ready">Not Ready</string>
+    <string name="diag_im_unsupported">N/A</string>
+    <string name="diag_vin_failed">(Read failed)</string>
+
+    <!-- Diagnosis knowledge base (AI symptoms) -->
+    <string name="diag_symptom_start_hard">Hard to start</string>
+    <string name="diag_symptom_idle_unstable">Unstable idle</string>
+    <string name="diag_symptom_lack_power">Lack of power</string>
+    <string name="diag_symptom_fuel_up">Increased fuel use</string>
+    <string name="diag_symptom_exhaust_abnormal">Abnormal exhaust</string>
+    <string name="diag_symptom_vibration">Abnormal vibration</string>
+    <string name="diag_symptom_overheating">Overheating</string>
+    <string name="diag_symptom_noise">Unusual noise</string>
+    <string name="diag_symptom_stall">Stalls while riding</string>
+    <string name="diag_symptom_mil">Check engine light on</string>
+
+    <!-- Diagnosis knowledge base (rule titles/advice) -->
+    <string name="diag_rule_ignition_title">Ignition system fault</string>
+    <string name="diag_rule_ignition_advice">Check spark plug gap and carbon, ignition coil and HT leads first; single-cylinder misfire usually comes with vibration and weak acceleration.</string>
+    <string name="diag_rule_fuel_title">Insufficient fuel supply</string>
+    <string name="diag_rule_fuel_advice">Check injectors for blockage, fuel pump pressure and fuel filter; a dirty air filter causes rich mixture and higher fuel use.</string>
+    <string name="diag_rule_cooling_title">Cooling system fault</string>
+    <string name="diag_rule_cooling_advice">Stop and cool down immediately; check coolant level, water pump and fan. Riding while overheating can burn the head gasket.</string>
+    <string name="diag_rule_intake_title">Intake system fault</string>
+    <string name="diag_rule_intake_advice">Check intake hoses for cracks/leaks, air filter and throttle body carbon; clean and re-learn idle afterwards.</string>
+    <string name="diag_rule_emission_title">Emission system fault</string>
+    <string name="diag_rule_emission_advice">Check O2 sensor and catalytic converter; an aging O2 sensor raises fuel use and emissions — check it first when exhaust smells odd.</string>
+    <string name="diag_rule_battery_title">Battery / charging system fault</string>
+    <string name="diag_rule_battery_advice">Measure battery voltage at idle (normal 13.5–14.5V); a faulty rectifier or stator causes hard starts and electrical instability.</string>
+    <string name="diag_rule_drivetrain_title">Drivetrain fault</string>
+    <string name="diag_rule_drivetrain_advice">Check chain tension and lube, and clutch slip (RPM rising without acceleration); a loose chain causes noise and skipping.</string>
+    <string name="diag_rule_brake_title">Brake system fault</string>
+    <string name="diag_rule_brake_advice">Check pad wear and disc warping; noise often comes from wear indicators or debris in the disc — inspect immediately.</string>
+
+    <!-- Freeze frame PID names -->
+    <string name="pid_name_coolant">Coolant</string>
+    <string name="pid_name_rpm">RPM</string>
+    <string name="pid_name_speed">Speed</string>
+    <string name="pid_name_load">Engine Load</string>
+    <string name="pid_name_fuel_trim">Fuel Trim</string>
+    <string name="pid_name_afr">Air/Fuel Ratio</string>
+    <string name="pid_name_maf">Air Flow</string>
+    <string name="pid_name_fuel_rate">Fuel Rate</string>
+
+    <!-- DTC descriptions -->
+    <string name="dtc_unknown">Code %1$s (not in table, see service manual)</string>
+    <string name="dtc_export_csv">Export CSV</string>
+    <string name="dtc_severity_label">Severity</string>
+    <string name="dtc_advice_label">Repair advice</string>
+    <string name="dtc_severity_critical">Critical</string>
+    <string name="dtc_severity_warning">Warning</string>
+    <string name="dtc_severity_normal">Normal</string>
+    <string name="dtc_advice_coolant">Check coolant temp sensor and wiring; verify coolant level and cooling fan operation</string>
+    <string name="dtc_advice_iat">Check intake air temp sensor and wiring; inspect intake ducts for damage</string>
+    <string name="dtc_advice_ignition">Check spark plugs, ignition coils and wires; verify ignition timing</string>
+    <string name="dtc_advice_fuel_mix">Check for intake leaks, injector spray and fuel pressure; clean injectors if needed</string>
+    <string name="dtc_advice_air">Check MAF/MAP sensor and wiring; clean or replace air filter</string>
+    <string name="dtc_advice_throttle">Check throttle position sensor and wiring; clean throttle body</string>
+    <string name="dtc_advice_o2">Check oxygen sensor and wiring; verify exhaust system is leak-free</string>
+    <string name="dtc_advice_injector">Check injector circuits and wiring; measure injector resistance</string>
+    <string name="dtc_advice_crank">Check crankshaft position sensor and wiring; verify sensor gap</string>
+    <string name="dtc_advice_knock">Check knock sensor and wiring; verify mounting torque</string>
+    <string name="dtc_advice_cam">Check camshaft position sensor and wiring; verify timing</string>
+    <string name="dtc_advice_egr">Check EGR valve operation and passages; clean carbon deposits</string>
+    <string name="dtc_advice_cat">Check catalytic converter and exhaust; verify no clogging or damage</string>
+    <string name="dtc_advice_evap">Check fuel cap seal and EVAP lines; verify no leaks</string>
+    <string name="dtc_advice_speed_idle">Check vehicle speed sensor and idle control valve; clean throttle body</string>
+    <string name="dtc_advice_battery">Check battery voltage and charging system; verify alternator output</string>
+    <string name="dtc_advice_ecu">Check ECU power and grounds; update firmware or replace ECU if needed</string>
+    <string name="dtc_advice_transmission">Check transmission fluid and control system; have it inspected by a professional</string>
+    <string name="dtc_advice_oem_fuel">Manufacturer-specific code; consult the factory service manual or dealer</string>
+    <string name="dtc_advice_wheel_speed">Check wheel speed sensors and wiring; verify sensor gap and tone ring</string>
+    <string name="dtc_advice_abs">Check ABS system and related sensors; have it inspected by a professional</string>
+    <string name="dtc_advice_comm">Check module power/ground and CAN bus wiring; verify no open circuit or interference</string>
+    <string name="dtc_advice_generic">Consult the factory service manual or have it diagnosed by a professional</string>
+    <string name="feat_health_check">Health Check</string>
+    <string name="feat_desc_health_check">Live data analysis with green/yellow/red system scores</string>
+    <string name="hc_refresh">Re-check</string>
+    <string name="hc_level_green">Good</string>
+    <string name="hc_level_yellow">Caution</string>
+    <string name="hc_level_red">Critical</string>
+    <string name="hc_sub_engine">Engine</string>
+    <string name="hc_sub_fuel">Fuel</string>
+    <string name="hc_sub_cooling">Cooling</string>
+    <string name="hc_sub_electrical">Electrical</string>
+    <string name="hc_sub_emissions">Emissions</string>
+    <string name="hc_rules_header">Live data diagnosis</string>
+    <string name="hc_healthy">All systems nominal, no issues detected</string>
+    <string name="hc_no_data">No data yet. Connect OBD or enable demo mode</string>
+    <string name="hc_confidence">Confidence: %1$d%%</string>
+    <string name="hc_rule_overheat">Engine overheating</string>
+    <string name="hc_advice_overheat">Stop and let the engine cool down; check coolant and cooling fan</string>
+    <string name="hc_rule_coolant_high">Coolant temperature high</string>
+    <string name="hc_advice_coolant_high">Monitor coolant temp; check fan, coolant level and water pump</string>
+    <string name="hc_rule_cold_high_rpm">High RPM with cold engine</string>
+    <string name="hc_advice_cold_high_rpm">Avoid high RPM before the engine reaches operating temperature</string>
+    <string name="hc_rule_low_voltage">Low alternator output</string>
+    <string name="hc_advice_low_voltage">Check alternator output and battery wiring</string>
+    <string name="hc_rule_voltage_reg">Charging voltage too high</string>
+    <string name="hc_advice_voltage_reg">Check voltage regulator; overvoltage can damage electronics</string>
+    <string name="hc_rule_fuel_trim">Fuel trim out of range</string>
+    <string name="hc_advice_fuel_trim">Check for intake leaks, injectors and fuel pressure</string>
+    <string name="hc_rule_maf_low">Airflow abnormally low</string>
+    <string name="hc_advice_maf_low">Check MAF sensor and intake ducts; clean or replace air filter</string>
+    <string name="hc_rule_idle_high_load">High load at idle</string>
+    <string name="hc_advice_idle_high_load">Check for vacuum leaks, mechanical drag and idle control</string>
+    <string name="hc_rule_lean">Mixture too lean</string>
+    <string name="hc_advice_lean">Check intake leaks and fuel pressure; verify injectors</string>
+    <string name="hc_rule_rich">Mixture too rich</string>
+    <string name="hc_advice_rich">Check injectors, oxygen sensor and air filter</string>
+    <string name="hc_rule_overrev">Engine over-rev</string>
+    <string name="hc_advice_overrev">Reduce RPM immediately; check oil level and engine condition</string>
+    <string name="dtc_p0100">MAF circuit malfunction</string>
+    <string name="dtc_p0101">MAF sensor out of range</string>
+    <string name="dtc_p0102">MAF sensor low input</string>
+    <string name="dtc_p0103">MAF sensor high input</string>
+    <string name="dtc_p0106">MAP sensor out of range</string>
+    <string name="dtc_p0107">MAP sensor low input</string>
+    <string name="dtc_p0108">MAP sensor high input</string>
+    <string name="dtc_p0110">IAT sensor circuit malfunction</string>
+    <string name="dtc_p0112">IAT sensor low input</string>
+    <string name="dtc_p0113">IAT sensor high input</string>
+    <string name="dtc_p0115">Coolant temp sensor circuit malfunction</string>
+    <string name="dtc_p0116">Coolant temp sensor out of range</string>
+    <string name="dtc_p0117">Coolant temp sensor low input</string>
+    <string name="dtc_p0118">Coolant temp sensor high input</string>
+    <string name="dtc_p0120">TPS circuit malfunction</string>
+    <string name="dtc_p0121">TPS out of range</string>
+    <string name="dtc_p0122">TPS low input</string>
+    <string name="dtc_p0123">TPS high input</string>
+    <string name="dtc_p0130">Front O2 sensor circuit malfunction</string>
+    <string name="dtc_p0131">Front O2 sensor low voltage</string>
+    <string name="dtc_p0132">Front O2 sensor high voltage</string>
+    <string name="dtc_p0133">Front O2 sensor slow response</string>
+    <string name="dtc_p0134">Front O2 sensor no activity</string>
+    <string name="dtc_p0171">System too lean</string>
+    <string name="dtc_p0172">System too rich</string>
+    <string name="dtc_p0201">Injector circuit malfunction — cyl 1</string>
+    <string name="dtc_p0202">Injector circuit malfunction — cyl 2</string>
+    <string name="dtc_p0203">Injector circuit malfunction — cyl 3</string>
+    <string name="dtc_p0204">Injector circuit malfunction — cyl 4</string>
+    <string name="dtc_p0300">Random misfire detected</string>
+    <string name="dtc_p0301">Cylinder 1 misfire</string>
+    <string name="dtc_p0302">Cylinder 2 misfire</string>
+    <string name="dtc_p0303">Cylinder 3 misfire</string>
+    <string name="dtc_p0304">Cylinder 4 misfire</string>
+    <string name="dtc_p0325">Knock sensor circuit malfunction</string>
+    <string name="dtc_p0327">Knock sensor low input</string>
+    <string name="dtc_p0328">Knock sensor high input</string>
+    <string name="dtc_p0335">Crankshaft position sensor circuit malfunction</string>
+    <string name="dtc_p0336">Crank sensor out of range</string>
+    <string name="dtc_p0340">Camshaft position sensor circuit malfunction</string>
+    <string name="dtc_p0400">EGR flow malfunction</string>
+    <string name="dtc_p0401">EGR flow insufficient</string>
+    <string name="dtc_p0420">Catalyst efficiency below threshold</string>
+    <string name="dtc_p0440">EVAP system malfunction</string>
+    <string name="dtc_p0442">EVAP small leak</string>
+    <string name="dtc_p0455">EVAP large leak</string>
+    <string name="dtc_p0500">Vehicle speed sensor malfunction</string>
+    <string name="dtc_p0505">Idle control system malfunction</string>
+    <string name="dtc_p0506">Idle RPM too low</string>
+    <string name="dtc_p0507">Idle RPM too high</string>
+    <string name="dtc_p0562">Battery voltage low</string>
+    <string name="dtc_p0563">Battery voltage high</string>
+    <string name="dtc_p0601">ECU memory fault</string>
+    <string name="dtc_p0606">ECU processor fault</string>
+    <string name="dtc_p0700">Transmission control system fault</string>
+    <string name="dtc_p1125">TPS signal malfunction</string>
+    <string name="dtc_p1128">Closed loop fuel control fault (rear O2)</string>
+    <string name="dtc_p1129">Closed loop fuel control fault</string>
+    <string name="dtc_p1130">Front O2 sensor switching fault</string>
+    <string name="dtc_p1235">Fuel pump control circuit fault</string>
+    <string name="dtc_p2120">Dual TPS circuit malfunction</string>
+    <string name="dtc_p2122">TPS A low input</string>
+    <string name="dtc_p2127">TPS B low input</string>
+    <string name="dtc_c0035">Left front wheel speed sensor circuit</string>
+    <string name="dtc_c0040">Right front wheel speed sensor circuit</string>
+    <string name="dtc_c0045">Left rear wheel speed sensor circuit</string>
+    <string name="dtc_c0050">Right rear wheel speed sensor circuit</string>
+    <string name="dtc_c0130">ABS system fault</string>
+    <string name="dtc_c0245">ABS hydraulic pump fault</string>
+    <string name="dtc_u0100">Lost communication with ECM</string>
+    <string name="dtc_u0121">Lost communication with ABS module</string>
+    <string name="dtc_u0140">Lost communication with body control module</string>
+    <string name="dtc_u0155">Lost communication with instrument cluster</string>
+
+    <!-- I/M monitor names -->
+    <string name="diag_im_test_misfire">Misfire monitor</string>
+    <string name="diag_im_test_fuel">Fuel system</string>
+    <string name="diag_im_test_components">Comprehensive components</string>
+    <string name="diag_im_test_catalyst">Catalyst</string>
+    <string name="diag_im_test_heated_catalyst">Heated catalyst</string>
+    <string name="diag_im_test_evap">Evaporative system</string>
+    <string name="diag_im_test_secondary_air">Secondary air</string>
+    <string name="diag_im_test_ac">A/C refrigerant</string>
+    <string name="diag_im_test_o2">Oxygen sensor</string>
+    <string name="diag_im_test_o2_heater">Oxygen sensor heater</string>
+    <string name="diag_im_test_egr">EGR</string>
+
+    <!-- Trip fuel -->
+    <string name="trip_fuel_dynamic">Dynamic Fuel</string>
+    <string name="trip_fuel_static">Idle Fuel</string>
+    <string name="trip_fuel_split">Dynamic %1$.2f L | Idle %2$.2f L</string>
+    <string name="trip_fuel_price_label">Price/L</string>
+    <string name="trip_fuel_cost_label">Cost</string>
+    <string name="trip_fuel_cost_value">%1$.1f</string>
+    <string name="trip_fuel_price_per_l">%1$.1f /L</string>
+
+    <!-- Maintenance -->
+    <string name="mnt_save">Save</string>
+    <string name="mnt_title">Maintenance</string>
+    <string name="mnt_due_banner">⚠ Service Due!</string>
+    <string name="mnt_remaining">Remaining: %1$s km | Days: %2$s days</string>
+    <string name="mnt_remaining_none">(No service record)</string>
+    <string name="mnt_odometer">Est. odometer: %1$d km | Last service: %2$d km</string>
+    <string name="mnt_label_last_km">Last service (km)</string>
+    <string name="mnt_label_last_date">Last service date (yyyyMMdd)</string>
+    <string name="mnt_label_interval_km">Reminder interval (km)</string>
+    <string name="mnt_label_interval_days">Reminder interval (days)</string>
+    <string name="mnt_battery">Battery Health</string>
+    <string name="mnt_voltage_value">Voltage: %1$.1f V</string>
+    <string name="mnt_voltage_placeholder">Voltage: —</string>
+    <string name="mnt_battery_charging">Charging / OK</string>
+    <string name="mnt_battery_normal">OK</string>
+    <string name="mnt_battery_low">Low — recharge recommended</string>
+    <string name="mnt_voltage_min">Session min: %1$.1f V</string>
+    <string name="mnt_voltage_min_none">Session min: —</string>
+    <string name="mnt_saved">Settings saved</string>
+
+    <!-- Realtime chart -->
+    <string name="chart_pause">Pause</string>
+    <string name="chart_resume">Resume</string>
+    <string name="chart_record">Record</string>
+    <string name="chart_stop_record">Stop</string>
+    <string name="chart_playback">Replay</string>
+    <string name="chart_stop_playback">Stop Replay</string>
+    <string name="chart_record_started">Recording started</string>
+    <string name="chart_record_saved">Saved: %1$s</string>
+    <string name="chart_no_record">No recording found</string>
+    <string name="chart_select_record">Select recording</string>
+    <string name="chart_record_empty">Recording is empty</string>
+    <string name="chart_playback_done">Replay finished</string>
+    <string name="chart_history_title">History Chart</string>
+    <string name="chart_select_signals">Select Signals</string>
+    <string name="chart_no_data">No history data yet</string>
+
+    <!-- Driving score -->
+    <string name="score_start">Start</string>
+    <string name="score_stop">Stop</string>
+    <string name="score_counting">Scoring…</string>
+    <string name="score_live">Scoring… (%1$d samples)</string>
+    <string name="score_insufficient">Insufficient data — ride for a few more seconds</string>
+    <string name="score_done">Done</string>
+    <string name="score_hint_idle">Press Start and ride for a while</string>
+    <string name="score_detail_title">Score Breakdown</string>
+    <string name="score_hard_accel">Hard Acceleration</string>
+    <string name="score_hard_brake">Hard Braking</string>
+    <string name="score_high_rpm">High RPM</string>
+    <string name="score_overspeed">Overspeed</string>
+    <string name="score_idle">Idle Time</string>
+    <string name="score_times">%1$d×</string>
+    <string name="score_percent">%1$d%%</string>
+    <string name="score_grade_excellent">Excellent</string>
+    <string name="score_grade_good">Good</string>
+    <string name="score_grade_fair">Fair</string>
+    <string name="score_grade_poor">Poor</string>
+
+    <!-- Gauges -->
+    <string name="obd_power">Power</string>
+    <string name="obd_torque">Torque</string>
+
+    <!-- Acceleration test -->
+    <string name="accel_title">Acceleration Test</string>
+    <string name="accel_speed_label">Speed km/h</string>
+    <string name="accel_mode_100">0-100 km/h</string>
+    <string name="accel_mode_60">0-60 km/h</string>
+    <string name="accel_mode_quarter">1/4 Mile</string>
+    <string name="accel_time_zero">0.00 s</string>
+    <string name="accel_time_format">%.2f s</string>
+    <string name="accel_result_format">Time: %.2f s</string>
+    <string name="accel_state_idle">Tap to start timing</string>
+    <string name="accel_state_armed">Ready: auto-starts when speed &gt; 0</string>
+    <string name="accel_state_running">Measuring…</string>
+    <string name="accel_start">Start</string>
+    <string name="accel_restart">Restart</string>
+    <string name="accel_best_none">Best: none yet</string>
+    <string name="accel_best_format">Best: %.2f s</string>
+    <string name="accel_not_connected">OBD not connected (enable Demo mode)</string>
+
+    <!-- Threshold alerts -->
+    <string name="alerts_title">Threshold Alerts</string>
+    <string name="alerts_enable">Enable Alerts</string>
+    <string name="alerts_coolant_label">Coolant max (°C)</string>
+    <string name="alerts_rpm_label">RPM max</string>
+    <string name="alerts_voltage_label">Voltage min (V)</string>
+    <string name="alerts_invalid">Enter valid numbers</string>
+    <string name="alerts_saved">Saved</string>
+    <string name="alert_msg_coolant">Coolant too high! %1$d°C</string>
+    <string name="alert_msg_rpm">RPM too high! %1$d</string>
+    <string name="alert_msg_voltage">Voltage too low! %1$sV</string>
+
+    <!-- Custom PID -->
+    <string name="pid_title">Custom PID</string>
+    <string name="pid_add">Add PID</string>
+    <string name="pid_empty">No custom PIDs yet — add one</string>
+    <string name="pid_delete">Delete</string>
+    <string name="pid_edit">Edit</string>
+    <string name="pid_confirm_delete">Delete "%1$s"?</string>
+    <string name="pid_name_hint">Name (e.g. Intake Pressure)</string>
+    <string name="pid_mode_hint">Mode (hex, e.g. 01)</string>
+    <string name="pid_pid_hint">PID (hex, e.g. 0B)</string>
+    <string name="pid_unit_hint">Unit (e.g. kPa)</string>
+    <string name="pid_formula_hint">Formula (e.g. (A*256+B)/4)</string>
+    <string name="pid_preview_hint">Formula preview: enter raw values to verify</string>
+    <string name="pid_raw_hint">raw bytes (hex, e.g. 0A 1B)</string>
+    <string name="pid_add_title">Add PID</string>
+    <string name="pid_edit_title">Edit PID</string>
+    <string name="pid_name_required">Enter a name</string>
+    <string name="pid_mode_invalid">Mode must be 2 hex digits</string>
+    <string name="pid_pid_invalid">PID must be 2 hex digits</string>
+    <string name="pid_formula_required">Enter a formula</string>
+    <string name="pid_formula_error">Formula error or insufficient bytes</string>
+    <string name="pid_result_format">Result: %1$s</string>
+
+    <!-- HUD -->
+    <string name="hud_back">← Back</string>
+    <string name="hud_status_disconnected">Not connected</string>
+    <string name="hud_status_connected">Connected</string>
+    <string name="hud_status_demo">Demo mode</string>
+    <string name="hud_speed_label">Speed km/h</string>
+    <string name="hud_rpm_label">RPM</string>
+    <string name="hud_temp_label">Coolant °C</string>
+    <string name="hud_voltage_label">Voltage V</string>
+    <string name="hud_enable_demo">Enable Demo mode</string>
+    <string name="hud_demo_enabled">Demo mode enabled</string>
+    <string name="hud_warn_coolant">Coolant %1$d°C</string>
+    <string name="hud_warn_rpm">RPM %1$d</string>
+    <string name="hud_warn_voltage">Voltage %1$sV</string>
+
+    <!-- Common -->
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_back">Back</string>
+    <string name="common_unit_rpm">RPM</string>
+    <string name="common_unit_kmh">km/h</string>
+    <string name="common_unit_celsius">°C</string>
+    <string name="common_unit_volt">V</string>
+    <string name="feature_wip">Under development</string>
+</resources>

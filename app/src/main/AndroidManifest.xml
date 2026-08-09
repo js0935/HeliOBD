@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 藍牙（Android 8–11） -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <!-- 藍牙（Android 12+） -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Android 8–11 掃描藍牙需要位置權限 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
+
+    <application
+        android:name=".App"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HeliOBD">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".license.LicenseActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ObdMonitorActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.EngineSoundActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.AiDiagnoseActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.TripActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.CompareActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.VehiclesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.DtcActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.DrivingScoreActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.MaintenanceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.RealtimeChartActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ChartActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.HudActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.AlertsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.CustomPidActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.AccelerationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.FeaturePlaceholderActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.HealthCheckActivity"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">HeliOBD</string>
+
+    <!-- 主畫面 -->
+    <string name="nav_obd">即時數據</string>
+    <string name="nav_dtc">故障碼</string>
+    <string name="nav_license">授權管理</string>
+
+    <!-- 免費功能描述 -->
+    <string name="obd_desc">轉速、車速、水溫即時顯示</string>
+    <string name="dtc_desc">讀取與清除故障碼</string>
+
+    <!-- 功能名稱 -->
+    <string name="feat_engine_sound">引擎聲浪</string>
+    <string name="feat_ai_diag">AI 診斷</string>
+    <string name="feat_trip_review">行程回顧</string>
+    <string name="feat_data_compare">數據對比</string>
+    <string name="feat_multi_car">多車管理</string>
+
+    <!-- 功能描述 -->
+    <string name="feat_desc_engine_sound">模擬排氣聲浪，享受騎乘樂趣</string>
+    <string name="feat_desc_ai_diag">AI 分析診斷數據，找出問題根源</string>
+    <string name="feat_desc_trip_review">完整記錄每次騎乘旅程</string>
+    <string name="feat_desc_data_compare">多筆數據對比，掌握車輛狀態趨勢</string>
+    <string name="feat_desc_multi_car">一台裝置管理多台愛車</string>
+
+    <!-- 授權 -->
+    <string name="license_enter">輸入授權碼</string>
+    <string name="license_hint">請輸入 OBD- 開頭的授權碼</string>
+    <string name="license_device_id">本機設備碼</string>
+    <string name="license_activate">啟用授權</string>
+    <string name="license_copy_id">複製設備碼</string>
+    <string name="license_copied">設備碼已複製</string>
+    <string name="license_deactivate">移除授權</string>
+    <string name="license_activated_features">已啟用功能</string>
+    <string name="license_status_valid">✓ 授權有效</string>
+    <string name="license_status_expired">授權已過期</string>
+    <string name="license_status_mismatch">授權碼綁定其他設備</string>
+    <string name="license_status_invalid">授權碼無效（簽章驗證失敗）</string>
+    <string name="license_status_rollback">偵測到系統時間倒退，授權已清除</string>
+    <string name="license_status_none">尚未授權</string>
+    <string name="license_unknown">授權狀態未知</string>
+    <string name="locked_feature">此功能尚未解鎖</string>
+    <string name="locked_go_license">前往授權</string>
+    <string name="license_empty">請先輸入授權碼</string>
+
+    <!-- OBD -->
+    <string name="obd_connect">連接 OBD</string>
+    <string name="obd_disconnect">中斷連線</string>
+    <string name="obd_scanning">掃描中…</string>
+    <string name="obd_connecting">連線中…</string>
+    <string name="obd_connected">已連線</string>
+    <string name="obd_disconnected">未連線</string>
+    <string name="monitor_customize">自訂</string>
+    <string name="monitor_tile_title">選擇要顯示的數據</string>
+    <string name="monitor_unit_metric">公制</string>
+    <string name="monitor_unit_imperial">英制</string>
+    <string name="monitor_page">%1$d/%2$d</string>
+    <string name="monitor_drag_hint">長按拖動排序</string>
+    <string name="monitor_chart">圖表</string>
+    <string name="obd_select_device">選擇 ELM327 裝置</string>
+    <string name="obd_no_device">未找到 ELM327 裝置</string>
+    <string name="obd_scan">掃描藍牙</string>
+    <string name="obd_rpm">轉速</string>
+    <string name="obd_speed">車速</string>
+    <string name="obd_temp">水溫</string>
+    <string name="obd_voltage">電瓶電壓</string>
+    <string name="obd_init_failed">OBD 初始化失敗</string>
+    <string name="obd_permission_denied">需要藍牙權限才能連接 OBD</string>
+    <string name="obd_connect_failed">連接失敗：%1$s</string>
+    <string name="obd_connect_error">連線失敗</string>
+
+    <!-- 故障碼 -->
+    <string name="dtc_read">讀取故障碼</string>
+    <string name="dtc_clear">清除故障碼</string>
+    <string name="dtc_clear_confirm">清除故障碼將一併清除：\n・故障碼（DTC）\n・凍結框資料\n・含氧感測器測試數據\n・監控測試狀態\n・車載監控測試結果\n・MIL 亮起期間行駛里程\n・清除後暖機次數／行駛里程／時間\n\n確定要清除嗎？</string>
+    <string name="dtc_cleared">故障碼已清除</string>
+    <string name="dtc_empty">無故障碼，車輛一切正常</string>
+    <string name="dtc_read_error">故障碼讀取失敗</string>
+    <string name="dtc_tab_current">正式故障碼</string>
+    <string name="dtc_tab_pending">待處理</string>
+    <string name="dtc_tab_permanent">永久</string>
+    <string name="dtc_pending_empty">無待處理故障碼</string>
+    <string name="dtc_permanent_empty">無永久故障碼</string>
+
+    <!-- 引擎聲浪 -->
+    <string name="engine_sound_mode_real">OBD 真實轉速</string>
+    <string name="engine_sound_mode_sim">模擬模式（未連接 OBD）</string>
+    <string name="engine_sound_rpm_label">模擬轉速調整（未連線時可用）</string>
+    <string name="engine_sound_rpm_value">%1$d RPM</string>
+    <string name="common_play">播放聲浪</string>
+    <string name="common_stop">停止播放</string>
+
+    <!-- AI 診斷 -->
+    <string name="ai_diag_symptoms">選擇症狀（可多選）</string>
+    <string name="ai_diag_dtc_section">故障碼（可選）</string>
+    <string name="ai_diag_read_dtc">從 OBD 讀取</string>
+    <string name="ai_diag_add_dtc">加入</string>
+    <string name="ai_diag_dtc_hint">手動輸入 DTC（如 P0113），多個以逗號分隔</string>
+    <string name="ai_diag_selected_dtc">已加入故障碼</string>
+    <string name="ai_diag_start">開始診斷</string>
+    <string name="ai_diag_empty">請先選擇症狀或輸入故障碼</string>
+    <string name="ai_diag_no_dtc">未讀取到故障碼</string>
+    <string name="ai_diag_no_result">未發現明顯問題，車輛狀態良好</string>
+    <string name="ai_diag_confidence">信賴度：%1$d%%</string>
+
+    <!-- 行程回顧 -->
+    <string name="trip_record_start">開始記錄</string>
+    <string name="trip_record_stop">停止記錄</string>
+    <string name="trip_recording">記錄中…</string>
+    <string name="trip_idle">未在記錄</string>
+    <string name="trip_current">目前行程</string>
+    <string name="trip_history">歷史行程</string>
+    <string name="trip_duration">時長</string>
+    <string name="trip_distance">里程</string>
+    <string name="trip_max_speed">最高速度</string>
+    <string name="trip_avg_speed">平均速度</string>
+    <string name="trip_max_rpm">最高轉速</string>
+    <string name="trip_avg_rpm">平均轉速</string>
+    <string name="trip_avg_coolant">平均水溫</string>
+    <string name="trip_samples">樣本數</string>
+    <string name="trip_empty">尚無行程記錄</string>
+    <string name="trip_saved">行程已儲存：時長 %1$s，里程 %2$.1f km</string>
+    <string name="trip_no_data">無 OBD 數據，未儲存行程</string>
+    <string name="trip_deleted">已刪除</string>
+    <string name="trip_confirm_delete">確定刪除此筆行程？</string>
+    <string name="trip_detail">行程明細：%1$s</string>
+    <string name="trip_card_info">時長 %1$s｜里程 %2$s km｜最高速 %3$d km/h</string>
+    <string name="trip_fuel_rate">油耗</string>
+    <string name="trip_fuel_total">已用油量</string>
+    <string name="trip_track">軌跡</string>
+    <string name="trip_export_csv">匯出 CSV</string>
+    <string name="trip_chart">曲線</string>
+    <string name="trip_no_track">本行程無 GPS 軌跡</string>
+    <string name="trip_exported">已匯出：%1$s</string>
+    <string name="trip_no_samples">本行程無可匯出的樣本資料</string>
+    <string name="trip_fuel_unit">%1$s L/100km</string>
+    <string name="trip_fuel_liter">%1$s L</string>
+    <string name="trip_gps_on">已啟用 GPS 軌跡記錄</string>
+    <string name="trip_duration_hms">%1$d 時 %2$d 分 %3$d 秒</string>
+    <string name="trip_duration_ms">%1$d 分 %2$d 秒</string>
+    <string name="trip_km"> km</string>
+    <string name="common_delete">刪除</string>
+
+    <!-- 數據對比 -->
+    <string name="compare_capture_a">捕捉為快照 A</string>
+    <string name="compare_capture_b">捕捉為快照 B</string>
+    <string name="compare_clear">清除</string>
+    <string name="compare_empty_a">尚未捕捉快照 A</string>
+    <string name="compare_empty_b">尚未捕捉快照 B</string>
+    <string name="compare_failed">數據讀取失敗，請稍後再試</string>
+    <string name="compare_metric">項目</string>
+    <string name="compare_snap_a_short">快照 A</string>
+    <string name="compare_snap_b_short">快照 B</string>
+    <string name="compare_diff">差異</string>
+    <string name="compare_hint">提示：先連接 OBD，在兩種狀態（如怠速／行駛）下各捕捉一次，比較引擎負載與電系差異。</string>
+    <string name="compare_snapshot_info">%1$s 捕捉｜RPM %2$s｜車速 %3$s km/h｜水溫 %4$s °C｜電壓 %5$s V</string>
+
+    <!-- 多車管理 -->
+    <string name="vehicles_add">新增車輛</string>
+    <string name="vehicles_edit">編輯車輛</string>
+    <string name="vehicles_empty">尚無車輛，請先新增</string>
+    <string name="vehicles_current">目前車輛</string>
+    <string name="vehicles_set_current">設為目前</string>
+    <string name="vehicles_confirm_delete">確定刪除「%1$s」？</string>
+    <string name="vehicles_current_set">已設為目前車輛</string>
+    <string name="vehicles_read_vin">讀取 VIN</string>
+    <string name="vehicles_vin_loaded">已從 OBD 讀取 VIN</string>
+    <string name="vehicles_name_hint">車輛名稱（必填）</string>
+    <string name="vehicles_brand_hint">廠牌／型號</string>
+    <string name="vehicles_cc_hint">排氣量（cc）</string>
+    <string name="vehicles_note_hint">備註</string>
+    <string name="vehicles_name_required">請輸入車輛名稱</string>
+    <string name="common_edit">編輯</string>
+    <string name="common_save">儲存</string>
+
+    <!-- 移除廣告 -->
+    <string name="noads_status">已啟用</string>
+    <string name="noads_desc">本版本不含任何廣告，體驗純淨無干擾。</string>
+    <string name="noads_note">若未來版本加入廣告，此功能可一鍵關閉廣告顯示。</string>
+
+    <!-- 強化功能（第二階段） -->
+    <string name="feat_hud">抬頭顯示</string>
+    <string name="feat_desc_hud">夜間騎乘大字顯示，安全不分心</string>
+    <string name="feat_alerts">閾值警示</string>
+    <string name="feat_desc_alerts">引擎過熱、轉速超限即時提醒</string>
+    <string name="feat_custom_pid">自訂 PID</string>
+    <string name="feat_desc_custom_pid">新增車廠專用感測器與公式</string>
+    <string name="feat_accel">加速測試</string>
+    <string name="feat_desc_accel">0-100 計時，記錄最佳成績</string>
+    <string name="feat_demo">模擬模式</string>
+    <string name="feat_desc_demo">無硬體也能體驗全部功能</string>
+    <string name="demo_on">模擬模式已開啟：正在模擬 OBD 數據</string>
+    <string name="demo_off">模擬模式已關閉</string>
+
+    <!-- 新功能（診斷三件套/曲線圖/油耗/評分/保養） -->
+    <string name="feat_chart">數據曲線</string>
+    <string name="feat_desc_chart">即時曲線圖，錄製與回放數據</string>
+    <string name="feat_fuel">油耗統計</string>
+    <string name="feat_desc_fuel">動靜態油耗分離與油錢計算</string>
+    <string name="feat_score">駕駛評分</string>
+    <string name="feat_desc_score">評分騎乘風格，改善駕駛習慣</string>
+    <string name="feat_maintenance">保養提醒</string>
+    <string name="feat_desc_maintenance">保養里程與電池健康監控</string>
+
+    <!-- 診斷三件套 -->
+    <string name="diag_vin_section">VIN 車身碼</string>
+    <string name="diag_freeze_section">凍結框（故障發生當下數據）</string>
+    <string name="diag_freeze_none">（無凍結框數據）</string>
+    <string name="diag_freeze_trigger">觸發碼：%1$s</string>
+    <string name="ff_rule_overheat">凍結框：引擎過熱</string>
+    <string name="ff_advice_overheat">故障發生時水溫超過 110°C，立即檢查冷卻液與散熱風扇</string>
+    <string name="ff_rule_coolant_high">凍結框：水溫偏高</string>
+    <string name="ff_advice_coolant_high">故障發生時水溫位於 101-110°C 高溫區，留意冷卻系統</string>
+    <string name="ff_rule_high_load">凍結框：高負載低速</string>
+    <string name="ff_advice_high_load">故障發生時負載高且車速低，可能為爬坡、重拖或傳動阻力</string>
+    <string name="ff_rule_overrev">凍結框：引擎超轉</string>
+    <string name="ff_advice_overrev">故障發生時轉速超過 8500 RPM，檢查機油量與引擎狀況</string>
+    <string name="ff_rule_cold_high_rpm">凍結框：冷引擎高轉速</string>
+    <string name="ff_advice_cold_high_rpm">故障發生時引擎未達工作溫度即高轉速行駛</string>
+    <string name="ff_normal">凍結框數據接近正常範圍，無法從此快照判定故障原因</string>
+    <string name="diag_im_section">I/M 排放就緒</string>
+    <string name="diag_im_none">（無 I/M 資料）</string>
+    <string name="diag_im_mil">MIL 警示燈：%1$s　儲存故障碼：%2$d　就緒：%3$d/%4$d</string>
+    <string name="diag_mil_on">亮起</string>
+    <string name="diag_mil_off">熄滅</string>
+    <string name="diag_im_ready">就緒</string>
+    <string name="diag_im_not_ready">未就緒</string>
+    <string name="diag_im_unsupported">未支援</string>
+    <string name="diag_vin_failed">（讀取失敗）</string>
+
+    <!-- 診斷知識庫（AI 診斷症狀） -->
+    <string name="diag_symptom_start_hard">啟動困難</string>
+    <string name="diag_symptom_idle_unstable">怠速不穩</string>
+    <string name="diag_symptom_lack_power">動力不足</string>
+    <string name="diag_symptom_fuel_up">油耗增加</string>
+    <string name="diag_symptom_exhaust_abnormal">排氣異常</string>
+    <string name="diag_symptom_vibration">異常抖動</string>
+    <string name="diag_symptom_overheating">水溫過高</string>
+    <string name="diag_symptom_noise">異音</string>
+    <string name="diag_symptom_stall">行駛中熄火</string>
+    <string name="diag_symptom_mil">亮故障燈</string>
+
+    <!-- 診斷知識庫（規則標題/建議） -->
+    <string name="diag_rule_ignition_title">點火系統異常</string>
+    <string name="diag_rule_ignition_advice">優先檢查火星塞間隙與積碳、點火線圈與高壓線接頭；單缸失火常伴隨異常抖動與加速無力。</string>
+    <string name="diag_rule_fuel_title">燃油供應不足</string>
+    <string name="diag_rule_fuel_advice">檢查噴油嘴是否堵塞、汽油泵壓力與燃油濾清器；空氣濾芯過髒會造成混合比過濃、油耗增加。</string>
+    <string name="diag_rule_cooling_title">冷卻系統異常</string>
+    <string name="diag_rule_cooling_advice">立即停車降溫，檢查水箱水位、水泵運作與散熱風扇；水溫過高繼續行駛可能導致汽缸墊片燒毀。</string>
+    <string name="diag_rule_intake_title">進氣系統異常</string>
+    <string name="diag_rule_intake_advice">檢查進氣管路是否有裂縫漏氣、空氣濾芯與節氣門積碳；清潔後建議重新進行怠速學習。</string>
+    <string name="diag_rule_emission_title">排放系統異常</string>
+    <string name="diag_rule_emission_advice">檢查含氧感知器與觸媒轉換器；含氧感知器老化會造成油耗增加與排放超標，尾氣有異味時優先檢查。</string>
+    <string name="diag_rule_battery_title">電瓶 / 充電系統異常</string>
+    <string name="diag_rule_battery_advice">量測怠速電瓶電壓（正常 13.5–14.5V）；整流器或發電線圈故障會導致啟動困難與電系不穩。</string>
+    <string name="diag_rule_drivetrain_title">傳動系統異常</string>
+    <string name="diag_rule_drivetrain_advice">檢查鏈條鬆緊與潤滑、離合器是否打滑（轉速上升但加速無力）；鏈條過鬆會造成異音與跳齒。</string>
+    <string name="diag_rule_brake_title">煞車系統異常</string>
+    <string name="diag_rule_brake_advice">檢查煞車來令片磨耗與碟盤變形；異音常來自磨損指示片刮擦或碟盤夾入異物，請立即檢修。</string>
+
+    <!-- 凍結框 PID 名稱 -->
+    <string name="pid_name_coolant">水溫</string>
+    <string name="pid_name_rpm">轉速</string>
+    <string name="pid_name_speed">車速</string>
+    <string name="pid_name_load">引擎負載</string>
+    <string name="pid_name_fuel_trim">燃油修正</string>
+    <string name="pid_name_afr">空燃比</string>
+    <string name="pid_name_maf">空氣流量</string>
+    <string name="pid_name_fuel_rate">燃油消耗率</string>
+
+    <!-- DTC 描述表 -->
+    <string name="dtc_unknown">診斷碼 %1$s（未收錄，請參閱原廠手冊）</string>
+    <string name="dtc_export_csv">匯出 CSV</string>
+    <string name="dtc_severity_label">嚴重度</string>
+    <string name="dtc_advice_label">維修建議</string>
+    <string name="dtc_severity_critical">嚴重</string>
+    <string name="dtc_severity_warning">警告</string>
+    <string name="dtc_severity_normal">正常</string>
+    <string name="dtc_advice_coolant">檢查水溫感測器與接線，確認水箱水位與風扇運作，避免過熱行駛</string>
+    <string name="dtc_advice_iat">檢查進氣溫度感測器與接線，確認進氣管路無破損</string>
+    <string name="dtc_advice_ignition">檢查火星塞、點火線圈與高壓線，確認點火時序正常</string>
+    <string name="dtc_advice_fuel_mix">檢查進氣管路是否漏氣、噴油嘴霧化與燃油壓力，必要時清洗噴油嘴</string>
+    <string name="dtc_advice_air">檢查空氣流量計／進氣壓力感測器與接線，清潔或更換空氣濾芯</string>
+    <string name="dtc_advice_throttle">檢查節氣門位置感測器與接線，清潔節氣門積碳</string>
+    <string name="dtc_advice_o2">檢查含氧感測器與接線，確認排氣系統無漏氣</string>
+    <string name="dtc_advice_injector">檢查噴油嘴電路與接線，測量噴油嘴阻抗</string>
+    <string name="dtc_advice_crank">檢查曲軸位置感測器與接線，確認感測間隙正常</string>
+    <string name="dtc_advice_knock">檢查爆震感測器與接線，確認固定扭力正確</string>
+    <string name="dtc_advice_cam">檢查凸輪軸位置感測器與接線，確認正時正常</string>
+    <string name="dtc_advice_egr">檢查 EGR 閥作動與管路，清潔積碳</string>
+    <string name="dtc_advice_cat">檢查觸媒轉換器與排氣系統，確認無堵塞或損壞</string>
+    <string name="dtc_advice_evap">檢查油箱蓋密合度與蒸發排放管路，確認無漏氣</string>
+    <string name="dtc_advice_speed_idle">檢查車速感測器與怠速控制閥，清潔節氣門</string>
+    <string name="dtc_advice_battery">檢查電瓶電壓與充電系統，確認發電機運作正常</string>
+    <string name="dtc_advice_ecu">檢查 ECU 供電與接地，必要時更新韌體或更換 ECU</string>
+    <string name="dtc_advice_transmission">檢查變速箱油位與控制系統，建議交由專業技師檢測</string>
+    <string name="dtc_advice_oem_fuel">車廠專用碼，建議查閱原廠維修手冊或交由經銷商檢測</string>
+    <string name="dtc_advice_wheel_speed">檢查輪速感測器與接線，確認感測間隙與磁圈清潔</string>
+    <string name="dtc_advice_abs">檢查 ABS 系統與相關感測器，建議交由專業技師檢測</string>
+    <string name="dtc_advice_comm">檢查相關電腦的電源／接地與 CAN 匯流排接線，確認無斷路或干擾</string>
+    <string name="dtc_advice_generic">建議查閱原廠維修手冊，或交由專業技師診斷</string>
+    <string name="feat_health_check">健康檢查</string>
+    <string name="feat_desc_health_check">即時數據分析，各系統綠/黃/紅健康評分</string>
+    <string name="hc_refresh">重新檢查</string>
+    <string name="hc_level_green">良好</string>
+    <string name="hc_level_yellow">注意</string>
+    <string name="hc_level_red">危險</string>
+    <string name="hc_sub_engine">引擎系統</string>
+    <string name="hc_sub_fuel">燃油系統</string>
+    <string name="hc_sub_cooling">冷卻系統</string>
+    <string name="hc_sub_electrical">電氣系統</string>
+    <string name="hc_sub_emissions">排放系統</string>
+    <string name="hc_rules_header">即時數據診斷</string>
+    <string name="hc_healthy">各系統正常，未偵測到異常</string>
+    <string name="hc_no_data">尚未取得數據，請連線 OBD 或開啟模擬模式</string>
+    <string name="hc_confidence">信賴度：%1$d%%</string>
+    <string name="hc_rule_overheat">引擎過熱</string>
+    <string name="hc_advice_overheat">立即停車熄火降溫，檢查冷卻液與散熱風扇</string>
+    <string name="hc_rule_coolant_high">水溫偏高</string>
+    <string name="hc_advice_coolant_high">留意水溫變化，檢查散熱風扇、冷卻液與水泵</string>
+    <string name="hc_rule_cold_high_rpm">冷引擎高轉速</string>
+    <string name="hc_advice_cold_high_rpm">引擎未達工作溫度前應避免高轉速行駛</string>
+    <string name="hc_rule_low_voltage">發電機輸出偏低</string>
+    <string name="hc_advice_low_voltage">檢查發電機輸出與電瓶接線，確認充電系統正常</string>
+    <string name="hc_rule_voltage_reg">充電電壓過高</string>
+    <string name="hc_advice_voltage_reg">檢查電壓調節器，電壓過高可能損壞電器設備</string>
+    <string name="hc_rule_fuel_trim">混合氣異常</string>
+    <string name="hc_advice_fuel_trim">檢查進氣管路是否洩漏、噴油嘴與燃油壓力</string>
+    <string name="hc_rule_maf_low">進氣量異常偏低</string>
+    <string name="hc_advice_maf_low">檢查空氣流量計與進氣管路，清潔或更換空氣濾芯</string>
+    <string name="hc_rule_idle_high_load">怠速負載過高</string>
+    <string name="hc_advice_idle_high_load">檢查真空洩漏、機械阻力與怠速控制</string>
+    <string name="hc_rule_lean">混合氣過稀</string>
+    <string name="hc_advice_lean">檢查進氣洩漏與燃油壓力，確認噴油嘴正常</string>
+    <string name="hc_rule_rich">混合氣過濃</string>
+    <string name="hc_advice_rich">檢查噴油嘴、含氧感測器與空氣濾芯</string>
+    <string name="hc_rule_overrev">引擎超轉</string>
+    <string name="hc_advice_overrev">立即降低轉速，檢查機油量與引擎狀況</string>
+    <string name="dtc_p0100">空氣流量計電路故障</string>
+    <string name="dtc_p0101">空氣流量計訊號異常</string>
+    <string name="dtc_p0102">空氣流量計訊號過低</string>
+    <string name="dtc_p0103">空氣流量計訊號過高</string>
+    <string name="dtc_p0106">進氣壓力感測器異常</string>
+    <string name="dtc_p0107">進氣壓力感測器訊號過低</string>
+    <string name="dtc_p0108">進氣壓力感測器訊號過高</string>
+    <string name="dtc_p0110">進氣溫度感測器電路故障</string>
+    <string name="dtc_p0112">進氣溫度感測器訊號過低</string>
+    <string name="dtc_p0113">進氣溫度感測器訊號過高</string>
+    <string name="dtc_p0115">水溫感測器電路故障</string>
+    <string name="dtc_p0116">水溫感測器訊號異常</string>
+    <string name="dtc_p0117">水溫感測器訊號過低</string>
+    <string name="dtc_p0118">水溫感測器訊號過高</string>
+    <string name="dtc_p0120">節氣門位置感測器電路故障</string>
+    <string name="dtc_p0121">節氣門位置感測器訊號異常</string>
+    <string name="dtc_p0122">節氣門位置感測器訊號過低</string>
+    <string name="dtc_p0123">節氣門位置感測器訊號過高</string>
+    <string name="dtc_p0130">前氧感測器電路故障</string>
+    <string name="dtc_p0131">前氧感測器電壓過低</string>
+    <string name="dtc_p0132">前氧感測器電壓過高</string>
+    <string name="dtc_p0133">前氧感測器反應過慢</string>
+    <string name="dtc_p0134">前氧感測器無作用</string>
+    <string name="dtc_p0171">混合氣過稀</string>
+    <string name="dtc_p0172">混合氣過濃</string>
+    <string name="dtc_p0201">第 1 缸噴油嘴電路故障</string>
+    <string name="dtc_p0202">第 2 缸噴油嘴電路故障</string>
+    <string name="dtc_p0203">第 3 缸噴油嘴電路故障</string>
+    <string name="dtc_p0204">第 4 缸噴油嘴電路故障</string>
+    <string name="dtc_p0300">偵測到隨機失火</string>
+    <string name="dtc_p0301">第 1 缸失火</string>
+    <string name="dtc_p0302">第 2 缸失火</string>
+    <string name="dtc_p0303">第 3 缸失火</string>
+    <string name="dtc_p0304">第 4 缸失火</string>
+    <string name="dtc_p0325">爆震感測器電路故障</string>
+    <string name="dtc_p0327">爆震感測器訊號過低</string>
+    <string name="dtc_p0328">爆震感測器訊號過高</string>
+    <string name="dtc_p0335">曲軸位置感測器電路故障</string>
+    <string name="dtc_p0336">曲軸位置感測器訊號異常</string>
+    <string name="dtc_p0340">凸輪軸位置感測器電路故障</string>
+    <string name="dtc_p0400">廢氣再循環（EGR）流量異常</string>
+    <string name="dtc_p0401">廢氣再循環（EGR）流量不足</string>
+    <string name="dtc_p0420">觸媒轉換器效率低於門檻</string>
+    <string name="dtc_p0440">蒸發排放系統故障</string>
+    <string name="dtc_p0442">蒸發排放系統微漏氣</string>
+    <string name="dtc_p0455">蒸發排放系統大量漏氣</string>
+    <string name="dtc_p0500">車速感測器訊號異常</string>
+    <string name="dtc_p0505">怠速控制系統故障</string>
+    <string name="dtc_p0506">怠速過低</string>
+    <string name="dtc_p0507">怠速過高</string>
+    <string name="dtc_p0562">電瓶電壓過低</string>
+    <string name="dtc_p0563">電瓶電壓過高</string>
+    <string name="dtc_p0601">引擎電腦（ECU）記憶體故障</string>
+    <string name="dtc_p0606">引擎電腦（ECU）處理器故障</string>
+    <string name="dtc_p0700">變速箱控制系統故障</string>
+    <string name="dtc_p1125">節氣門位置訊號異常</string>
+    <string name="dtc_p1128">閉合迴路燃油控制異常（後氧）</string>
+    <string name="dtc_p1129">閉合迴路燃油控制異常</string>
+    <string name="dtc_p1130">前氧感測器切換異常</string>
+    <string name="dtc_p1235">燃油泵控制電路故障</string>
+    <string name="dtc_p2120">雙節氣門位置感測器電路故障</string>
+    <string name="dtc_p2122">節氣門位置感測器 A 訊號過低</string>
+    <string name="dtc_p2127">節氣門位置感測器 B 訊號過低</string>
+    <string name="dtc_c0035">左前輪速感測器電路故障</string>
+    <string name="dtc_c0040">右前輪速感測器電路故障</string>
+    <string name="dtc_c0045">左後輪速感測器電路故障</string>
+    <string name="dtc_c0050">右後輪速感測器電路故障</string>
+    <string name="dtc_c0130">ABS 系統故障</string>
+    <string name="dtc_c0245">ABS 液壓泵故障</string>
+    <string name="dtc_u0100">與引擎電腦通訊中斷</string>
+    <string name="dtc_u0121">與 ABS 電腦通訊中斷</string>
+    <string name="dtc_u0140">與車身電腦通訊中斷</string>
+    <string name="dtc_u0155">與儀表板通訊中斷</string>
+
+    <!-- I/M 監測項目名稱 -->
+    <string name="diag_im_test_misfire">失火監測</string>
+    <string name="diag_im_test_fuel">燃油系統</string>
+    <string name="diag_im_test_components">綜合元件</string>
+    <string name="diag_im_test_catalyst">觸媒轉換器</string>
+    <string name="diag_im_test_heated_catalyst">加熱觸媒</string>
+    <string name="diag_im_test_evap">蒸發排放</string>
+    <string name="diag_im_test_secondary_air">二次空氣</string>
+    <string name="diag_im_test_ac">空調冷媒</string>
+    <string name="diag_im_test_o2">氧感測器</string>
+    <string name="diag_im_test_o2_heater">氧感測器加熱</string>
+    <string name="diag_im_test_egr">EGR</string>
+
+    <!-- 行程油耗 -->
+    <string name="trip_fuel_dynamic">動態油耗</string>
+    <string name="trip_fuel_static">靜態油耗</string>
+    <string name="trip_fuel_split">動態 %1$.2f L　靜態 %2$.2f L</string>
+    <string name="trip_fuel_price_label">油價(元/L)</string>
+    <string name="trip_fuel_cost_label">油錢</string>
+    <string name="trip_fuel_cost_value">%1$.1f 元</string>
+    <string name="trip_fuel_price_per_l">%1$.1f 元/L</string>
+
+    <!-- 保養提醒 -->
+    <string name="mnt_save">儲存設定</string>
+    <string name="mnt_title">保養提醒</string>
+    <string name="mnt_due_banner">⚠ 保養到期！</string>
+    <string name="mnt_remaining">剩餘里程：%1$s km　剩餘天數：%2$s 天</string>
+    <string name="mnt_remaining_none">（未設定上次保養）</string>
+    <string name="mnt_odometer">估計總里程：%1$d km　上次保養：%2$d km</string>
+    <string name="mnt_label_last_km">上次保養里程(km)</string>
+    <string name="mnt_label_last_date">上次保養日期(yyyyMMdd)</string>
+    <string name="mnt_label_interval_km">提醒里程間隔(km)</string>
+    <string name="mnt_label_interval_days">提醒天數間隔</string>
+    <string name="mnt_battery">電池健康</string>
+    <string name="mnt_voltage_value">電壓：%1$.1f V</string>
+    <string name="mnt_voltage_placeholder">電壓：—</string>
+    <string name="mnt_battery_charging">狀態：充電中 / 正常</string>
+    <string name="mnt_battery_normal">狀態：正常</string>
+    <string name="mnt_battery_low">狀態：電量偏低，建議充電</string>
+    <string name="mnt_voltage_min">本次最低電壓：%1$.1f V</string>
+    <string name="mnt_voltage_min_none">本次最低電壓：—</string>
+    <string name="mnt_saved">設定已儲存</string>
+
+    <!-- 數據曲線 -->
+    <string name="chart_pause">暫停</string>
+    <string name="chart_resume">繼續</string>
+    <string name="chart_record">錄製</string>
+    <string name="chart_stop_record">停止錄製</string>
+    <string name="chart_playback">回放</string>
+    <string name="chart_stop_playback">停止回放</string>
+    <string name="chart_record_started">開始錄製</string>
+    <string name="chart_record_saved">已儲存：%1$s</string>
+    <string name="chart_no_record">尚無錄製檔案</string>
+    <string name="chart_select_record">選擇錄製紀錄</string>
+    <string name="chart_record_empty">錄製檔案無資料</string>
+    <string name="chart_playback_done">回放結束</string>
+    <string name="chart_history_title">歷史數據圖</string>
+    <string name="chart_select_signals">選擇訊號</string>
+    <string name="chart_no_data">尚無歷史數據</string>
+
+    <!-- 駕駛評分 -->
+    <string name="score_start">開始計分</string>
+    <string name="score_stop">結束</string>
+    <string name="score_counting">計分中…</string>
+    <string name="score_live">即時評分中…（樣本 %1$d）</string>
+    <string name="score_insufficient">數據不足，請至少騎乘數秒後再結束</string>
+    <string name="score_done">本次評分完成</string>
+    <string name="score_hint_idle">按下「開始計分」並騎乘一段時間</string>
+    <string name="score_detail_title">評分明細</string>
+    <string name="score_hard_accel">急加速</string>
+    <string name="score_hard_brake">急煞車</string>
+    <string name="score_high_rpm">高轉速比例</string>
+    <string name="score_overspeed">超速比例</string>
+    <string name="score_idle">怠速比例</string>
+    <string name="score_times">%1$d 次</string>
+    <string name="score_percent">%1$d%%</string>
+    <string name="score_grade_excellent">優</string>
+    <string name="score_grade_good">良</string>
+    <string name="score_grade_fair">中</string>
+    <string name="score_grade_poor">差</string>
+
+    <!-- 馬力/扭力 -->
+    <string name="obd_power">馬力</string>
+    <string name="obd_torque">扭力</string>
+
+    <!-- 加速測試 -->
+    <string name="accel_title">加速測試</string>
+    <string name="accel_speed_label">車速 km/h</string>
+    <string name="accel_mode_100">0-100 km/h</string>
+    <string name="accel_mode_60">0-60 km/h</string>
+    <string name="accel_mode_quarter">1/4 英里</string>
+    <string name="accel_time_zero">0.00 秒</string>
+    <string name="accel_time_format">%.2f 秒</string>
+    <string name="accel_result_format">成績：%.2f 秒</string>
+    <string name="accel_state_idle">點擊開始計時</string>
+    <string name="accel_state_armed">已就緒：車速 &gt; 0 時自動起跑</string>
+    <string name="accel_state_running">測量中…</string>
+    <string name="accel_start">開始計時</string>
+    <string name="accel_restart">重新開始</string>
+    <string name="accel_best_none">最佳：無記錄</string>
+    <string name="accel_best_format">最佳：%.2f 秒</string>
+    <string name="accel_not_connected">未連線 OBD（可啟用模擬模式）</string>
+
+    <!-- 閾值警示 -->
+    <string name="alerts_title">閾值警示</string>
+    <string name="alerts_enable">啟用警示</string>
+    <string name="alerts_coolant_label">水溫上限 (°C)</string>
+    <string name="alerts_rpm_label">轉速上限 (RPM)</string>
+    <string name="alerts_voltage_label">電壓下限 (V)</string>
+    <string name="alerts_invalid">請輸入有效的數值</string>
+    <string name="alerts_saved">已儲存</string>
+    <string name="alert_msg_coolant">水溫過高！%1$d°C</string>
+    <string name="alert_msg_rpm">轉速過高！%1$d RPM</string>
+    <string name="alert_msg_voltage">電壓過低！%1$sV</string>
+
+    <!-- 自訂 PID -->
+    <string name="pid_title">自訂 PID</string>
+    <string name="pid_add">新增 PID</string>
+    <string name="pid_empty">尚無自訂 PID，請先新增</string>
+    <string name="pid_delete">刪除</string>
+    <string name="pid_edit">編輯</string>
+    <string name="pid_confirm_delete">確定刪除「%1$s」？</string>
+    <string name="pid_name_hint">名稱（如 進氣歧管壓力）</string>
+    <string name="pid_mode_hint">模式（hex，如 01）</string>
+    <string name="pid_pid_hint">PID（hex，如 0B）</string>
+    <string name="pid_unit_hint">單位（如 kPa）</string>
+    <string name="pid_formula_hint">公式（如 (A*256+B)/4）</string>
+    <string name="pid_preview_hint">公式預覽：輸入 raw 值驗算</string>
+    <string name="pid_raw_hint">raw 位元組（hex，如 0A 1B）</string>
+    <string name="pid_add_title">新增 PID</string>
+    <string name="pid_edit_title">編輯 PID</string>
+    <string name="pid_name_required">請輸入名稱</string>
+    <string name="pid_mode_invalid">模式需為 2 位 hex</string>
+    <string name="pid_pid_invalid">PID 需為 2 位 hex</string>
+    <string name="pid_formula_required">請輸入公式</string>
+    <string name="pid_formula_error">公式錯誤或位元組不足</string>
+    <string name="pid_result_format">計算結果：%1$s</string>
+
+    <!-- HUD -->
+    <string name="hud_back">← 返回</string>
+    <string name="hud_status_disconnected">未連線</string>
+    <string name="hud_status_connected">已連線</string>
+    <string name="hud_status_demo">模擬模式</string>
+    <string name="hud_speed_label">車速 km/h</string>
+    <string name="hud_rpm_label">轉速 RPM</string>
+    <string name="hud_temp_label">水溫 °C</string>
+    <string name="hud_voltage_label">電壓 V</string>
+    <string name="hud_enable_demo">啟用模擬模式</string>
+    <string name="hud_demo_enabled">模擬模式已開啟</string>
+    <string name="hud_warn_coolant">水溫 %1$d°C</string>
+    <string name="hud_warn_rpm">轉速 %1$d RPM</string>
+    <string name="hud_warn_voltage">電壓 %1$sV</string>
+
+    <!-- 通用 -->
+    <string name="common_ok">確定</string>
+    <string name="common_cancel">取消</string>
+    <string name="common_back">返回</string>
+    <string name="common_unit_rpm">RPM</string>
+    <string name="common_unit_kmh">km/h</string>
+    <string name="common_unit_celsius">°C</string>
+    <string name="common_unit_volt">V</string>
+    <string name="feature_wip">開發中，敬請期待</string>
+</resources>
