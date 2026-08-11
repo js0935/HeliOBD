@@ -58,6 +58,15 @@ data class EcuModule(
     @StringRes val nameRes: Int,
 )
 
+/** 連線診斷資訊（AT 指令查詢 adapter 版本 / 裝置描述 / 電壓 / 通訊協定） */
+data class ConnectionDiag(
+    val version: String?,
+    val deviceDesc: String?,
+    val voltage: Float?,
+    val protocol: String?,
+    val protocolNumber: String?,
+)
+
 /**
  * OBD 回應解碼器（純邏輯，無 Android 依賴）。
  *

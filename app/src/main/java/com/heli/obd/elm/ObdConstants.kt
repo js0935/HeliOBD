@@ -31,6 +31,10 @@ object ObdConstants {
     const val CMD_AUTO_PROTOCOL = "ATSP0" // 自動協定
     const val CMD_AUTO_PROTOCOL_ALT = "ATSP A0" // 自動協定（空白寫法，部分 clone 才接受）
     const val CMD_VOLTAGE = "ATRV"       // 電瓶電壓
+    const val CMD_INFO = "ATI"           // Adapter 版本資訊
+    const val CMD_DEVICE_DESC = "AT@1"   // 裝置描述（部分 clone 支援）
+    const val CMD_DESCRIBE_PROTOCOL = "ATDP"  // 協定名稱
+    const val CMD_PROTOCOL_NUMBER = "ATDPN"   // 協定編號
 
     // ===== OBD 服務模式 =====
     const val MODE_CURRENT_DATA = "01"   // 即時數據

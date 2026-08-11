@@ -550,6 +550,27 @@ class ObdManager(private val appContext: Context) {
 
     // ===== 診斷擴充（凍結框 / I/M 就緒 / VIN） =====
 
+    /** 連線診斷：查詢 adapter 版本 / 裝置描述 / 電瓶電壓 / 通訊協定（AT I / AT @1 / AT RV / AT DP / AT DPN） */
+    fun readConnectionDiag(): ConnectionDiag? {
+        if (demoMode) {
+            return ConnectionDiag(
+                version = "ELM327 v1.5a",
+                deviceDesc = "HeliOBD Demo Adapter",
+                voltage = 13.8f,
+                protocol = "ISO 15765-4 (CAN 11/500)",
+                protocolNumber = "6",
+            )
+        }
+        if (!isConnected()) return null
+        return ConnectionDiag(
+            version = sendCommand(ObdConstants.CMD_INFO)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+            deviceDesc = sendCommand(ObdConstants.CMD_DEVICE_DESC)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+            voltage = sendCommand(ObdConstants.CMD_VOLTAGE)?.let { ObdDecoder.voltage(it) },
+            protocol = sendCommand(ObdConstants.CMD_DESCRIBE_PROTOCOL)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+            protocolNumber = sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+        )
+    }
+
     /** 凍結框：讀取觸發碼 + 水溫/轉速/車速/負載的凍結值（mode 02） */
     fun readFreezeFrame(): FreezeFrame? {
         if (demoMode) {

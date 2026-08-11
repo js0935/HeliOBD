@@ -24,6 +24,7 @@ import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.diag.DiagnosisEngine
 import com.heli.obd.diag.HealthCheckEngine
+import com.heli.obd.elm.DtcDatabase
 import com.heli.obd.elm.FreezeFrame
 import com.heli.obd.elm.ImReadiness
 import com.heli.obd.elm.MonitorTest
@@ -54,6 +55,9 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
     private var pendingCodes: List<String> = emptyList()
     private var permanentCodes: List<String> = emptyList()
     private var currentTab = 0
+
+    /** 內建描述表未收錄之故障碼 → dtc_codes.db 查詢結果（code → 描述或 null） */
+    private var descOverrides: Map<String, String?> = emptyMap()
 
     private var freezeFrame: FreezeFrame? = null
     private var imReadiness: ImReadiness? = null
@@ -106,6 +110,12 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
             calid = withContext(Dispatchers.IO) { obd.readCalibrationId() }
             cvn = withContext(Dispatchers.IO) { obd.readCvn() }
             monitorTests = withContext(Dispatchers.IO) { obd.readMonitorTests() }
+            descOverrides = withContext(Dispatchers.IO) {
+                DtcDatabase.ensureReady(applicationContext)
+                (codes + pending + permanent).distinct()
+                    .filter { ObdConstants.dtcDescriptionRes(it) == R.string.dtc_unknown }
+                    .associateWith { DtcDatabase.description(it) }
+            }
             storedCodes = codes
             pendingCodes = pending
             permanentCodes = permanent
@@ -148,6 +158,16 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         style(tabPermanent, currentTab == 2)
     }
 
+    private fun resolveDtcDesc(code: String): String {
+        val res = ObdConstants.dtcDescriptionRes(code)
+        return if (res == R.string.dtc_unknown) {
+            val dbDesc = descOverrides[code]
+            if (dbDesc != null) "$code：$dbDesc" else getString(R.string.dtc_unknown, code)
+        } else {
+            getString(res, code)
+        }
+    }
+
     private fun renderDtcList(codes: List<String>, emptyRes: Int) {
         container.removeAllViews()
         statusText.text = getString(R.string.dtc_read)
@@ -168,7 +188,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         codes.forEach { code ->
             val row = inflater.inflate(R.layout.item_dtc, container, false)
             row.findViewById<TextView>(R.id.dtc_code).text = code
-            row.findViewById<TextView>(R.id.dtc_desc).text = getString(ObdConstants.dtcDescriptionRes(code), code)
+            row.findViewById<TextView>(R.id.dtc_desc).text = resolveDtcDesc(code)
             row.findViewById<View>(R.id.dtc_severity_bar).setBackgroundColor(
                 getColor(severityColorRes(ObdConstants.dtcSeverity(code)))
             )
@@ -204,7 +224,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
 
         content.addView(
             TextView(this).apply {
-                text = getString(ObdConstants.dtcDescriptionRes(code), code)
+                text = resolveDtcDesc(code)
                 setTextColor(getColor(R.color.text_primary))
                 textSize = 16f
             }
@@ -324,7 +344,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
             sb.append("<table><tr><th>代碼</th><th>描述</th><th>嚴重度</th><th>建議</th></tr>")
             all.forEach { code ->
                 sb.append("<tr><td>").append(escapeHtml(code)).append("</td>")
-                    .append("<td>").append(escapeHtml(getString(ObdConstants.dtcDescriptionRes(code), code))).append("</td>")
+                    .append("<td>").append(escapeHtml(resolveDtcDesc(code))).append("</td>")
                     .append("<td>").append(escapeHtml(getString(severityTextRes(ObdConstants.dtcSeverity(code))))).append("</td>")
                     .append("<td>").append(escapeHtml(getString(ObdConstants.dtcAdviceRes(code)))).append("</td></tr>")
             }

@@ -48,7 +48,8 @@ APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
 | 語音警示開關 | 完成 |
 | 日夜模式（深色/淺色/跟隨系統） | 完成 |
 | 甩尾圓環（G 值量測） | 完成 |
-| 故障碼資料庫（160+ 碼含維修建議） | 完成 |
+| 故障碼資料庫（28,000+ 碼含維修建議） | 完成 |
+| 連線診斷（Adapter 版本/電壓/通訊協定） | 完成 |
 | 模擬模式（無 OBD 硬體體驗全部功能） | 完成 |
 
 ## 結構
@@ -67,6 +68,7 @@ app/src/main/java/com/heli/obd/
 │   ├── ObdManager.kt       掃描/連線/AT 指令/輪詢/故障碼/模擬模式
 │   ├── ObdDecoder.kt       回應解碼（RPM/車速/水溫/電壓/DTC/O2/EVAP）
 │   ├── ObdConstants.kt     PID 與 DTC 描述表（含 ECU header / Mode 05 / Mode 08）
+│   ├── DtcDatabase.kt      DTC 描述資料庫查詢層（assets/dtc_codes.db）
 │   ├── BtPermissions.kt    藍牙權限（8–11 與 12+）
 │   ├── AlertMonitor.kt     閾值警示（水溫/轉速/電壓 + 音效/震動）
 │   └── DemoConfig.kt       模擬模式全域開關（SharedPreferences）
@@ -98,12 +100,13 @@ app/src/main/java/com/heli/obd/
     ├── StageTestActivity.kt 多階段測試助理
     ├── SmogCheckActivity.kt 驗車準備（I/M 判決 + 驅動週期）
     ├── VehicleReportActivity.kt 車況報告（分享 / AI 提示詞）
+    ├── ConnectionDiagActivity.kt 連線診斷（Adapter 版本/電壓/協定）
     ├── TripTrackView.kt      軌跡繪圖 View
     └── FeaturePlaceholderActivity.kt  占位
 ```
 
 ## 現況
 
-全功能已交付並通過 `assembleDebug` 建置。主畫面包含 28 個功能入口；
+全功能已交付並通過 `assembleDebug` 建置。主畫面包含 29 個功能入口；
 支援日夜模式（設定 → 外觀模式：深色/淺色/跟隨系統）；
 模擬模式提供完整體驗（無需 ELM327 硬體）。

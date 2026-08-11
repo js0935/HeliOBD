@@ -949,4 +949,14 @@
     <string name="report_mil_on">亮起</string>
     <string name="report_mil_off">熄滅</string>
     <string name="report_ai_prompt">你是專業汽車診斷技師。請根據以下 OBD-II 車況資料，用繁體中文說明：1) 每個故障碼的可能原因與嚴重程度；2) 排放監測器未就緒的影響；3) 建議的檢修順序與預估難度；4) 是否建議立即送修。請條列清楚、避免術語堆砌。</string>
+
+    <!-- 連線診斷 -->
+    <string name="conn_diag_title">連線診斷</string>
+    <string name="conn_diag_desc">查詢 OBD adapter 版本、裝置描述與目前通訊協定</string>
+    <string name="conn_diag_version">Adapter 版本</string>
+    <string name="conn_diag_device">裝置描述</string>
+    <string name="conn_diag_voltage">電瓶電壓</string>
+    <string name="conn_diag_protocol">通訊協定</string>
+    <string name="conn_diag_protocol_number">協定編號</string>
+    <string name="conn_diag_refresh">重新讀取</string>
 </resources>
