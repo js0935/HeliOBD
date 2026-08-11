@@ -24,4 +24,9 @@
     <!-- 衍生透明度色票（ripple / 圖示環 stroke） -->
     <color name="primary_20">#33007A99</color>
     <color name="primary_25">#40007A99</color>
+
+    <!-- OBD 狀態膠囊（pill 背景：狀態色 15% 透明度，文字用狀態本色） -->
+    <color name="pill_connected">#261E9E57</color>
+    <color name="pill_demo">#26E85D26</color>
+    <color name="pill_idle">#265A6B7A</color>
 </resources>

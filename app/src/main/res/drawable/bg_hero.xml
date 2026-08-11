@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 品牌 hero 區背景：bg → surface 垂直漸層（深/淺模式各自引用對應 @color token） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="@color/bg"
+        android:endColor="@color/surface" />
+</shape>

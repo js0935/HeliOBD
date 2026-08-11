@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- OBD 狀態膠囊：全圓角 pill，背景色由 MainActivity 依三態 setTint 切換 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/pill_idle" />
+    <corners android:radius="999dp" />
+</shape>

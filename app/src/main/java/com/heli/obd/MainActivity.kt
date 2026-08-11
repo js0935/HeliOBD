@@ -54,6 +54,8 @@ import com.heli.obd.ui.VwtpSensorsActivity
 class MainActivity : BaseActivity() {
 
     private lateinit var obdStatusText: TextView
+    private lateinit var statusPill: LinearLayout
+    private lateinit var statusDot: View
 
     /** 入口定義 */
     private data class Entry(val icon: Int, val titleRes: Int, val descRes: Int)
@@ -96,6 +98,8 @@ class MainActivity : BaseActivity() {
         setContentView(R.layout.activity_main)
 
         obdStatusText = findViewById(R.id.obd_status)
+        statusPill = findViewById(R.id.status_pill)
+        statusDot = findViewById(R.id.status_dot)
 
         // 模擬模式預設關閉：每次啟動一律重置為關閉，不自動恢復上次的 Demo 狀態
         DemoConfig.setEnabled(this, false)
@@ -212,14 +216,20 @@ class MainActivity : BaseActivity() {
             obd.isDemoMode() -> {
                 obdStatusText.setText(R.string.demo_status_on)
                 obdStatusText.setTextColor(getColor(R.color.accent))
+                statusPill.background.setTint(getColor(R.color.pill_demo))
+                statusDot.background.setTint(getColor(R.color.accent))
             }
             obd.isConnected() -> {
                 obdStatusText.setText(R.string.obd_connected)
                 obdStatusText.setTextColor(getColor(R.color.success))
+                statusPill.background.setTint(getColor(R.color.pill_connected))
+                statusDot.background.setTint(getColor(R.color.success))
             }
             else -> {
                 obdStatusText.setText(R.string.obd_disconnected)
                 obdStatusText.setTextColor(getColor(R.color.text_secondary))
+                statusPill.background.setTint(getColor(R.color.pill_idle))
+                statusDot.background.setTint(getColor(R.color.text_secondary))
             }
         }
     }
