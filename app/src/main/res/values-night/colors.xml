@@ -3,8 +3,8 @@
     <!-- 淺色主題配色（values-night 於白天/淺色模式自動套用） -->
     <color name="bg">#F2F4F7</color>
     <color name="surface">#FFFFFF</color>
-    <color name="surface_alt">#E9EDF2</color>
-    <color name="stroke">#D3DCE4</color>
+    <color name="surface_alt">#E6EBF0</color>
+    <color name="stroke">#D8E0E8</color>
     <color name="primary">#007A99</color>
     <color name="primary_dark">#06667E</color>
     <color name="accent">#E85D26</color>
@@ -14,4 +14,14 @@
     <color name="danger">#C0392B</color>
     <color name="lock">#B7950B</color>
     <color name="amber">#D48806</color>
+
+    <!-- 按壓狀態色（按鈕/卡片按下時） -->
+    <color name="surface_pressed">#E2E7EC</color>
+    <color name="surface_alt_pressed">#DCE3EA</color>
+    <color name="accent_pressed">#C74E1F</color>
+    <color name="primary_pressed">#05566B</color>
+
+    <!-- 衍生透明度色票（ripple / 圖示環 stroke） -->
+    <color name="primary_20">#33007A99</color>
+    <color name="primary_25">#40007A99</color>
 </resources>

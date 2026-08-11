@@ -9,6 +9,10 @@
         <item name="android:navigationBarColor">@color/bg</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
+        <!-- 現代標準屬性：狀態列圖示依晝夜切換深淺；ActionMode 覆蓋而非推擠內容 -->
+        <item name="android:windowLightStatusBar">@bool/window_light_status_bar</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowNoTitle">true</item>
     </style>
 
     <style name="Theme.HeliOBD.Dialog" parent="Theme.AppCompat.Dialog.Alert">
@@ -28,16 +32,20 @@
     <style name="CardText" parent="">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
     </style>
 
     <style name="TitleText" parent="">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">22sp</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:lineSpacingMultiplier">1.1</item>
     </style>
 
     <style name="SubText" parent="">
         <item name="android:textColor">@color/text_secondary</item>
         <item name="android:textSize">13sp</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
     </style>
 </resources>

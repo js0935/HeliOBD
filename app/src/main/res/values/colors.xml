@@ -2,9 +2,9 @@
 <resources>
     <!-- 深色車機主題配色 -->
     <color name="bg">#0F1419</color>
-    <color name="surface">#1A222B</color>
-    <color name="surface_alt">#232E3A</color>
-    <color name="stroke">#2E3B48</color>
+    <color name="surface">#1B2530</color>
+    <color name="surface_alt">#26323F</color>
+    <color name="stroke">#1AFFFFFF</color>
     <color name="primary">#00B4D8</color>
     <color name="primary_dark">#0A7E99</color>
     <color name="accent">#FF6B35</color>
@@ -14,4 +14,14 @@
     <color name="danger">#E74C3C</color>
     <color name="lock">#F1C40F</color>
     <color name="amber">#FFC107</color>
+
+    <!-- 按壓狀態色（按鈕/卡片按下時） -->
+    <color name="surface_pressed">#141B23</color>
+    <color name="surface_alt_pressed">#1E2833</color>
+    <color name="accent_pressed">#D9531F</color>
+    <color name="primary_pressed">#086A80</color>
+
+    <!-- 衍生透明度色票（ripple / 圖示環 stroke） -->
+    <color name="primary_20">#3300B4D8</color>
+    <color name="primary_25">#4000B4D8</color>
 </resources>
