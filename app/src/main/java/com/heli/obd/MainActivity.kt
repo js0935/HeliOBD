@@ -37,9 +37,11 @@ import com.heli.obd.ui.ObdMonitorActivity
 import com.heli.obd.ui.RealtimeChartActivity
 import com.heli.obd.ui.SettingsActivity
 import com.heli.obd.ui.SkidPadActivity
+import com.heli.obd.ui.SmogCheckActivity
 import com.heli.obd.ui.StageTestActivity
 import com.heli.obd.ui.TerminalActivity
 import com.heli.obd.ui.TripActivity
+import com.heli.obd.ui.VehicleReportActivity
 import com.heli.obd.ui.VehiclesActivity
 import com.heli.obd.ui.VwtpSensorsActivity
 
@@ -80,6 +82,8 @@ class MainActivity : BaseActivity() {
         Entry(R.drawable.ic_score, R.string.feat_score, R.string.feat_desc_score),
         Entry(R.drawable.ic_maintenance, R.string.feat_maintenance, R.string.feat_desc_maintenance),
         Entry(R.drawable.ic_alert, R.string.feat_health_check, R.string.feat_desc_health_check),
+        Entry(R.drawable.ic_alert, R.string.feat_smog_check, R.string.feat_desc_smog_check),
+        Entry(R.drawable.ic_trip, R.string.feat_report, R.string.feat_desc_report),
         Entry(R.drawable.ic_demo, R.string.feat_demo, R.string.feat_desc_demo),
         Entry(R.drawable.ic_obd, R.string.feat_connection, R.string.feat_desc_connection),
         Entry(R.drawable.ic_pid, R.string.feat_terminal, R.string.feat_desc_terminal),
@@ -170,6 +174,8 @@ class MainActivity : BaseActivity() {
             R.string.feat_score -> DrivingScoreActivity::class.java
             R.string.feat_maintenance -> MaintenanceActivity::class.java
             R.string.feat_health_check -> HealthCheckActivity::class.java
+            R.string.feat_smog_check -> SmogCheckActivity::class.java
+            R.string.feat_report -> VehicleReportActivity::class.java
             R.string.feat_connection -> SettingsActivity::class.java
             R.string.feat_terminal -> TerminalActivity::class.java
             else -> FeaturePlaceholderActivity::class.java

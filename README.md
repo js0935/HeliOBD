@@ -30,6 +30,8 @@ APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
 | ECU 模組掃描（11-bit CAN header 探測） | 完成 |
 | O2/EVAP 測試（Mode 05 / Mode 08） | 完成 |
 | 多階段測試助理（RPM 階梯/燃油修正/O2 響應） | 完成 |
+| 驗車準備（I/M 監測器判決 + 驅動週期引導） | 完成 |
+| 車況報告（彙整分享 + AI 診斷提示詞） | 完成 |
 | 引擎聲浪模擬 | 完成 |
 | AI 診斷（自訂規則引擎） | 完成 |
 | 行程回顧（含 GPS 軌跡、油耗估算、CSV 匯出） | 完成 |
@@ -94,12 +96,14 @@ app/src/main/java/com/heli/obd/
     ├── EcuScanActivity.kt    ECU 模組掃描
     ├── O2EvapActivity.kt     O2/EVAP 測試
     ├── StageTestActivity.kt 多階段測試助理
+    ├── SmogCheckActivity.kt 驗車準備（I/M 判決 + 驅動週期）
+    ├── VehicleReportActivity.kt 車況報告（分享 / AI 提示詞）
     ├── TripTrackView.kt      軌跡繪圖 View
     └── FeaturePlaceholderActivity.kt  占位
 ```
 
 ## 現況
 
-全功能已交付並通過 `assembleDebug` 建置。主畫面包含 26 個功能入口；
+全功能已交付並通過 `assembleDebug` 建置。主畫面包含 28 個功能入口；
 支援日夜模式（設定 → 外觀模式：深色/淺色/跟隨系統）；
 模擬模式提供完整體驗（無需 ELM327 硬體）。

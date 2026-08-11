@@ -896,4 +896,57 @@
     <string name="replay_stat_min">最小</string>
     <string name="replay_stat_avg">平均</string>
     <string name="replay_stat_std">標準差</string>
+
+    <!-- 驗車準備（I/M Readiness 彙整） -->
+    <string name="feat_smog_check">驗車準備</string>
+    <string name="feat_desc_smog_check">排放監測器狀態與驗車判決</string>
+    <string name="smog_title">驗車準備檢查</string>
+    <string name="smog_desc">依排放監測器就緒狀態與故障碼，預測是否可通過定期檢驗。清除故障碼後監測器會全部重置，需行駛 50–100 英里才會重新完成。</string>
+    <string name="smog_verdict">檢驗預測</string>
+    <string name="smog_pass">可驗車</string>
+    <string name="smog_wait">需先完成驅動週期</string>
+    <string name="smog_fail">不可驗車</string>
+    <string name="smog_pass_desc">所有排放監測器已就緒且無故障碼，預期可通過檢驗。</string>
+    <string name="smog_wait_desc">尚有 %1$d 個監測器未就緒。多數檢驗標準容許 2000 年後車款最多 2 個未就緒（1996–1999 年款最多 1 個），完成下方驅動週期後即可驗車。</string>
+    <string name="smog_fail_desc">檢測燈亮起或存在故障碼，需先排除故障並清除故障碼。</string>
+    <string name="smog_mil">檢測燈（MIL）：%1$s</string>
+    <string name="smog_mil_on">亮起</string>
+    <string name="smog_mil_off">熄滅</string>
+    <string name="smog_dtc_count">故障碼 %1$d 個</string>
+    <string name="smog_no_data">無法讀取監測器狀態（未連線）</string>
+    <string name="smog_monitors">監測器狀態</string>
+    <string name="smog_ready_count">就緒 %1$d / %2$d</string>
+    <string name="smog_drive_cycle">驅動週期引導</string>
+    <string name="smog_drive_cycle_desc">針對未就緒的監測器，依下列方式行駛即可在 1–3 個行車循環內完成：冷啟動 → 市區 4–5 分鐘 → 高速巡航 5–10 分鐘 → 怠速 30 秒 → 滑行減速停車。</string>
+    <string name="smog_hint_misfire">連續型：行駛幾分鐘即完成。</string>
+    <string name="smog_hint_fuel">連續型：行駛幾分鐘即完成。</string>
+    <string name="smog_hint_components">連續型：行駛幾分鐘即完成。</string>
+    <string name="smog_hint_catalyst">需中負載巡航：高速公路以穩定速度行駛 5–10 分鐘。</string>
+    <string name="smog_hint_heated_catalyst">需中負載巡航：高速公路以穩定速度行駛 5–10 分鐘。</string>
+    <string name="smog_hint_evap">需油箱 15–85%、冷啟動後於穩定環境溫度下行駛。</string>
+    <string name="smog_hint_secondary_air">需冷啟動：清晨冷車啟動後短程行駛。</string>
+    <string name="smog_hint_ac">需開啟冷氣空調行駛一段時間。</string>
+    <string name="smog_hint_o2">需混合路況：市區與高速交替行駛。</string>
+    <string name="smog_hint_o2_heater">需冷啟動後怠速暖機數分鐘。</string>
+    <string name="smog_hint_egr">需特定負載窗口：含上坡或急加速的市區行駛。</string>
+    <string name="smog_check_button">重新檢查</string>
+
+    <!-- 車況報告 -->
+    <string name="feat_report">車況報告</string>
+    <string name="feat_desc_report">彙整診斷結果並分享報告</string>
+    <string name="report_title">車況報告</string>
+    <string name="report_desc">彙整車輛資訊、故障碼、排放監測器與監控測試結果，可複製為文字報告或分享。</string>
+    <string name="report_build">產生報告</string>
+    <string name="report_share">分享</string>
+    <string name="report_copy">複製報告</string>
+    <string name="report_copy_ai">複製 AI 診斷提示詞</string>
+    <string name="report_copied">已複製</string>
+    <string name="report_section_vehicle">車輛資訊</string>
+    <string name="report_section_dtc">故障碼</string>
+    <string name="report_section_im">排放監測器</string>
+    <string name="report_section_mode6">監控測試（Mode 06）</string>
+    <string name="report_no_dtc">無故障碼</string>
+    <string name="report_mil_on">亮起</string>
+    <string name="report_mil_off">熄滅</string>
+    <string name="report_ai_prompt">你是專業汽車診斷技師。請根據以下 OBD-II 車況資料，用繁體中文說明：1) 每個故障碼的可能原因與嚴重程度；2) 排放監測器未就緒的影響；3) 建議的檢修順序與預估難度；4) 是否建議立即送修。請條列清楚、避免術語堆砌。</string>
 </resources>
