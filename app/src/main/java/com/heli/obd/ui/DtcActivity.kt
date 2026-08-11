@@ -26,12 +26,16 @@ import com.heli.obd.diag.DiagnosisEngine
 import com.heli.obd.diag.HealthCheckEngine
 import com.heli.obd.elm.FreezeFrame
 import com.heli.obd.elm.ImReadiness
+import com.heli.obd.elm.MonitorTest
 import com.heli.obd.elm.ObdConstants
 import com.heli.obd.elm.ObdManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * 故障碼畫面：DTC 讀取/清除 + 診斷三件套（凍結框 / I/M 就緒 / VIN）。
@@ -51,6 +55,13 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
     private var permanentCodes: List<String> = emptyList()
     private var currentTab = 0
 
+    private var freezeFrame: FreezeFrame? = null
+    private var imReadiness: ImReadiness? = null
+    private var vin: String? = null
+    private var calid: String? = null
+    private var cvn: String? = null
+    private var monitorTests: List<MonitorTest> = emptyList()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_dtc)
@@ -60,7 +71,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
 
         findViewById<Button>(R.id.btn_read_dtc).setOnClickListener { readAll() }
         findViewById<Button>(R.id.btn_clear_dtc).setOnClickListener { confirmClearDtc() }
-        findViewById<Button>(R.id.btn_export_dtc).setOnClickListener { exportDtcCsv() }
+        findViewById<Button>(R.id.btn_export_dtc).setOnClickListener { exportDiagnosticReport() }
 
         tabStored = findViewById(R.id.tab_stored)
         tabPending = findViewById(R.id.tab_pending)
@@ -89,16 +100,20 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
             val codes = withContext(Dispatchers.IO) { obd.readDtc() }
             val pending = withContext(Dispatchers.IO) { obd.readPendingDtc() }
             val permanent = withContext(Dispatchers.IO) { obd.readPermanentDtc() }
-            val freeze = withContext(Dispatchers.IO) { obd.readFreezeFrame() }
-            val im = withContext(Dispatchers.IO) { obd.readImReadiness() }
-            val vin = withContext(Dispatchers.IO) { obd.readVin() }
+            freezeFrame = withContext(Dispatchers.IO) { obd.readFreezeFrame() }
+            imReadiness = withContext(Dispatchers.IO) { obd.readImReadiness() }
+            vin = withContext(Dispatchers.IO) { obd.readVin() }
+            calid = withContext(Dispatchers.IO) { obd.readCalibrationId() }
+            cvn = withContext(Dispatchers.IO) { obd.readCvn() }
+            monitorTests = withContext(Dispatchers.IO) { obd.readMonitorTests() }
             storedCodes = codes
             pendingCodes = pending
             permanentCodes = permanent
             renderDtcTab(currentTab)
-            renderFreezeFrame(freeze)
-            renderImReadiness(im)
-            renderVin(vin)
+            renderFreezeFrame(freezeFrame)
+            renderImReadiness(imReadiness)
+            renderVin(vin, calid, cvn)
+            renderMonitorTests(monitorTests)
             statusText.text = getString(R.string.dtc_read)
         }
     }
@@ -236,35 +251,108 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
             .show()
     }
 
-    private fun exportDtcCsv() {
+    private fun exportDiagnosticReport() {
+        val sb = StringBuilder()
+        sb.append("""<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><title>HeliOBD 診斷報告</title>""")
+        sb.append("""<style>body{font-family:sans-serif;color:#1a1a1a;margin:16px}h1{font-size:20px}h2{font-size:15px;color:#0a5fd0;border-bottom:1px solid #d0d0d0;padding-bottom:4px}table{width:100%%;border-collapse:collapse;margin:4px 0 12px}td,th{border:1px solid #ddd;padding:6px;font-size:13px;text-align:left}th{background:#f2f6fb}.none{color:#2e8b57;font-size:13px}small{color:#888}</style></head><body>""")
+        sb.append("<h1>HeliOBD 診斷報告</h1>")
+        sb.append("<small>").append(getString(R.string.diag_report_generated, SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()))).append("</small>")
+
+        sb.append("<h2>").append(escapeHtml(getString(R.string.diag_vin_section))).append("</h2><table><tr><th>項目</th><th>數值</th></tr>")
+        sb.append("<tr><td>VIN</td><td>").append(escapeHtml(vin ?: getString(R.string.diag_vin_failed))).append("</td></tr>")
+        sb.append("<tr><td>").append(escapeHtml(getString(R.string.diag_calid_label))).append("</td><td>").append(escapeHtml(calid ?: "—")).append("</td></tr>")
+        sb.append("<tr><td>").append(escapeHtml(getString(R.string.diag_cvn_label))).append("</td><td>").append(escapeHtml(cvn ?: "—")).append("</td></tr></table>")
+
+        sb.append("<h2>").append(escapeHtml(getString(R.string.diag_im_section))).append("</h2>")
+        if (imReadiness == null) {
+            sb.append("<p class=\"none\">").append(escapeHtml(getString(R.string.diag_im_none))).append("</p>")
+        } else {
+            sb.append("<table><tr><th>測試項目</th><th>狀態</th></tr>")
+            imReadiness!!.tests.forEach { test ->
+                val status = when {
+                    !test.supported -> getString(R.string.diag_im_unsupported)
+                    test.ready -> getString(R.string.diag_im_ready)
+                    else -> getString(R.string.diag_im_not_ready)
+                }
+                sb.append("<tr><td>").append(escapeHtml(getString(test.nameRes))).append("</td><td>").append(escapeHtml(status)).append("</td></tr>")
+            }
+            sb.append("</table>")
+        }
+
+        sb.append("<h2>").append(escapeHtml(getString(R.string.diag_freeze_section))).append("</h2>")
+        if (freezeFrame == null) {
+            sb.append("<p class=\"none\">").append(escapeHtml(getString(R.string.diag_freeze_none))).append("</p>")
+        } else {
+            sb.append("<table><tr><th>項目</th><th>數值</th></tr>")
+            sb.append("<tr><td>").append(escapeHtml(getString(R.string.diag_freeze_trigger, freezeFrame!!.triggerDtc ?: "—"))).append("</td><td>—</td></tr>")
+            freezeFrame!!.values.forEach { (key, value) ->
+                sb.append("<tr><td>").append(escapeHtml(getString(key))).append("</td><td>").append(escapeHtml(value?.toString() ?: "—")).append("</td></tr>")
+            }
+            sb.append("</table>")
+        }
+
+        sb.append("<h2>").append(escapeHtml(getString(R.string.diag_mode6_section))).append("</h2>")
+        if (monitorTests.isEmpty()) {
+            sb.append("<p class=\"none\">").append(escapeHtml(getString(R.string.diag_mode6_none))).append("</p>")
+        } else {
+            var currentTid = -1
+            monitorTests.forEach { test ->
+                if (test.tid != currentTid) {
+                    currentTid = test.tid
+                    val titleRes = when (currentTid) {
+                        ObdConstants.TID_MISFIRE.toInt(16) -> R.string.diag_tid_misfire
+                        ObdConstants.TID_FUEL_SYSTEM.toInt(16) -> R.string.diag_tid_fuel
+                        ObdConstants.TID_COMPONENTS.toInt(16) -> R.string.diag_tid_components
+                        else -> null
+                    }
+                    sb.append("<h2 style=\"font-size:13px\">")
+                        .append(escapeHtml(if (titleRes != null) getString(titleRes) else getString(R.string.mon_test_unknown, currentTid)))
+                        .append("</h2>")
+                }
+                val name = test.nameRes?.let { getString(it) }
+                    ?: getString(R.string.mon_test_unknown, test.testId)
+                val prefix = test.cylinder?.let { getString(R.string.mon_test_cylinder, it) + " " } ?: ""
+                sb.append("<p style=\"font-size:13px;margin:2px 0\">").append(escapeHtml(prefix + name)).append("：").append(test.value).append("</p>")
+            }
+        }
+
+        sb.append("<h2>").append(escapeHtml(getString(R.string.nav_dtc))).append("</h2>")
         val all = (storedCodes + pendingCodes + permanentCodes).distinct()
         if (all.isEmpty()) {
-            Toast.makeText(this, R.string.dtc_empty, Toast.LENGTH_SHORT).show()
-            return
+            sb.append("<p class=\"none\">").append(escapeHtml(getString(R.string.diag_report_no_dtc))).append("</p>")
+        } else {
+            sb.append("<table><tr><th>代碼</th><th>描述</th><th>嚴重度</th><th>建議</th></tr>")
+            all.forEach { code ->
+                sb.append("<tr><td>").append(escapeHtml(code)).append("</td>")
+                    .append("<td>").append(escapeHtml(getString(ObdConstants.dtcDescriptionRes(code), code))).append("</td>")
+                    .append("<td>").append(escapeHtml(getString(severityTextRes(ObdConstants.dtcSeverity(code))))).append("</td>")
+                    .append("<td>").append(escapeHtml(getString(ObdConstants.dtcAdviceRes(code)))).append("</td></tr>")
+            }
+            sb.append("</table>")
         }
-        val sb = StringBuilder()
-        sb.append("code,description,severity,advice\n")
-        all.forEach { code ->
-            sb.append(code).append(',')
-                .append('"')
-                .append(getString(ObdConstants.dtcDescriptionRes(code), code).replace("\"", "\"\""))
-                .append('"').append(',')
-                .append(getString(severityTextRes(ObdConstants.dtcSeverity(code)))).append(',')
-                .append('"')
-                .append(getString(ObdConstants.dtcAdviceRes(code)).replace("\"", "\"\""))
-                .append('"').append('\n')
+
+        sb.append("</body></html>")
+        try {
+            val dir = File(filesDir, "export").apply { mkdirs() }
+            val file = File(dir, "diag_report_${System.currentTimeMillis()}.html")
+            file.writeText(sb.toString())
+            val uri: Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val share = Intent(Intent.ACTION_SEND).apply {
+                type = "text/html"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(share, getString(R.string.diag_report_share)))
+        } catch (e: Exception) {
+            Toast.makeText(this, R.string.diag_report_failed, Toast.LENGTH_LONG).show()
         }
-        val dir = File(filesDir, "export").apply { mkdirs() }
-        val file = File(dir, "dtc_${System.currentTimeMillis()}.csv")
-        file.writeText(sb.toString())
-        val uri: Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-        val share = Intent(Intent.ACTION_SEND).apply {
-            type = "text/csv"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        startActivity(Intent.createChooser(share, getString(R.string.dtc_export_csv)))
     }
+
+    private fun escapeHtml(text: String): String = text
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
 
     private fun confirmClearDtc() {
         if (!obd.isConnected()) {
@@ -380,8 +468,65 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         }
     }
 
-    private fun renderVin(vin: String?) {
+    private fun renderVin(vin: String?, calid: String?, cvn: String?) {
         findViewById<TextView>(R.id.vin_text).text = vin ?: getString(R.string.diag_vin_failed)
+        findViewById<TextView>(R.id.calid_text).text = if (calid != null)
+            getString(R.string.diag_calid_label) + "：" + calid
+        else
+            getString(R.string.diag_vin_failed)
+        findViewById<TextView>(R.id.cvn_text).text = if (cvn != null)
+            getString(R.string.diag_cvn_label) + "：" + cvn
+        else
+            getString(R.string.diag_vin_failed)
+    }
+
+    private fun renderMonitorTests(tests: List<MonitorTest>) {
+        val container = findViewById<LinearLayout>(R.id.monitor_tests_container)
+        container.removeAllViews()
+        if (tests.isEmpty()) {
+            container.addView(
+                TextView(this).apply {
+                    text = getString(R.string.diag_mode6_none)
+                    setTextColor(getColor(R.color.text_secondary))
+                    textSize = 14f
+                    setPadding(0, dp(4), 0, 0)
+                }
+            )
+            return
+        }
+        var currentTid = -1
+        tests.forEach { test ->
+            if (test.tid != currentTid) {
+                currentTid = test.tid
+                val titleRes = when (currentTid) {
+                    ObdConstants.TID_MISFIRE.toInt(16) -> R.string.diag_tid_misfire
+                    ObdConstants.TID_FUEL_SYSTEM.toInt(16) -> R.string.diag_tid_fuel
+                    ObdConstants.TID_COMPONENTS.toInt(16) -> R.string.diag_tid_components
+                    else -> null
+                }
+                container.addView(
+                    TextView(this).apply {
+                        text = if (titleRes != null) getString(titleRes)
+                        else getString(R.string.mon_test_unknown, currentTid)
+                        setTextColor(getColor(R.color.text_primary))
+                        setTypeface(typeface, Typeface.BOLD)
+                        textSize = 14f
+                        setPadding(0, dp(6), 0, 0)
+                    }
+                )
+            }
+            val name = test.nameRes?.let { getString(it) }
+                ?: getString(R.string.mon_test_unknown, test.testId)
+            val prefix = test.cylinder?.let { getString(R.string.mon_test_cylinder, it) + " " } ?: ""
+            container.addView(
+                TextView(this).apply {
+                    text = prefix + name + "：" + test.value
+                    setTextColor(getColor(R.color.text_secondary))
+                    textSize = 13f
+                    setPadding(dp(8), dp(1), 0, dp(1))
+                }
+            )
+        }
     }
 
     // ===== ObdManager.Listener =====

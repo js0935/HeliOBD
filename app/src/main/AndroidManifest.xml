@@ -114,6 +114,26 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".ui.DynoActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.LiveFuelActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.DataLoggerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.DataReplayActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.SkidPadActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".ui.FeaturePlaceholderActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

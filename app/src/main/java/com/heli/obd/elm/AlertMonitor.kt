@@ -24,6 +24,7 @@ object AlertMonitor {
 
     private const val PREFS = "alert_prefs"
     private const val KEY_ENABLED = "enabled"
+    private const val KEY_VOICE = "voice"
     private const val KEY_COOLANT_MAX = "coolantMax"
     private const val KEY_RPM_MAX = "rpmMax"
     private const val KEY_VOLTAGE_MIN = "voltageMin"
@@ -116,6 +117,9 @@ object AlertMonitor {
     }
 
     private fun speak(ctx: Context, message: String) {
+        val voiceEnabled = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getBoolean(KEY_VOICE, true)
+        if (!voiceEnabled) return
         runCatching {
             if (tts == null) {
                 tts = TextToSpeech(ctx) { status ->

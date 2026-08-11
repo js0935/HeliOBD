@@ -21,12 +21,16 @@ import com.heli.obd.ui.AiDiagnoseActivity
 import com.heli.obd.ui.AlertsActivity
 import com.heli.obd.ui.CompareActivity
 import com.heli.obd.ui.CustomPidActivity
+import com.heli.obd.ui.DataLoggerActivity
 import com.heli.obd.ui.DtcActivity
 import com.heli.obd.ui.DrivingScoreActivity
+import com.heli.obd.ui.DynoActivity
 import com.heli.obd.ui.EngineSoundActivity
 import com.heli.obd.ui.FeaturePlaceholderActivity
 import com.heli.obd.ui.HudActivity
 import com.heli.obd.ui.HealthCheckActivity
+import com.heli.obd.ui.LiveFuelActivity
+import com.heli.obd.ui.SkidPadActivity
 import com.heli.obd.ui.MaintenanceActivity
 import com.heli.obd.ui.ObdMonitorActivity
 import com.heli.obd.ui.RealtimeChartActivity
@@ -61,6 +65,10 @@ class MainActivity : BaseActivity() {
         Entry(R.drawable.ic_pid, R.string.feat_custom_pid, R.string.feat_desc_custom_pid),
         Entry(R.drawable.ic_pid, R.string.feat_vwtp, R.string.feat_desc_vwtp),
         Entry(R.drawable.ic_accel, R.string.feat_accel, R.string.feat_desc_accel),
+    Entry(R.drawable.ic_chart, R.string.feat_dyno, R.string.feat_desc_dyno),
+    Entry(R.drawable.ic_fuel, R.string.feat_live_fuel, R.string.feat_desc_live_fuel),
+    Entry(R.drawable.ic_chart, R.string.feat_data_logger, R.string.feat_desc_data_logger),
+        Entry(R.drawable.ic_accel, R.string.feat_skid_pad, R.string.feat_desc_skid_pad),
         Entry(R.drawable.ic_chart, R.string.feat_chart, R.string.feat_desc_chart),
         Entry(R.drawable.ic_fuel, R.string.feat_fuel, R.string.feat_desc_fuel),
         Entry(R.drawable.ic_score, R.string.feat_score, R.string.feat_desc_score),
@@ -144,6 +152,10 @@ class MainActivity : BaseActivity() {
             R.string.feat_custom_pid -> CustomPidActivity::class.java
             R.string.feat_vwtp -> VwtpSensorsActivity::class.java
             R.string.feat_accel -> AccelerationActivity::class.java
+    R.string.feat_dyno -> DynoActivity::class.java
+    R.string.feat_live_fuel -> LiveFuelActivity::class.java
+    R.string.feat_data_logger -> DataLoggerActivity::class.java
+            R.string.feat_skid_pad -> SkidPadActivity::class.java
             R.string.feat_chart -> RealtimeChartActivity::class.java
             R.string.feat_fuel -> TripActivity::class.java
             R.string.feat_score -> DrivingScoreActivity::class.java

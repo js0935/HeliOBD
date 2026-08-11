@@ -54,7 +54,7 @@
             android:layout_weight="1.3"
             android:minWidth="0dp"
             android:background="@drawable/bg_card"
-            android:text="@string/dtc_export_csv"
+            android:text="@string/diag_report_share"
             android:textColor="@color/text_primary"
             android:textSize="13sp" />
     </LinearLayout>
@@ -136,6 +136,26 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp"
                     android:textIsSelectable="true" />
+
+                <TextView
+                    android:id="@+id/calid_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="—"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:textIsSelectable="true" />
+
+                <TextView
+                    android:id="@+id/cvn_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="—"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:textIsSelectable="true" />
             </LinearLayout>
 
             <LinearLayout
@@ -208,6 +228,30 @@
 
                 <LinearLayout
                     android:id="@+id/im_tests_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="10dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/diag_mode6_section"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/monitor_tests_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"

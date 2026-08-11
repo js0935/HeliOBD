@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 淺色主題配色（values-night 於白天/淺色模式自動套用） -->
+    <color name="bg">#F2F4F7</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_alt">#E9EDF2</color>
+    <color name="stroke">#D3DCE4</color>
+    <color name="primary">#007A99</color>
+    <color name="primary_dark">#06667E</color>
+    <color name="accent">#E85D26</color>
+    <color name="text_primary">#17222D</color>
+    <color name="text_secondary">#5A6B7A</color>
+    <color name="success">#1E9E57</color>
+    <color name="danger">#C0392B</color>
+    <color name="lock">#B7950B</color>
+    <color name="amber">#D48806</color>
+</resources>

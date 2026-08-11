@@ -28,6 +28,15 @@ data class FreezeFrame(
     val values: Map<Int, Int?>,
 )
 
+/** Mode 06 車載監控單一測試結果 */
+data class MonitorTest(
+    val tid: Int,
+    val testId: Int,
+    val value: Long,
+    val nameRes: Int?,
+    val cylinder: Int? = null,
+)
+
 /**
  * OBD 回應解碼器（純邏輯，無 Android 依賴）。
  *
@@ -157,6 +166,72 @@ object ObdDecoder {
         val bytes = parseBytes(hexResponse) ?: return null
         if (bytes.size < 4 || bytes[0] != 0x41) return null
         return decodeDtc(bytes[2], bytes[3])
+    }
+
+    /**
+     * Mode 06 車載監控測試結果（`46 <TID> <TestID> <data> ...`）。
+     * 回應無長度欄位，依 TestID 對照表取值寬（預設 2 bytes）；失火計數（0x00）的
+     * 高 4 bits 為缸號、低 12 bits 為計數（0xFFF = 超過上限）。
+     */
+    fun monitorTests(hexResponse: String): List<MonitorTest> {
+        val bytes = parseBytes(hexResponse) ?: return emptyList()
+        if (bytes.size < 3 || bytes[0] != 0x46) return emptyList()
+        val tid = bytes[1]
+        val result = mutableListOf<MonitorTest>()
+        var i = 2
+        while (i < bytes.size) {
+            val testId = bytes[i]
+            i++
+            val width = valueWidth(tid, testId)
+            if (i + width > bytes.size) break
+            var value = 0L
+            repeat(width) { value = (value shl 8) or bytes[i + it].toLong() }
+            if (testId == 0x00 && width == 2) {
+                val cylinder = (bytes[i] ushr 4) and 0x0F
+                val count = ((bytes[i] and 0x0F) shl 8) or bytes[i + 1]
+                result.add(
+                    MonitorTest(tid, testId, count.toLong(), ObdConstants.MONITOR_TEST_NAMES[0x00], cylinder)
+                )
+            } else {
+                result.add(MonitorTest(tid, testId, value, ObdConstants.MONITOR_TEST_NAMES[testId]))
+            }
+            i += width
+        }
+        return result
+    }
+
+    private fun valueWidth(tid: Int, testId: Int): Int = 2
+
+    /**
+     * 校正 ID（mode 09 PID 0A）：多幀 ASCII，解析方式同 VIN（剝離 ISO-TP 幀標頭與續幀索引）。
+     */
+    fun calibrationId(hexResponse: String): String? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        var start = -1
+        for (i in 0..bytes.lastIndex - 2) {
+            if (bytes[i] == 0x49 && bytes[i + 1] == 0x0A) {
+                start = i + 2
+                break
+            }
+        }
+        if (start == -1) return null
+        if (start < bytes.size && bytes[start] in 1..62) start++
+        val sb = StringBuilder()
+        for (i in start until bytes.size) {
+            val b = bytes[i]
+            if (b in 0x10..0x2F) continue
+            if (b !in 0x30..0x7E) continue
+            sb.append(b.toChar())
+            if (sb.length >= 16) break
+        }
+        return sb.toString().takeIf { it.isNotBlank() }
+    }
+
+    /** 校驗號碼（mode 09 PID 0B）：`49 0B XX XX XX XX` → 8 位 hex */
+    fun cvn(hexResponse: String): String? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 6 || bytes[0] != 0x49 || bytes[1] != 0x0B) return null
+        return bytes.copyOfRange(2, 6).joinToString("") { "%02X".format(it) }
     }
 
     /**

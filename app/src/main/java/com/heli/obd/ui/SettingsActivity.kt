@@ -18,6 +18,8 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
+import com.heli.obd.App
 import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
@@ -37,6 +39,7 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
     private lateinit var statusText: TextView
     private lateinit var connectBtn: Button
     private lateinit var disconnectBtn: Button
+    private lateinit var appearanceValue: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +52,10 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
 
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
         findViewById<View>(R.id.btn_save).setOnClickListener { save() }
+
+        appearanceValue = findViewById(R.id.settings_appearance_value)
+        renderAppearance()
+        findViewById<View>(R.id.settings_appearance_row).setOnClickListener { pickAppearance() }
 
         connectBtn.setOnClickListener { ensurePermissionAndConnect() }
         disconnectBtn.setOnClickListener {
@@ -205,6 +212,52 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
             .apply()
         Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
         finish()
+    }
+
+    private fun appearanceMode(): String =
+        getSharedPreferences(ObdManager.PREFS, MODE_PRIVATE)
+            .getString(App.KEY_APPEARANCE, "system")
+            .orEmpty()
+
+    private fun renderAppearance() {
+        val labelRes = when (appearanceMode()) {
+            "dark" -> R.string.settings_appearance_dark
+            "light" -> R.string.settings_appearance_light
+            else -> R.string.settings_appearance_system
+        }
+        appearanceValue.text = getString(R.string.settings_appearance_value, getString(labelRes))
+    }
+
+    private fun pickAppearance() {
+        val options = listOf(
+            "system" to R.string.settings_appearance_system,
+            "light" to R.string.settings_appearance_light,
+            "dark" to R.string.settings_appearance_dark,
+        )
+        val labels = options.map { getString(it.second) }.toTypedArray()
+        val checked = options.indexOfFirst { it.first == appearanceMode() }.coerceAtLeast(0)
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.settings_appearance_title)
+            .setSingleChoiceItems(labels, checked) { _, which ->
+                val mode = options[which].first
+                getSharedPreferences(ObdManager.PREFS, MODE_PRIVATE)
+                    .edit()
+                    .putString(App.KEY_APPEARANCE, mode)
+                    .apply()
+                applyNightMode(mode)
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    private fun applyNightMode(mode: String) {
+        AppCompatDelegate.setDefaultNightMode(
+            when (mode) {
+                "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+                "light" -> AppCompatDelegate.MODE_NIGHT_NO
+                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
+        )
     }
 
     companion object {

@@ -6,6 +6,8 @@
 package com.heli.obd
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
+import com.heli.obd.elm.ObdManager
 import com.heli.obd.license.LicenseManager
 
 /**
@@ -25,11 +27,29 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         license = LicenseManager(this, PUBLIC_KEY_B64)
+        applyAppearance()
+    }
+
+    /** 依設定套用日夜模式（深色/淺色/跟隨系統），於任何 Activity 建立前生效 */
+    private fun applyAppearance() {
+        val mode = getSharedPreferences(ObdManager.PREFS, MODE_PRIVATE)
+            .getString(KEY_APPEARANCE, "system")
+            .orEmpty()
+        AppCompatDelegate.setDefaultNightMode(
+            when (mode) {
+                "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+                "light" -> AppCompatDelegate.MODE_NIGHT_NO
+                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
+        )
     }
 
     companion object {
         /** LicenseKeyGenUI 產生的公鑰 base64（SubjectPublicKeyInfo DER） */
         const val PUBLIC_KEY_B64 = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwgb+Euqa3a+aYvE5HDPCXa2XpumCfIfh+8CxlbdBPq19rpdKWMj10cHmcJAVaUyG2k2hr1cq7EDMH9XK/Q3ruPbAYvXw3zctqBIEQT92d+acjttpU3GY69mWmFNmXsWHQVlk3WnGFa+f5EdVtotlogB8pjTp/TUJgH+nisq0SO9hdQL8iP6hncmfWDSwwnRV3LM2dU4V/VmqLKKZKiaw3OzBLG5RUki6uGzu6CJSDx8e44ZA5f3VpmKGZfOQ3NAiQlSlAUhr8wAQdSvQSkdCOi+csuQahTeMRZpQnhMBLLiEl6XTyoY3NRZN0+SFku2yXOGtfpohm2LUNrxSjoz3uQIDAQAB"
+
+        /** 外觀模式（system/light/dark），存於 ObdManager.PREFS */
+        const val KEY_APPEARANCE = "appearance"
 
         fun from(context: android.content.Context): App =
             context.applicationContext as App

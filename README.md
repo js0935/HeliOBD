@@ -36,6 +36,13 @@ APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
 | 閾值警示（水溫/轉速/電壓） | 完成 |
 | 自訂 PID（公式引擎 + 車廠專用感測器） | 完成 |
 | 加速測試（0-100 / 0-60 / 1/4 英里） | 完成 |
+| 馬力/扭力估算（Dyno） | 完成 |
+| 即時油耗（含加油校準） | 完成 |
+| 數據錄製 / 回放（JSON/CSV） | 完成 |
+| 語音警示開關 | 完成 |
+| 日夜模式（深色/淺色/跟隨系統） | 完成 |
+| 甩尾圓環（G 值量測） | 完成 |
+| 故障碼資料庫（160+ 碼含維修建議） | 完成 |
 | 模擬模式（無 OBD 硬體體驗全部功能） | 完成 |
 
 ## 結構
@@ -74,11 +81,18 @@ app/src/main/java/com/heli/obd/
     ├── AlertsActivity.kt      閾值警示設定
     ├── CustomPidActivity.kt   自訂 PID
     ├── AccelerationActivity.kt 加速測試
-    ├── TripTrackView.kt       軌跡繪圖 View
+    ├── DynoActivity.kt       馬力/扭力估算
+    ├── LiveFuelActivity.kt   即時油耗（含加油校準）
+    ├── DataLoggerActivity.kt 數據錄製（JSON/CSV）
+    ├── DataReplayActivity.kt 數據回放（曲線圖）
+    ├── SkidPadActivity.kt    甩尾圓環 G 值量測
+    ├── SkidPadView.kt        圓環軌跡繪圖 View
+    ├── TripTrackView.kt      軌跡繪圖 View
     └── FeaturePlaceholderActivity.kt  占位
 ```
 
 ## 現況
 
-全功能已交付並通過 `assembleDebug` 建置。主畫面包含 17 個功能入口；
+全功能已交付並通過 `assembleDebug` 建置。主畫面包含 23 個功能入口；
+支援日夜模式（設定 → 外觀模式：深色/淺色/跟隨系統）；
 模擬模式提供完整體驗（無需 ELM327 硬體）。

@@ -589,6 +589,47 @@ class ObdManager(private val appContext: Context) {
         return resp?.let { ObdDecoder.vin(it) }
     }
 
+    /** 校正 ID（mode 09 PID 0A） */
+    fun readCalibrationId(): String? {
+        if (demoMode) return "MOTODIAG-DEMO-CALID"
+        if (!isConnected()) return null
+        val resp = sendCommand(ObdConstants.MODE_VEHICLE_INFO + "0A")
+        return resp?.let { ObdDecoder.calibrationId(it) }
+    }
+
+    /** 校驗號碼（mode 09 PID 0B） */
+    fun readCvn(): String? {
+        if (demoMode) return "ABCD1234"
+        if (!isConnected()) return null
+        val resp = sendCommand(ObdConstants.MODE_VEHICLE_INFO + "0B")
+        return resp?.let { ObdDecoder.cvn(it) }
+    }
+
+    /** 車載監控測試結果（mode 06）：失火/燃油系統/綜合元件三組 TID */
+    fun readMonitorTests(): List<MonitorTest> {
+        if (demoMode) {
+            return listOf(
+                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], 1),
+                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], 2),
+                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], 3),
+                MonitorTest(1, 0x01, 200, ObdConstants.MONITOR_TEST_NAMES[0x01]),
+                MonitorTest(1, 0x03, 200, ObdConstants.MONITOR_TEST_NAMES[0x03]),
+            )
+        }
+        if (!isConnected()) return emptyList()
+        val tids = listOf(
+            ObdConstants.TID_MISFIRE,
+            ObdConstants.TID_FUEL_SYSTEM,
+            ObdConstants.TID_COMPONENTS,
+        )
+        val result = mutableListOf<MonitorTest>()
+        for (tid in tids) {
+            val resp = sendCommand(ObdConstants.MODE_MONITOR_TESTS + tid)
+            resp?.let { result += ObdDecoder.monitorTests(it) }
+        }
+        return result
+    }
+
     // ===== 故障碼 =====
 
     fun readDtc(): List<String> {

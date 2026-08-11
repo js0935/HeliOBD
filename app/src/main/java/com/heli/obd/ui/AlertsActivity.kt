@@ -19,6 +19,7 @@ import com.heli.obd.R
 class AlertsActivity : BaseActivity() {
 
     private lateinit var enabledSwitch: Switch
+    private lateinit var voiceSwitch: Switch
     private lateinit var coolantField: EditText
     private lateinit var rpmField: EditText
     private lateinit var voltageField: EditText
@@ -28,6 +29,7 @@ class AlertsActivity : BaseActivity() {
         setContentView(R.layout.activity_alerts)
 
         enabledSwitch = findViewById(R.id.alert_enabled)
+        voiceSwitch = findViewById(R.id.alert_voice)
         coolantField = findViewById(R.id.alert_coolant)
         rpmField = findViewById(R.id.alert_rpm)
         voltageField = findViewById(R.id.alert_voltage)
@@ -40,6 +42,7 @@ class AlertsActivity : BaseActivity() {
     private fun loadPrefs() {
         val prefs = getSharedPreferences("alert_prefs", MODE_PRIVATE)
         enabledSwitch.isChecked = prefs.getBoolean("enabled", false)
+        voiceSwitch.isChecked = prefs.getBoolean("voice", true)
         coolantField.setText(prefs.getInt("coolantMax", 110).toString())
         rpmField.setText(prefs.getInt("rpmMax", 9000).toString())
         voltageField.setText(prefs.getFloat("voltageMin", 11.5f).toString())
@@ -56,6 +59,7 @@ class AlertsActivity : BaseActivity() {
         getSharedPreferences("alert_prefs", MODE_PRIVATE)
             .edit()
             .putBoolean("enabled", enabledSwitch.isChecked)
+            .putBoolean("voice", voiceSwitch.isChecked)
             .putInt("coolantMax", coolant)
             .putInt("rpmMax", rpm)
             .putFloat("voltageMin", voltage.toFloat())
