@@ -1,0 +1,1103 @@
+{
+ "1": {
+  "expr": "0.2 * A * B",
+  "unit": "rpm"
+ },
+ "2": {
+  "expr": "A * 0.002 * B",
+  "unit": "percent"
+ },
+ "3": {
+  "expr": "0.002 * A * B",
+  "unit": "grads"
+ },
+ "4": {
+  "branches": [
+   {
+    "cond": "(abs(B-127)*0.01*A)>127.0",
+    "expr": "(abs(B - 127) * 0.01 * A)",
+    "unit": "ATDC"
+   },
+   {
+    "cond": "else",
+    "expr": "(abs(B - 127) * 0.01 * A)",
+    "unit": "BTDC"
+   }
+  ]
+ },
+ "5": {
+  "expr": "(A * (B - 100)) * 0.1",
+  "unit": "celicium"
+ },
+ "6": {
+  "expr": "0.001 * A * B",
+  "unit": "volts"
+ },
+ "7": {
+  "expr": "0.01 * A * B",
+  "unit": "kmh"
+ },
+ "8": {
+  "expr": "0.1 * A * B",
+  "unit": "None"
+ },
+ "9": {
+  "expr": "(B - 127) * 0.02 * A",
+  "unit": "grads"
+ },
+ "10": {
+  "branches": [
+   {
+    "cond": "B==0",
+    "expr": "0.0",
+    "unit": "None"
+   },
+   {
+    "cond": "else",
+    "expr": "1.0",
+    "unit": "None"
+   }
+  ]
+ },
+ "11": {
+  "expr": "0.0001 * A * (B - 128) + 1.0",
+  "unit": "None"
+ },
+ "12": {
+  "expr": "0.001 * A * B",
+  "unit": "Ohm"
+ },
+ "13": {
+  "expr": "(B - 127) * 0.001 * A",
+  "unit": "mm"
+ },
+ "14": {
+  "expr": "0.005 * A * B",
+  "unit": "bar"
+ },
+ "15": {
+  "expr": "0.01 * A * B",
+  "unit": "ms"
+ },
+ "16": {
+  "expr": "bin16(A,B)",
+  "unit": "None"
+ },
+ "17": {
+  "expr": "A * 256 + B",
+  "unit": "None"
+ },
+ "18": {
+  "expr": "0.04 * A * B",
+  "unit": "mbar"
+ },
+ "19": {
+  "expr": "(A * B) * 0.01",
+  "unit": "liters"
+ },
+ "20": {
+  "expr": "A * (B - 128) / 128",
+  "unit": "percent",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "21": {
+  "expr": "0.001 * A * B",
+  "unit": "volts"
+ },
+ "22": {
+  "expr": "0.001 * A * B",
+  "unit": "ms"
+ },
+ "23": {
+  "expr": "B / 256 * A",
+  "unit": "percent",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "24": {
+  "expr": "0.001 * A * B",
+  "unit": "A"
+ },
+ "25": {
+  "expr": "B * 1.421 + (A / 182)",
+  "unit": "grams_sec",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "26": {
+  "expr": "B - A",
+  "unit": "celicium"
+ },
+ "27": {
+  "branches": [
+   {
+    "cond": "(abs(B-128)*0.01*A)<128.0",
+    "expr": "(abs(B - 128) * 0.01 * A)",
+    "unit": "ATDC"
+   },
+   {
+    "cond": "else",
+    "expr": "(abs(B - 128) * 0.01 * A)",
+    "unit": "BTDC"
+   }
+  ]
+ },
+ "28": {
+  "expr": "B - A",
+  "unit": "None"
+ },
+ "29": {
+  "branches": [
+   {
+    "cond": "B<A",
+    "expr": "1.0",
+    "unit": "None"
+   },
+   {
+    "cond": "else",
+    "expr": "2.0",
+    "unit": "None"
+   }
+  ]
+ },
+ "30": {
+  "expr": "B / 12 - A",
+  "unit": "grads_CS",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "31": {
+  "expr": "B / 2560 - A",
+  "unit": "celicium",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "32": {
+  "branches": [
+   {
+    "cond": "B>128",
+    "expr": "B - 256",
+    "unit": "None"
+   },
+   {
+    "cond": "else",
+    "expr": "B",
+    "unit": "None"
+   }
+  ]
+ },
+ "33": {
+  "branches": [
+   {
+    "cond": "A==0",
+    "expr": "100 * B",
+    "unit": "percent"
+   },
+   {
+    "cond": "else",
+    "expr": "100 * B / A",
+    "unit": "percent"
+   }
+  ],
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "34": {
+  "expr": "(B - 128) * 0.01 * A",
+  "unit": "kW"
+ },
+ "35": {
+  "expr": "0.01 * A * B",
+  "unit": "Lh"
+ },
+ "36": {
+  "expr": "A * 2560 + B * 10",
+  "unit": "km"
+ },
+ "37": {
+  "expr": "A * 256 + B",
+  "unit": "None"
+ },
+ "38": {
+  "expr": "(B - 128) * 0.001 * A",
+  "unit": "grads_CS"
+ },
+ "39": {
+  "expr": "B / 256 * A",
+  "unit": "mg_hour",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "40": {
+  "expr": "B * 0.1 + 25.5 * A - 400.0",
+  "unit": "A"
+ },
+ "41": {
+  "expr": "B + A * 255",
+  "unit": "Ah"
+ },
+ "42": {
+  "expr": "B * 0.1 + 25.5 * A - 400.0",
+  "unit": "kW"
+ },
+ "43": {
+  "expr": "B * 0.1 + 25.5 * A",
+  "unit": "volts"
+ },
+ "44": {
+  "expr": "A * 60 + B",
+  "unit": "minutes"
+ },
+ "45": {
+  "expr": "0.1 * A * B / 100.0",
+  "unit": "None"
+ },
+ "46": {
+  "expr": "(A * B - 3200) * 0.0027",
+  "unit": "grads_CS"
+ },
+ "47": {
+  "expr": "(B - 128) * A",
+  "unit": "ms"
+ },
+ "48": {
+  "expr": "B + A * 255",
+  "unit": "None"
+ },
+ "49": {
+  "expr": "(B / 4) * 0.1 * A",
+  "unit": "mg_hour",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "50": {
+  "branches": [
+   {
+    "cond": "A==0",
+    "expr": "(B - 128) / 0.01",
+    "unit": "mbar"
+   },
+   {
+    "cond": "else",
+    "expr": "(B - 128) / 0.01 * A",
+    "unit": "mbar"
+   }
+  ]
+ },
+ "51": {
+  "expr": "(B - 128) / 255 * A",
+  "unit": "mg_hour",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "52": {
+  "expr": "B * 0.02 * A - A",
+  "unit": "Nm"
+ },
+ "53": {
+  "expr": "(B - 128) * 1.4222 + 0.006 * A",
+  "unit": "grams_sec"
+ },
+ "54": {
+  "expr": "A * 256 + B",
+  "unit": "None"
+ },
+ "55": {
+  "expr": "A * B / 200",
+  "unit": "seconds",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "56": {
+  "expr": "A * 256 + B",
+  "unit": "None"
+ },
+ "57": {
+  "expr": "A * 256 + B + 65536",
+  "unit": "None"
+ },
+ "58": {
+  "branches": [
+   {
+    "cond": "B>128",
+    "expr": "1.0225 * (256 - B)",
+    "unit": "per_second"
+   },
+   {
+    "cond": "else",
+    "expr": "1.0225 * B",
+    "unit": "per_second"
+   }
+  ]
+ },
+ "59": {
+  "expr": "(A * 256 + B) / 32768",
+  "unit": "None",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "60": {
+  "expr": "(A * 256 + B) * 0.01",
+  "unit": "seconds"
+ },
+ "61": {
+  "branches": [
+   {
+    "cond": "A==0",
+    "expr": "B - 128",
+    "unit": "None"
+   },
+   {
+    "cond": "else",
+    "expr": "(B - 128) / A",
+    "unit": "None"
+   }
+  ],
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "62": {
+  "expr": "0.256 * A * B",
+  "unit": "per_second"
+ },
+ "63": {
+  "expr": "bin16(A,B)",
+  "unit": "None"
+ },
+ "64": {
+  "expr": "A + B",
+  "unit": "Ohm"
+ },
+ "65": {
+  "expr": "0.01 * A * (B - 127)",
+  "unit": "mm"
+ },
+ "66": {
+  "expr": "(A * B) / 511.12",
+  "unit": "volts"
+ },
+ "67": {
+  "expr": "(640 * A) + B * 2.5",
+  "unit": "grads"
+ },
+ "68": {
+  "expr": "(256 * A + B) / 7.365",
+  "unit": "grads_sec"
+ },
+ "69": {
+  "expr": "(256 * A + B) * 0.03254",
+  "unit": "bar"
+ },
+ "70": {
+  "expr": "(256 * A + B) * 0.192",
+  "unit": "m_sec2"
+ },
+ "71": {
+  "expr": "A * B",
+  "unit": "cm"
+ },
+ "72": {
+  "expr": "A * 6.25 / 100.0 + B * 5.17 / 100.0",
+  "unit": "volts"
+ },
+ "73": {
+  "expr": "(A * B) * 0.01",
+  "unit": "Ohm"
+ },
+ "74": {
+  "expr": "(A * B) * 0.1",
+  "unit": "None"
+ },
+ "75": {
+  "expr": "A * B",
+  "unit": "None"
+ },
+ "76": {
+  "branches": [
+   {
+    "cond": "A>0",
+    "expr": "(A + 1) * 256 + B",
+    "unit": "kOhm"
+   },
+   {
+    "cond": "else",
+    "expr": "B",
+    "unit": "kOhm"
+   }
+  ]
+ },
+ "78": {
+  "expr": "B * 1.819",
+  "unit": "grams_sec"
+ },
+ "79": {
+  "expr": "B",
+  "unit": "None"
+ },
+ "80": {
+  "expr": "(A * 256 + B) * 0.01",
+  "unit": "kOhm"
+ },
+ "81": {
+  "expr": "ShortSigned(A, B) * (7.0 / 160.0)",
+  "unit": "grads"
+ },
+ "82": {
+  "expr": "ShortSigned(A, B) * 98.1 / 10000.0",
+  "unit": "m_sec2"
+ },
+ "83": {
+  "expr": "ShortSigned(A, B) * 0.01",
+  "unit": "bar"
+ },
+ "84": {
+  "branches": [
+   {
+    "cond": "(A&0x80)==128",
+    "expr": "-24.909 + B * 0.0973",
+    "unit": "m_sec2"
+   },
+   {
+    "cond": "else",
+    "expr": "B * 0.0973",
+    "unit": "m_sec2"
+   }
+  ]
+ },
+ "85": {
+  "expr": "ShortSigned(A, B) * 0.00286",
+  "unit": "per_second"
+ },
+ "86": {
+  "expr": "(A * B) * 0.1",
+  "unit": "A"
+ },
+ "87": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "per_second"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.1",
+    "unit": "per_second"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.1 - 12.8",
+    "unit": "per_second"
+   }
+  ]
+ },
+ "88": {
+  "expr": "(A * B) * 0.01",
+  "unit": "kOhm"
+ },
+ "90": {
+  "expr": "(A * B) * 0.1",
+  "unit": "kg_h"
+ },
+ "91": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "grads"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.1",
+    "unit": "grads"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.1 - 12.8",
+    "unit": "grads"
+   }
+  ]
+ },
+ "92": {
+  "expr": "A * B",
+  "unit": "km"
+ },
+ "93": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "Nm"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.001",
+    "unit": "Nm"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.001 - 0.128",
+    "unit": "Nm"
+   }
+  ]
+ },
+ "94": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "Nm"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.1",
+    "unit": "Nm"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.1 - 12.8",
+    "unit": "Nm"
+   }
+  ]
+ },
+ "95": {
+  "expr": "A * 256 + B",
+  "unit": "None"
+ },
+ "96": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "mbar"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.1 + 12.8",
+    "unit": "mbar"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.1",
+    "unit": "mbar"
+   }
+  ]
+ },
+ "97": {
+  "expr": "B * 5 - A * 5",
+  "unit": "celicium"
+ },
+ "99": {
+  "expr": "ShortSigned(A, B)",
+  "unit": "None"
+ },
+ "100": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "bar"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.1 + 12.8",
+    "unit": "bar"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.1",
+    "unit": "bar"
+   }
+  ]
+ },
+ "101": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "l_per_mm"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.001 + 0.128",
+    "unit": "l_per_mm"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.001",
+    "unit": "l_per_mm"
+   }
+  ]
+ },
+ "102": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "mm"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.1 + 12.8",
+    "unit": "mm"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.1",
+    "unit": "mm"
+   }
+  ]
+ },
+ "103": {
+  "expr": "A + B * 0.1",
+  "unit": "volts"
+ },
+ "105": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "meters"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.01 - 1.28",
+    "unit": "meters"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.01",
+    "unit": "meters"
+   }
+  ]
+ },
+ "106": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "kmh"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A) * 0.1 - 12.8",
+    "unit": "kmh"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.1",
+    "unit": "kmh"
+   }
+  ]
+ },
+ "107": {
+  "expr": "A * 256 + B",
+  "unit": "None"
+ },
+ "111": {
+  "expr": "72 + (A * 256 + B) * 256",
+  "unit": "km"
+ },
+ "112": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "grads"
+   },
+   {
+    "cond": "(B&0x80)!=128",
+    "expr": "((B & 0x7F) * A) * 0.001 - 0.128",
+    "unit": "grads"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.001",
+    "unit": "grads"
+   }
+  ]
+ },
+ "113": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "None"
+   },
+   {
+    "cond": "(B&0x80)!=128",
+    "expr": "((B & 0x7F) * A) * 0.01 - 1.28",
+    "unit": "None"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A) * 0.01",
+    "unit": "None"
+   }
+  ]
+ },
+ "114": {
+  "branches": [
+   {
+    "cond": "A==0&&B==0",
+    "expr": "0.0",
+    "unit": "None"
+   },
+   {
+    "cond": "(B&0x80)!=128",
+    "expr": "(B & 0x7F) * A - 128",
+    "unit": "meters"
+   },
+   {
+    "cond": "else",
+    "expr": "B * A",
+    "unit": "None"
+   }
+  ]
+ },
+ "115": {
+  "expr": "ShortSigned(A, B)",
+  "unit": "W"
+ },
+ "116": {
+  "expr": "ShortSigned(A, B)",
+  "unit": "per_minute"
+ },
+ "117": {
+  "branches": [
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "A * 0.64",
+    "unit": "celicium"
+   },
+   {
+    "cond": "else",
+    "expr": "A * -0.64",
+    "unit": "celicium"
+   }
+  ]
+ },
+ "119": {
+  "expr": "(A * B) * 0.01",
+  "unit": "percent"
+ },
+ "120": {
+  "expr": "(A * B) * 1.412",
+  "unit": "grads"
+ },
+ "121": {
+  "expr": "(B * 256 + A) * 0.5",
+  "unit": "None"
+ },
+ "122": {
+  "expr": "(B * 256 + A) * 0.01 - 327.68",
+  "unit": "None"
+ },
+ "124": {
+  "expr": "(A * B) * 0.1",
+  "unit": "mA"
+ },
+ "125": {
+  "expr": "A - B",
+  "unit": "db"
+ },
+ "126": {
+  "expr": "A - B",
+  "unit": "None"
+ },
+ "128": {
+  "expr": "A * B",
+  "unit": "per_minute"
+ },
+ "129": {
+  "expr": "(A * B) * 0.00391",
+  "unit": "percent"
+ },
+ "130": {
+  "expr": "(A * B) * 0.0003906",
+  "unit": "A"
+ },
+ "132": {
+  "expr": "(A * B) * 0.5",
+  "unit": "grads"
+ },
+ "133": {
+  "expr": "(A * B) * 39.06 / 10000.0",
+  "unit": "volts"
+ },
+ "134": {
+  "expr": "A * B",
+  "unit": "kmh"
+ },
+ "135": {
+  "expr": "A * B",
+  "unit": "None"
+ },
+ "136": {
+  "expr": "bin8(B)",
+  "unit": "None"
+ },
+ "137": {
+  "expr": "(A * B) * 0.01",
+  "unit": "ms"
+ },
+ "138": {
+  "expr": "(A * B) * 0.001",
+  "unit": "volts"
+ },
+ "143": {
+  "branches": [
+   {
+    "cond": "A==0||B==0",
+    "expr": "0.0",
+    "unit": "grads"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "(B & 0x7F) * A / 100",
+    "unit": "grads"
+   },
+   {
+    "cond": "else",
+    "expr": "(B * A / 100) - 12.8",
+    "unit": "grads"
+   }
+  ],
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "144": {
+  "branches": [
+   {
+    "cond": "B==0||A==0",
+    "expr": "0.0",
+    "unit": "Lh"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A / 100) + 12.8",
+    "unit": "Lh"
+   },
+   {
+    "cond": "else",
+    "expr": "B * A / 100",
+    "unit": "Lh"
+   }
+  ],
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "145": {
+  "branches": [
+   {
+    "cond": "B==0||A==0",
+    "expr": "0.0",
+    "unit": "liters100km"
+   },
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "((B & 0x7F) * A / 100) + 12.8",
+    "unit": "liters100km"
+   },
+   {
+    "cond": "else",
+    "expr": "B * A / 100",
+    "unit": "liters100km"
+   }
+  ],
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "147": {
+  "branches": [
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "255 - A",
+    "unit": "percent"
+   },
+   {
+    "cond": "else",
+    "expr": "-A",
+    "unit": "percent"
+   }
+  ]
+ },
+ "148": {
+  "branches": [
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "(B & 0xF) * 2",
+    "unit": "None"
+   },
+   {
+    "cond": "else",
+    "expr": "-(A * 32)",
+    "unit": "None"
+   }
+  ]
+ },
+ "149": {
+  "branches": [
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "A * 2.8 + 0.4 * (B & 0xF)",
+    "unit": "celicium"
+   },
+   {
+    "cond": "else",
+    "expr": "A * -10 + (B & 0xF)",
+    "unit": "celicium"
+   }
+  ]
+ },
+ "150": {
+  "branches": [
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "A * 0.0056 + (B & 0xF) * 1.42",
+    "unit": "grams_sec"
+   },
+   {
+    "cond": "else",
+    "expr": "182.04 + A * 0.0056 + (B & 0xF) * 1.42",
+    "unit": "grams_sec"
+   }
+  ]
+ },
+ "151": {
+  "branches": [
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "(A * B) * 0.01",
+    "unit": "grads_CS"
+   },
+   {
+    "cond": "else",
+    "expr": "A * 1.28 + (B & 0xF) * 0.02",
+    "unit": "grads_CS"
+   }
+  ]
+ },
+ "152": {
+  "branches": [
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "B * 0.025 + A * 3.2",
+    "unit": "mg"
+   },
+   {
+    "cond": "else",
+    "expr": "(A * (B & 0xF)) * 0.025",
+    "unit": "mg"
+   }
+  ]
+ },
+ "153": {
+  "branches": [
+   {
+    "cond": "(B&0x80)==128",
+    "expr": "(A * B) * 0.004",
+    "unit": "mg"
+   },
+   {
+    "cond": "else",
+    "expr": "A * -0.5 + B * 0.0078",
+    "unit": "mg"
+   }
+  ]
+ },
+ "154": {
+  "expr": "A * B",
+  "unit": "grads"
+ },
+ "155": {
+  "expr": "A * 2.55 - 90.0",
+  "unit": "grads"
+ },
+ "156": {
+  "expr": "A * 256 + B",
+  "unit": "cm"
+ },
+ "157": {
+  "expr": "ShortSigned(A, B)",
+  "unit": "cm"
+ },
+ "158": {
+  "expr": "A * 256 + B * 10 / 1000",
+  "unit": "kmh",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "159": {
+  "expr": "(B * 256 + A) * 0.1 - 3251.2",
+  "unit": "celicium"
+ },
+ "162": {
+  "expr": "(A * B) * 0.448",
+  "unit": "grads"
+ },
+ "163": {
+  "expr": "A * 60 + B",
+  "unit": "minutes"
+ },
+ "164": {
+  "expr": "B",
+  "unit": "percent"
+ },
+ "165": {
+  "expr": "B * 256 + A - 32768",
+  "unit": "mA"
+ },
+ "166": {
+  "expr": "(A * 640) + B * 2.5",
+  "unit": "grads_sec"
+ },
+ "167": {
+  "expr": "A * B * 10 / 10000",
+  "unit": "mOhm",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "168": {
+  "expr": "B * 0.01 + A * 2.56",
+  "unit": "percent"
+ },
+ "169": {
+  "expr": "200 + A * B",
+  "unit": "mV"
+ },
+ "170": {
+  "expr": "(A * B) * 3.91 / 10000.0",
+  "unit": "gramms"
+ },
+ "171": {
+  "expr": "(A * B) * 39.1 / 10000.0",
+  "unit": "gramms"
+ },
+ "172": {
+  "expr": "A * B",
+  "unit": "mg_km"
+ },
+ "173": {
+  "expr": "(A * B) * 0.1",
+  "unit": "mg_sec"
+ },
+ "174": {
+  "expr": "(A * B) * 0.001",
+  "unit": "liters100km"
+ },
+ "175": {
+  "expr": "(A * B) * 0.5 * 0.01",
+  "unit": "bar"
+ },
+ "176": {
+  "expr": "(A * B) * 0.1",
+  "unit": "ppm"
+ },
+ "177": {
+  "expr": "A * 256 + B - 32768",
+  "unit": "Nm"
+ },
+ "178": {
+  "expr": "A * 30.2 + B * 0.118 - 3855.1",
+  "unit": "grads_sec"
+ },
+ "179": {
+  "expr": "A * 2560 + B * 10",
+  "unit": "None"
+ },
+ "180": {
+  "expr": "A * B * 156 / 40000",
+  "unit": "kg_h",
+  "note": "C# int/int division (truncate toward zero)"
+ },
+ "181": {
+  "expr": "A * B / 1000",
+  "unit": "mg_sec",
+  "note": "C# int/int division (truncate toward zero)"
+ }
+}

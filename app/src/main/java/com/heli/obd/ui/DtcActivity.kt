@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.content.Intent
@@ -12,7 +17,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.MainActivity
@@ -31,7 +36,7 @@ import java.io.File
 /**
  * 故障碼畫面：DTC 讀取/清除 + 診斷三件套（凍結框 / I/M 就緒 / VIN）。
  */
-class DtcActivity : AppCompatActivity(), ObdManager.Listener {
+class DtcActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 

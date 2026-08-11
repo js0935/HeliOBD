@@ -2,6 +2,21 @@
 <resources>
     <!-- App -->
     <string name="app_name">HeliOBD</string>
+    <string name="splash_tagline">Car &amp; Motorcycle OBD-II Scanner</string>
+    <string name="app_team_credit">Heli Software Team</string>
+    <string name="trip_calibration">Calibrate Fuel</string>
+    <string name="trip_cal_begin_title">Begin Fuel Calibration</string>
+    <string name="trip_cal_begin_msg">The current odometer will be recorded as the baseline. Drive for a while, refuel, then come back to finish.</string>
+    <string name="trip_cal_odo_hint">Current odometer (km)</string>
+    <string name="trip_cal_begin_done">Calibration started, baseline odometer %1$s km</string>
+    <string name="trip_cal_finish_title">Finish Fuel Calibration</string>
+    <string name="trip_cal_finish_msg">Enter the current odometer and the fuel added. Actual consumption will be calculated to calibrate the estimate.</string>
+    <string name="trip_cal_fuel_hint">Fuel added (L)</string>
+    <string name="trip_cal_result">Actual %1$s L/100km｜App estimate %2$s L/100km｜Factor %3$s</string>
+    <string name="trip_cal_actual_only">Actual consumption %1$s L/100km (no trips in range, factor unchanged)</string>
+    <string name="trip_cal_invalid">Enter valid odometer and fuel values</string>
+    <string name="trip_cal_cancel">Cancel Calibration</string>
+    <string name="trip_cal_active">Calibration in progress</string>
 
     <!-- Main screen -->
     <string name="nav_obd">Live Data</string>
@@ -53,6 +68,7 @@
     <string name="obd_connecting">Connecting…</string>
     <string name="obd_connected">Connected</string>
     <string name="obd_disconnected">Not connected</string>
+    <string name="demo_status_on">Demo mode: ON</string>
     <string name="monitor_customize">Customize</string>
     <string name="monitor_tile_title">Select data to display</string>
     <string name="monitor_unit_metric">Metric</string>
@@ -159,6 +175,8 @@
     <string name="compare_snapshot_info">%1$s | RPM %2$s | %3$s km/h | %4$s °C | %5$s V</string>
 
     <!-- Vehicles -->
+    <string name="vehicle_type_car">Car</string>
+    <string name="vehicle_type_motorcycle">Motorcycle</string>
     <string name="vehicles_add">Add Vehicle</string>
     <string name="vehicles_edit">Edit Vehicle</string>
     <string name="vehicles_empty">No vehicles yet, add one first</string>
@@ -192,6 +210,13 @@
     <string name="feat_desc_accel">0-100 timing, best records</string>
     <string name="feat_demo">Demo Mode</string>
     <string name="feat_desc_demo">Experience everything without hardware</string>
+    <string name="feat_connection">Connection</string>
+    <string name="feat_desc_connection">Custom ELM327 init commands</string>
+    <string name="settings_title">Connection Settings</string>
+    <string name="settings_elm_label">Custom ELM327 init commands</string>
+    <string name="settings_elm_desc">One AT command per line, executed in order at connect time. Most users don\'t need this.</string>
+    <string name="settings_elm_hint">e.g. ATSP0, ATAT2</string>
+    <string name="settings_saved">Saved</string>
     <string name="demo_on">Demo mode on: simulating OBD data</string>
     <string name="demo_off">Demo mode off</string>
 
@@ -434,6 +459,13 @@
     <string name="trip_fuel_cost_label">Cost</string>
     <string name="trip_fuel_cost_value">%1$.1f</string>
     <string name="trip_fuel_price_per_l">%1$.1f /L</string>
+    <string name="trip_idle_time">Idle Time</string>
+    <string name="trip_total_stats">Trip Overview</string>
+    <string name="trip_total_count">%1$d trips</string>
+    <string name="trip_total_distance">Total %1$.1f km</string>
+    <string name="trip_total_duration">Total Time %1$s</string>
+    <string name="trip_total_fuel">Total Fuel %1$.2f L</string>
+    <string name="trip_total_cost">Total Cost %1$.1f</string>
 
     <!-- Maintenance -->
     <string name="mnt_save">Save</string>
@@ -469,6 +501,8 @@
     <string name="chart_select_record">Select recording</string>
     <string name="chart_record_empty">Recording is empty</string>
     <string name="chart_playback_done">Replay finished</string>
+    <string name="chart_share">Share Screenshot</string>
+    <string name="chart_no_live_data">No chart data yet</string>
     <string name="chart_history_title">History Chart</string>
     <string name="chart_select_signals">Select Signals</string>
     <string name="chart_no_data">No history data yet</string>

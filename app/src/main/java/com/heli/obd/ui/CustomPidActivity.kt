@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.graphics.Typeface
@@ -11,7 +16,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.R
 import com.heli.obd.pid.PidEvaluator
 import com.heli.obd.pid.PidStore
@@ -19,7 +24,7 @@ import com.heli.obd.pid.PidStore
 /**
  * 自訂 PID 編輯器：新增/編輯/刪除車廠專用 PID，支援公式（A/B/C/D 為 raw 位元組）與即時預覽。
  */
-class CustomPidActivity : AppCompatActivity() {
+class CustomPidActivity : BaseActivity() {
 
     private val store by lazy { PidStore(this) }
     private lateinit var container: LinearLayout

@@ -1,15 +1,20 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.R
 
 /**
  * 功能開發中占位畫面：顯示功能名稱與說明（功能本體逐版實作中）。
  */
-class FeaturePlaceholderActivity : AppCompatActivity() {
+class FeaturePlaceholderActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

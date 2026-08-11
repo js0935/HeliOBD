@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.diag
 
 import androidx.annotation.StringRes
@@ -49,7 +54,7 @@ object HealthCheckEngine {
     private const val SCORE_CRIT = 50
     private const val SCORE_BAD = 20
 
-    // 機車向閾值：水溫 / 電壓 / 負載 / 寬域 AFR（階梯由窄到寬，依序比對）
+    // 汽機車向閾值：水溫 / 電壓 / 負載 / 寬域 AFR（階梯由窄到寬，依序比對）
     val COOLANT_T = RangeThreshold(70f, 100f, 70f, 104f, 70f, 110f)
     val VOLTAGE_T = RangeThreshold(12.0f, 15.0f, 11.8f, 15.2f, 11.0f, 16.0f)
     val LOAD_T = RangeThreshold(0f, 70f, 0f, 85f, 0f, 95f)
@@ -102,7 +107,7 @@ object HealthCheckEngine {
         else -> HealthLevel.RED
     }
 
-    /** 多感測器交叉診斷規則（機車向；信賴度為規則強度） */
+    /** 多感測器交叉診斷規則（汽機車向；信賴度為規則強度） */
     val LIVE_RULES = listOf(
         LiveRule(R.string.hc_rule_overheat, R.string.hc_advice_overheat,
             DiagnosisEngine.Severity.CRITICAL, 0.9f) { it.coolant != null && it.coolant > 110 },

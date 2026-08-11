@@ -1,0 +1,654 @@
+{
+ "1": {
+  "de": "Motordrehzahl",
+  "zh": "引擎轉速"
+ },
+ "2": {
+  "de": "Absolute Drosselklappenstellung",
+  "zh": "節氣門絕對位置"
+ },
+ "3": {
+  "de": "Kennzahl 3",
+  "zh": "Kennzahl 3"
+ },
+ "4": {
+  "de": "Kennzahl 4",
+  "zh": "Kennzahl 4"
+ },
+ "5": {
+  "de": "Öl-Temperatur",
+  "zh": "機油溫度"
+ },
+ "6": {
+  "de": "Versorgungsspannung ECU",
+  "zh": "ECU 供電電壓"
+ },
+ "7": {
+  "de": "Fahrzeuggeschwindigkeit",
+  "zh": "車速"
+ },
+ "8": {
+  "de": "Bit Value Cruise Control",
+  "zh": "定速巡航位元值"
+ },
+ "9": {
+  "de": "Kennzahl 9",
+  "zh": "Kennzahl 9"
+ },
+ "10": {
+  "de": "Kennzahl 10",
+  "zh": "Kennzahl 10"
+ },
+ "11": {
+  "de": "Kennzahl 11",
+  "zh": "Kennzahl 11"
+ },
+ "12": {
+  "de": "Kennzahl 12",
+  "zh": "Kennzahl 12"
+ },
+ "13": {
+  "de": "Kennzahl 13",
+  "zh": "Kennzahl 13"
+ },
+ "14": {
+  "de": "Kennzahl 14",
+  "zh": "Kennzahl 14"
+ },
+ "15": {
+  "de": "CAN Bus Status",
+  "zh": "CAN 匯流排狀態"
+ },
+ "16": {
+  "de": "Bin. Bits",
+  "zh": "二進位位元"
+ },
+ "17": {
+  "de": "Kennzahl 17",
+  "zh": "Kennzahl 17"
+ },
+ "18": {
+  "de": "Absolute Pressure / Atmospheric Pressure / Intake Manifold Pressure",
+  "zh": "絕對壓力／大氣壓力／進氣歧管壓力"
+ },
+ "19": {
+  "de": "Tankinhalt",
+  "zh": "油箱油量"
+ },
+ "20": {
+  "de": "Kennzahl 20",
+  "zh": "Kennzahl 20"
+ },
+ "21": {
+  "de": "Modul. Piston Movement Sender Voltage",
+  "zh": "活塞行程模組感測器電壓"
+ },
+ "22": {
+  "de": "Kennzahl 22",
+  "zh": "Kennzahl 22"
+ },
+ "23": {
+  "de": "EGR Valve Duty Cycle / Inj. Timing",
+  "zh": "EGR 閥工作週期／噴射正時"
+ },
+ "24": {
+  "de": "Kennzahl 24",
+  "zh": "Kennzahl 24"
+ },
+ "25": {
+  "de": "Kennzahl 25",
+  "zh": "Kennzahl 25"
+ },
+ "26": {
+  "de": "Kennzahl 26",
+  "zh": "Kennzahl 26"
+ },
+ "27": {
+  "de": "Ign. Timing Calculated/Actual",
+  "zh": "點火正時（計算／實際）"
+ },
+ "28": {
+  "de": "Kennzahl 28",
+  "zh": "Kennzahl 28"
+ },
+ "29": {
+  "de": "Kennfeld",
+  "zh": "特性曲線場"
+ },
+ "30": {
+  "de": "Kennzahl 30",
+  "zh": "Kennzahl 30"
+ },
+ "31": {
+  "de": "Preheating Time",
+  "zh": "預熱時間"
+ },
+ "32": {
+  "de": "Kennzahl 32",
+  "zh": "Kennzahl 32"
+ },
+ "33": {
+  "de": "Stellung Gaspedal",
+  "zh": "油門踏板位置"
+ },
+ "34": {
+  "de": "Kennzahl 34",
+  "zh": "Kennzahl 34"
+ },
+ "35": {
+  "de": "Treibstoff-Verbrauch",
+  "zh": "燃油消耗率"
+ },
+ "36": {
+  "de": "Ges. Laufleistung",
+  "zh": "總行駛里程"
+ },
+ "37": {
+  "de": "Öldruck",
+  "zh": "機油壓力"
+ },
+ "38": {
+  "de": "Kennzahl 38",
+  "zh": "Kennzahl 38"
+ },
+ "39": {
+  "de": "Inj. Quantity Driver Request / Torque Limitation / Smoke Limitation",
+  "zh": "噴射量（駕駛需求／扭力限制／煙霧限制）"
+ },
+ "40": {
+  "de": "Kennzahl 40",
+  "zh": "Kennzahl 40"
+ },
+ "41": {
+  "de": "Kennzahl 41",
+  "zh": "Kennzahl 41"
+ },
+ "42": {
+  "de": "Kennzahl 42",
+  "zh": "Kennzahl 42"
+ },
+ "43": {
+  "de": "Kennzahl 43",
+  "zh": "Kennzahl 43"
+ },
+ "44": {
+  "de": "Uhrzeit",
+  "zh": "時鐘時間"
+ },
+ "45": {
+  "de": "Kennzahl 45",
+  "zh": "Kennzahl 45"
+ },
+ "46": {
+  "de": "Kennzahl 46",
+  "zh": "Kennzahl 46"
+ },
+ "47": {
+  "de": "Kennzahl 47",
+  "zh": "Kennzahl 47"
+ },
+ "48": {
+  "de": "Kennzahl 48",
+  "zh": "Kennzahl 48"
+ },
+ "49": {
+  "de": "Mass Air/Rev. / Air Mass Calculated / Air Mass Actual",
+  "zh": "進氣質量／每轉（計算值／實際值）"
+ },
+ "50": {
+  "de": "Kennzahl 50",
+  "zh": "Kennzahl 50"
+ },
+ "51": {
+  "de": "Kennzahl 51",
+  "zh": "Kennzahl 51"
+ },
+ "52": {
+  "de": "Kennzahl 52",
+  "zh": "Kennzahl 52"
+ },
+ "53": {
+  "de": "Luftdurchfluß Luftmassenmesser",
+  "zh": "空氣流量計流量"
+ },
+ "54": {
+  "de": "Kennzahl 54",
+  "zh": "Kennzahl 54"
+ },
+ "55": {
+  "de": "Kennzahl 55",
+  "zh": "Kennzahl 55"
+ },
+ "56": {
+  "de": "Kennzahl 56",
+  "zh": "Kennzahl 56"
+ },
+ "57": {
+  "de": "Kennzahl 57",
+  "zh": "Kennzahl 57"
+ },
+ "58": {
+  "de": "Kennzahl 58",
+  "zh": "Kennzahl 58"
+ },
+ "59": {
+  "de": "Kennzahl 59",
+  "zh": "Kennzahl 59"
+ },
+ "60": {
+  "de": "Kennzahl 60",
+  "zh": "Kennzahl 60"
+ },
+ "61": {
+  "de": "Kennzahl 61",
+  "zh": "Kennzahl 61"
+ },
+ "62": {
+  "de": "Kennzahl 62",
+  "zh": "Kennzahl 62"
+ },
+ "63": {
+  "de": "Text",
+  "zh": "文字"
+ },
+ "64": {
+  "de": "Widerstand",
+  "zh": "電阻"
+ },
+ "65": {
+  "de": "Kennzahl 65",
+  "zh": "Kennzahl 65"
+ },
+ "66": {
+  "de": "Kennzahl 66",
+  "zh": "Kennzahl 66"
+ },
+ "67": {
+  "de": "Kennzahl 67",
+  "zh": "Kennzahl 67"
+ },
+ "68": {
+  "de": "Kennzahl 68",
+  "zh": "Kennzahl 68"
+ },
+ "69": {
+  "de": "Kennzahl 69",
+  "zh": "Kennzahl 69"
+ },
+ "70": {
+  "de": "Kennzahl 70",
+  "zh": "Kennzahl 70"
+ },
+ "71": {
+  "de": "Kennzahl 71",
+  "zh": "Kennzahl 71"
+ },
+ "72": {
+  "de": "Kennzahl 72",
+  "zh": "Kennzahl 72"
+ },
+ "73": {
+  "de": "Kennzahl 73",
+  "zh": "Kennzahl 73"
+ },
+ "74": {
+  "de": "Kennzahl 74",
+  "zh": "Kennzahl 74"
+ },
+ "75": {
+  "de": "Kennzahl 75",
+  "zh": "Kennzahl 75"
+ },
+ "76": {
+  "de": "Kennzahl 76",
+  "zh": "Kennzahl 76"
+ },
+ "78": {
+  "de": "Kennzahl 78",
+  "zh": "Kennzahl 78"
+ },
+ "79": {
+  "de": "Kennzahl 79",
+  "zh": "Kennzahl 79"
+ },
+ "80": {
+  "de": "Kennzahl 80",
+  "zh": "Kennzahl 80"
+ },
+ "81": {
+  "de": "Kennzahl 81",
+  "zh": "Kennzahl 81"
+ },
+ "82": {
+  "de": "Kennzahl 82",
+  "zh": "Kennzahl 82"
+ },
+ "83": {
+  "de": "Kennzahl 83",
+  "zh": "Kennzahl 83"
+ },
+ "84": {
+  "de": "Kennzahl 84",
+  "zh": "Kennzahl 84"
+ },
+ "85": {
+  "de": "Kennzahl 85",
+  "zh": "Kennzahl 85"
+ },
+ "86": {
+  "de": "Kennzahl 86",
+  "zh": "Kennzahl 86"
+ },
+ "87": {
+  "de": "Kennzahl 87",
+  "zh": "Kennzahl 87"
+ },
+ "88": {
+  "de": "Kennzahl 88",
+  "zh": "Kennzahl 88"
+ },
+ "90": {
+  "de": "Kennzahl 90",
+  "zh": "Kennzahl 90"
+ },
+ "91": {
+  "de": "Kennzahl 91",
+  "zh": "Kennzahl 91"
+ },
+ "92": {
+  "de": "Kennzahl 92",
+  "zh": "Kennzahl 92"
+ },
+ "93": {
+  "de": "Kennzahl 93",
+  "zh": "Kennzahl 93"
+ },
+ "94": {
+  "de": "Kennzahl 94",
+  "zh": "Kennzahl 94"
+ },
+ "95": {
+  "de": "Kennzahl 95",
+  "zh": "Kennzahl 95"
+ },
+ "96": {
+  "de": "Kennzahl 96",
+  "zh": "Kennzahl 96"
+ },
+ "97": {
+  "de": "Kennzahl 97",
+  "zh": "Kennzahl 97"
+ },
+ "99": {
+  "de": "Kennzahl 99",
+  "zh": "Kennzahl 99"
+ },
+ "100": {
+  "de": "Kennzahl 100",
+  "zh": "Kennzahl 100"
+ },
+ "101": {
+  "de": "Kennzahl 101",
+  "zh": "Kennzahl 101"
+ },
+ "102": {
+  "de": "Kennzahl 102",
+  "zh": "Kennzahl 102"
+ },
+ "103": {
+  "de": "Kennzahl 103",
+  "zh": "Kennzahl 103"
+ },
+ "105": {
+  "de": "Kennzahl 105",
+  "zh": "Kennzahl 105"
+ },
+ "106": {
+  "de": "Kennzahl 106",
+  "zh": "Kennzahl 106"
+ },
+ "107": {
+  "de": "Kennzahl 107",
+  "zh": "Kennzahl 107"
+ },
+ "111": {
+  "de": "Kennzahl 111",
+  "zh": "Kennzahl 111"
+ },
+ "112": {
+  "de": "Kennzahl 112",
+  "zh": "Kennzahl 112"
+ },
+ "113": {
+  "de": "Kennzahl 113",
+  "zh": "Kennzahl 113"
+ },
+ "114": {
+  "de": "Kennzahl 114",
+  "zh": "Kennzahl 114"
+ },
+ "115": {
+  "de": "Kennzahl 115",
+  "zh": "Kennzahl 115"
+ },
+ "116": {
+  "de": "Kennzahl 116",
+  "zh": "Kennzahl 116"
+ },
+ "117": {
+  "de": "Kennzahl 117",
+  "zh": "Kennzahl 117"
+ },
+ "119": {
+  "de": "Kennzahl 119",
+  "zh": "Kennzahl 119"
+ },
+ "120": {
+  "de": "Kennzahl 120",
+  "zh": "Kennzahl 120"
+ },
+ "121": {
+  "de": "Kennzahl 121",
+  "zh": "Kennzahl 121"
+ },
+ "122": {
+  "de": "Kennzahl 122",
+  "zh": "Kennzahl 122"
+ },
+ "124": {
+  "de": "Kennzahl 124",
+  "zh": "Kennzahl 124"
+ },
+ "125": {
+  "de": "Kennzahl 125",
+  "zh": "Kennzahl 125"
+ },
+ "126": {
+  "de": "Kennzahl 126",
+  "zh": "Kennzahl 126"
+ },
+ "128": {
+  "de": "Kennzahl 128",
+  "zh": "Kennzahl 128"
+ },
+ "129": {
+  "de": "Kennzahl 129",
+  "zh": "Kennzahl 129"
+ },
+ "130": {
+  "de": "Kennzahl 130",
+  "zh": "Kennzahl 130"
+ },
+ "132": {
+  "de": "Kennzahl 132",
+  "zh": "Kennzahl 132"
+ },
+ "133": {
+  "de": "Kennzahl 133",
+  "zh": "Kennzahl 133"
+ },
+ "134": {
+  "de": "Kennzahl 134",
+  "zh": "Kennzahl 134"
+ },
+ "135": {
+  "de": "Kennzahl 135",
+  "zh": "Kennzahl 135"
+ },
+ "136": {
+  "de": "Kennzahl 136",
+  "zh": "Kennzahl 136"
+ },
+ "137": {
+  "de": "Kennzahl 137",
+  "zh": "Kennzahl 137"
+ },
+ "138": {
+  "de": "Kennzahl 138",
+  "zh": "Kennzahl 138"
+ },
+ "143": {
+  "de": "Kennzahl 143",
+  "zh": "Kennzahl 143"
+ },
+ "144": {
+  "de": "Kennzahl 144",
+  "zh": "Kennzahl 144"
+ },
+ "145": {
+  "de": "Kennzahl 145",
+  "zh": "Kennzahl 145"
+ },
+ "147": {
+  "de": "Kennzahl 147",
+  "zh": "Kennzahl 147"
+ },
+ "148": {
+  "de": "Kennzahl 148",
+  "zh": "Kennzahl 148"
+ },
+ "149": {
+  "de": "Kennzahl 149",
+  "zh": "Kennzahl 149"
+ },
+ "150": {
+  "de": "Kennzahl 150",
+  "zh": "Kennzahl 150"
+ },
+ "151": {
+  "de": "Kennzahl 151",
+  "zh": "Kennzahl 151"
+ },
+ "152": {
+  "de": "Kennzahl 152",
+  "zh": "Kennzahl 152"
+ },
+ "153": {
+  "de": "Kennzahl 153",
+  "zh": "Kennzahl 153"
+ },
+ "154": {
+  "de": "Kennzahl 154",
+  "zh": "Kennzahl 154"
+ },
+ "155": {
+  "de": "Kennzahl 155",
+  "zh": "Kennzahl 155"
+ },
+ "156": {
+  "de": "Kennzahl 156",
+  "zh": "Kennzahl 156"
+ },
+ "157": {
+  "de": "Kennzahl 157",
+  "zh": "Kennzahl 157"
+ },
+ "158": {
+  "de": "Kennzahl 158",
+  "zh": "Kennzahl 158"
+ },
+ "159": {
+  "de": "Kennzahl 159",
+  "zh": "Kennzahl 159"
+ },
+ "162": {
+  "de": "Kennzahl 162",
+  "zh": "Kennzahl 162"
+ },
+ "163": {
+  "de": "Kennzahl 163",
+  "zh": "Kennzahl 163"
+ },
+ "164": {
+  "de": "Kennzahl 164",
+  "zh": "Kennzahl 164"
+ },
+ "165": {
+  "de": "Kennzahl 165",
+  "zh": "Kennzahl 165"
+ },
+ "166": {
+  "de": "Kennzahl 166",
+  "zh": "Kennzahl 166"
+ },
+ "167": {
+  "de": "Kennzahl 167",
+  "zh": "Kennzahl 167"
+ },
+ "168": {
+  "de": "Kennzahl 168",
+  "zh": "Kennzahl 168"
+ },
+ "169": {
+  "de": "Kennzahl 169",
+  "zh": "Kennzahl 169"
+ },
+ "170": {
+  "de": "Kennzahl 170",
+  "zh": "Kennzahl 170"
+ },
+ "171": {
+  "de": "Kennzahl 171",
+  "zh": "Kennzahl 171"
+ },
+ "172": {
+  "de": "Kennzahl 172",
+  "zh": "Kennzahl 172"
+ },
+ "173": {
+  "de": "Kennzahl 173",
+  "zh": "Kennzahl 173"
+ },
+ "174": {
+  "de": "Kennzahl 174",
+  "zh": "Kennzahl 174"
+ },
+ "175": {
+  "de": "Kennzahl 175",
+  "zh": "Kennzahl 175"
+ },
+ "176": {
+  "de": "Kennzahl 176",
+  "zh": "Kennzahl 176"
+ },
+ "177": {
+  "de": "Kennzahl 177",
+  "zh": "Kennzahl 177"
+ },
+ "178": {
+  "de": "Kennzahl 178",
+  "zh": "Kennzahl 178"
+ },
+ "179": {
+  "de": "Kennzahl 179",
+  "zh": "Kennzahl 179"
+ },
+ "180": {
+  "de": "Kennzahl 180",
+  "zh": "Kennzahl 180"
+ },
+ "181": {
+  "de": "Kennzahl 181",
+  "zh": "Kennzahl 181"
+ }
+}

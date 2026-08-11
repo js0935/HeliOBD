@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.os.Build
@@ -8,7 +13,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.DemoConfig
@@ -22,7 +27,7 @@ import java.util.Locale
  * 車速特大、轉速/水溫/電壓大字卡片；連線狀態即時顯示；
  * 未連線時可直接在畫面上開啟模擬模式；數據超限自動變紅警示。
  */
-class HudActivity : AppCompatActivity(), ObdManager.Listener {
+class HudActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 
@@ -102,7 +107,7 @@ class HudActivity : AppCompatActivity(), ObdManager.Listener {
     }
 
     private fun renderConnection() {
-        val demo = DemoConfig.isEnabled(this)
+        val demo = obd.isDemoMode()
         val connected = obd.isConnected()
         demoBtn.visibility = if (connected || demo) View.GONE else View.VISIBLE
         when {

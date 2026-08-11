@@ -59,9 +59,19 @@
             android:id="@+id/btn_chart_playback"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_card"
             android:text="@string/chart_playback"
+            android:textColor="@color/text_primary" />
+
+        <Button
+            android:id="@+id/btn_chart_share"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card"
+            android:text="@string/chart_share"
             android:textColor="@color/text_primary" />
     </LinearLayout>
 </LinearLayout>

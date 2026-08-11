@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.license
 
 import android.os.Bundle
@@ -7,14 +12,14 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.App
 import com.heli.obd.R
 
 /**
  * 授權管理畫面：顯示設備碼、輸入 OBD- 授權碼啟用、檢視已解鎖功能、移除授權。
  */
-class LicenseActivity : AppCompatActivity() {
+class LicenseActivity : BaseActivity() {
 
     private val app get() = application as App
     private val license get() = app.license

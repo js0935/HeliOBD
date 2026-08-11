@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.content.Context
@@ -37,6 +42,10 @@ class TripChartView @JvmOverloads constructor(
         color = Color.rgb(148, 163, 184)
         textSize = 18f
     }
+    private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(148, 163, 184)
+        textSize = 12f
+    }
 
     fun setSeries(list: List<Series>) {
         series = list
@@ -52,7 +61,7 @@ class TripChartView @JvmOverloads constructor(
         super.onDraw(canvas)
         val padLeft = dp(10f)
         val padTop = dp(10f)
-        val padRight = dp(10f)
+        val padRight = dp(64f)
         val padBottom = dp(26f)
         val plotW = width.toFloat() - padLeft - padRight
         val plotH = height.toFloat() - padTop - padBottom
@@ -60,6 +69,7 @@ class TripChartView @JvmOverloads constructor(
 
         drawGrid(canvas, padLeft, padTop, plotW, plotH)
         drawSeriesLines(canvas, padLeft, padTop, plotW, plotH)
+        drawAxisLabels(canvas, padLeft, plotW)
         drawLegend(canvas, padLeft, plotW)
     }
 
@@ -96,16 +106,32 @@ class TripChartView @JvmOverloads constructor(
         }
     }
 
+    private fun drawAxisLabels(canvas: Canvas, padLeft: Float, plotW: Float) {
+        var ry = dp(24f)
+        for (s in series) {
+            val vals = samples.mapNotNull { it[s.label] }
+            if (vals.size >= 2) {
+                val max = vals.max()
+                val min = vals.min()
+                axisPaint.color = s.color
+                canvas.drawText("${fmt(max)}/${fmt(min)}", padLeft + plotW + dp(4f), ry, axisPaint)
+            }
+            ry += dp(18f)
+        }
+    }
+
     private fun drawLegend(canvas: Canvas, padLeft: Float, plotW: Float) {
         val latest = samples.lastOrNull() ?: return
         var x = padLeft
         val baseline = height.toFloat() - dp(6f)
         for (s in series) {
             val v = latest[s.label]
-            val valueText = v?.let {
-                if (it == it.toInt().toFloat()) it.toInt().toString() else "%.1f".format(it)
-            } ?: "—"
-            val text = "${s.label} $valueText"
+            val valueText = v?.let { fmt(it) } ?: "—"
+            val avgText = samples.mapNotNull { it[s.label] }
+                .takeIf { it.size >= 2 }
+                ?.let { fmt(it.average().toFloat()) }
+                ?: ""
+            val text = "${s.label} $valueText${if (avgText.isNotEmpty()) " AVG $avgText" else ""}"
             legendPaint.color = s.color
             val tw = legendPaint.measureText(text)
             if (x + tw > padLeft + plotW) break
@@ -113,6 +139,9 @@ class TripChartView @JvmOverloads constructor(
             x += tw + dp(14f)
         }
     }
+
+    private fun fmt(value: Float): String =
+        if (value == value.toInt().toFloat()) value.toInt().toString() else "%.1f".format(value)
 
     private fun dp(value: Float): Float =
         value * resources.displayMetrics.density

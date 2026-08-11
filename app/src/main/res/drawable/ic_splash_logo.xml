@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/apk/res-auto"
+    android:width="160dp"
+    android:height="160dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- 深色圓底（徑向漸層） -->
+    <path
+        android:pathData="M48,6 A42,42 0 1,0 48,90 A42,42 0 1,0 48,6">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="48"
+                android:centerY="48"
+                android:gradientRadius="46"
+                android:startColor="#232E3A"
+                android:endColor="#0F1419" />
+        </aapt:attr>
+    </path>
+    <!-- 速度表外圈 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="5"
+        android:pathData="M48,8 A40,40 0 1,0 48,88 A40,40 0 1,0 48,8" />
+    <!-- 內圈刻度環 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#2E3B48"
+        android:strokeWidth="2.5"
+        android:pathData="M48,16 A32,32 0 1,0 48,80 A32,32 0 1,0 48,16" />
+    <!-- 頂部主刻度 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="4"
+        android:pathData="M48,9 L48,15" />
+    <!-- 右側主刻度 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="4"
+        android:pathData="M87,48 L81,48" />
+    <!-- 指針 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,48 L48,24 L50,48 Z" />
+    <!-- 掃描弧線（OBD 訊號） -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="3"
+        android:alpha="0.75"
+        android:pathData="M20,60 A34,34 0 0,0 76,60" />
+    <!-- 中心點 -->
+    <path
+        android:fillColor="#FF6B35"
+        android:pathData="M48,48 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+</vector>

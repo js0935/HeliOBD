@@ -19,6 +19,12 @@
         <item name="colorAccent">@color/accent</item>
     </style>
 
+    <style name="Theme.HeliOBD.Splash" parent="Theme.HeliOBD">
+        <!-- 冷啟動期間即顯示深色底，避免白閃 -->
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:windowDisablePreview">false</item>
+    </style>
+
     <style name="CardText" parent="">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">16sp</item>

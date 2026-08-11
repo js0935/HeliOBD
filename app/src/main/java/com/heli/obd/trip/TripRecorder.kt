@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.trip
 
 import android.Manifest
@@ -38,6 +43,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
         val litersDynamic: Double = 0.0,
         val litersStatic: Double = 0.0,
         val avgFuelRateLh: Double = 0.0,
+        val idleTimeSec: Int = 0,
     ) {
         /** 總耗油量：優先使用 fuelRate 實測累計，否則退回速度查表估算 */
         val totalFuelL: Double
@@ -78,6 +84,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
     private var litersStatic = 0.0
     private var fuelRateSum = 0.0
     private var fuelRateCount = 0
+    private var idleTimeSec = 0
 
     private val samples = mutableListOf<Sample>()
     private var listener: ObdManager.Listener? = null
@@ -119,6 +126,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
             litersDynamic = litersDynamic,
             litersStatic = litersStatic,
             avgFuelRateLh = if (fuelRateCount > 0) fuelRateSum / fuelRateCount else 0.0,
+            idleTimeSec = idleTimeSec,
         )
     }
 
@@ -142,6 +150,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
         litersStatic = 0.0
         fuelRateSum = 0.0
         fuelRateCount = 0
+        idleTimeSec = 0
         samples.clear()
         lastLocation = null
         startGps()
@@ -182,6 +191,10 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
                     }
                     fuelRateSum += fr
                     fuelRateCount++
+                }
+                // 怠速：車速為 0 且引擎運轉（轉速 > 0）
+                if (speed == 0 && rpm > 0 && dtSec > 0 && dtSec < 5) {
+                    idleTimeSec += dtSec.toInt()
                 }
                 sampleCount++
 
@@ -240,6 +253,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
             litersDynamic = litersDynamic,
             litersStatic = litersStatic,
             avgFuelRateLh = if (fuelRateCount > 0) fuelRateSum / fuelRateCount else 0.0,
+            idleTimeSec = idleTimeSec,
         )
         save(summary)
         return summary
@@ -369,6 +383,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
         put("litersDynamic", s.litersDynamic)
         put("litersStatic", s.litersStatic)
         put("avgFuelRateLh", s.avgFuelRateLh)
+        put("idleTimeSec", s.idleTimeSec)
         val downsampled = downsample(samples)
         put("samplesArr", JSONArray(downsampled.map { sampleToJson(it) }))
     }
@@ -392,6 +407,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
             litersDynamic = j.optDouble("litersDynamic", 0.0),
             litersStatic = j.optDouble("litersStatic", 0.0),
             avgFuelRateLh = j.optDouble("avgFuelRateLh", 0.0),
+            idleTimeSec = j.optInt("idleTimeSec", 0),
         )
     }
 

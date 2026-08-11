@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.elm
 
 import android.content.Context
@@ -5,8 +10,10 @@ import android.media.ToneGenerator
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import com.heli.obd.R
+import java.util.Locale
 
 /**
  * 閾值警示監聽器：掛在 ObdManager 上，當水溫/轉速/電壓超過設定值時發出提示。
@@ -29,6 +36,8 @@ object AlertMonitor {
     private var lastRpmAlert = 0L
     private var lastVoltageAlert = 0L
     private var tone: ToneGenerator? = null
+    private var tts: TextToSpeech? = null
+    private var ttsReady = false
 
     private val listener = object : ObdManager.Listener {
         override fun onStateChanged(state: ObdManager.State) {}
@@ -103,10 +112,31 @@ object AlertMonitor {
             }
         }
         Toast.makeText(ctx, message, Toast.LENGTH_LONG).show()
+        speak(ctx, message)
+    }
+
+    private fun speak(ctx: Context, message: String) {
+        runCatching {
+            if (tts == null) {
+                tts = TextToSpeech(ctx) { status ->
+                    if (status == TextToSpeech.SUCCESS) {
+                        tts?.language = Locale.getDefault()
+                        ttsReady = true
+                    }
+                }
+            }
+            if (ttsReady) {
+                tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "heli_alert")
+            }
+        }
     }
 
     fun release() {
         runCatching { tone?.release() }
         tone = null
+        runCatching { tts?.stop() }
+        runCatching { tts?.shutdown() }
+        tts = null
+        ttsReady = false
     }
 }

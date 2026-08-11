@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.graphics.Typeface
@@ -10,7 +15,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.ObdManager
@@ -22,7 +27,7 @@ import java.io.File
  * 加速測試：以 OBD 車速自動偵測起跑（>0）與目標（0-100 / 0-60 / 1/4 英里），
  * 計時成績儲存最佳記錄（files/accel_scores.json）。
  */
-class AccelerationActivity : AppCompatActivity(), ObdManager.Listener {
+class AccelerationActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 

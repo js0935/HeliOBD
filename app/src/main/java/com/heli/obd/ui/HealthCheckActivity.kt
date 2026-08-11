@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.content.res.ColorStateList
@@ -8,7 +13,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.MainActivity
@@ -23,7 +28,7 @@ import kotlinx.coroutines.withContext
 /**
  * 健康檢查：即時數據 → 子系統階梯評分 → 綠/黃/紅總覽 + 交叉診斷規則。
  */
-class HealthCheckActivity : AppCompatActivity(), ObdManager.Listener {
+class HealthCheckActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 

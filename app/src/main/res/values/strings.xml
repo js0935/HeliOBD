@@ -2,6 +2,21 @@
 <resources>
     <!-- App -->
     <string name="app_name">HeliOBD</string>
+    <string name="splash_tagline">汽機車 OBD-II 車機檢測</string>
+    <string name="app_team_credit">禾秝軟體開發團隊｜代碼：洪俊士</string>
+    <string name="trip_calibration">油耗校正</string>
+    <string name="trip_cal_begin_title">開始油耗校正</string>
+    <string name="trip_cal_begin_msg">記錄目前里程表作為基準，行駛一段距離並加油後再回來完成校正</string>
+    <string name="trip_cal_odo_hint">目前里程表 (km)</string>
+    <string name="trip_cal_begin_done">已開始校正，基準里程表 %1$s km</string>
+    <string name="trip_cal_finish_title">完成油耗校正</string>
+    <string name="trip_cal_finish_msg">輸入目前里程表與本次加油量，App 將計算實測油耗並校正估算</string>
+    <string name="trip_cal_fuel_hint">本次加油量 (L)</string>
+    <string name="trip_cal_result">實測油耗 %1$s L/100km｜App 估算 %2$s L/100km｜校正係數 %3$s</string>
+    <string name="trip_cal_actual_only">實測油耗 %1$s L/100km（區間內無旅程，係數未調整）</string>
+    <string name="trip_cal_invalid">請輸入有效的里程與加油量</string>
+    <string name="trip_cal_cancel">取消校正</string>
+    <string name="trip_cal_active">校正進行中</string>
 
     <!-- 主畫面 -->
     <string name="nav_obd">即時數據</string>
@@ -53,6 +68,7 @@
     <string name="obd_connecting">連線中…</string>
     <string name="obd_connected">已連線</string>
     <string name="obd_disconnected">未連線</string>
+    <string name="demo_status_on">模擬模式：已開啟</string>
     <string name="monitor_customize">自訂</string>
     <string name="monitor_tile_title">選擇要顯示的數據</string>
     <string name="monitor_unit_metric">公制</string>
@@ -71,6 +87,11 @@
     <string name="obd_permission_denied">需要藍牙權限才能連接 OBD</string>
     <string name="obd_connect_failed">連接失敗：%1$s</string>
     <string name="obd_connect_error">連線失敗</string>
+    <string name="obd_location_title">開啟位置服務</string>
+    <string name="obd_location_message">Android 11 以下系統要求開啟位置服務才能掃描藍牙 OBD 裝置。請開啟後再試。</string>
+    <string name="obd_open_settings">開啟設定</string>
+    <string name="obd_bt_off">藍牙未開啟</string>
+    <string name="obd_bt_off_message">請先開啟藍牙再掃描 ELM327 裝置。</string>
 
     <!-- 故障碼 -->
     <string name="dtc_read">讀取故障碼</string>
@@ -159,6 +180,8 @@
     <string name="compare_snapshot_info">%1$s 捕捉｜RPM %2$s｜車速 %3$s km/h｜水溫 %4$s °C｜電壓 %5$s V</string>
 
     <!-- 多車管理 -->
+    <string name="vehicle_type_car">汽車</string>
+    <string name="vehicle_type_motorcycle">機車</string>
     <string name="vehicles_add">新增車輛</string>
     <string name="vehicles_edit">編輯車輛</string>
     <string name="vehicles_empty">尚無車輛，請先新增</string>
@@ -192,6 +215,26 @@
     <string name="feat_desc_accel">0-100 計時，記錄最佳成績</string>
     <string name="feat_demo">模擬模式</string>
     <string name="feat_desc_demo">無硬體也能體驗全部功能</string>
+    <string name="feat_connection">連線設定</string>
+    <string name="feat_desc_connection">自訂 ELM327 初始化指令</string>
+    <string name="feat_terminal">OBD 終端機</string>
+    <string name="feat_desc_terminal">手動輸入 AT/UDS 指令，即時查看回應</string>
+    <string name="terminal_title">OBD 終端機</string>
+    <string name="terminal_input_hint">輸入指令，如 ATZ、010C</string>
+    <string name="terminal_send">傳送</string>
+    <string name="terminal_status_connected">已連線</string>
+    <string name="terminal_status_disconnected">未連線</string>
+    <string name="terminal_status_demo">模擬模式</string>
+    <string name="terminal_not_connected">尚未連線 OBD｜可於主畫面開啟模擬模式體驗</string>
+    <string name="terminal_no_response">（無回應）</string>
+    <string name="terminal_clear">清除</string>
+    <string name="terminal_welcome">HeliOBD OBD 終端機\n輸入 AT 指令（如 ATZ、ATRV）或 OBD 模式指令（如 010C）\n回應將即時顯示於此</string>
+    <string name="settings_title">連線設定</string>
+    <string name="settings_connection_label">連線狀態</string>
+    <string name="settings_elm_label">自訂 ELM327 初始化指令</string>
+    <string name="settings_elm_desc">每行一個 AT 指令，連線初始化時依序執行。一般使用者不需修改。</string>
+    <string name="settings_elm_hint">例如：ATSP0、ATAT2</string>
+    <string name="settings_saved">已儲存</string>
     <string name="demo_on">模擬模式已開啟：正在模擬 OBD 數據</string>
     <string name="demo_off">模擬模式已關閉</string>
 
@@ -434,6 +477,13 @@
     <string name="trip_fuel_cost_label">油錢</string>
     <string name="trip_fuel_cost_value">%1$.1f 元</string>
     <string name="trip_fuel_price_per_l">%1$.1f 元/L</string>
+    <string name="trip_idle_time">怠速時間</string>
+    <string name="trip_total_stats">旅程總覽</string>
+    <string name="trip_total_count">共 %1$d 趟</string>
+    <string name="trip_total_distance">總里程 %1$.1f km</string>
+    <string name="trip_total_duration">總時長 %1$s</string>
+    <string name="trip_total_fuel">總油耗 %1$.2f L</string>
+    <string name="trip_total_cost">總油錢 %1$.1f 元</string>
 
     <!-- 保養提醒 -->
     <string name="mnt_save">儲存設定</string>
@@ -469,6 +519,8 @@
     <string name="chart_select_record">選擇錄製紀錄</string>
     <string name="chart_record_empty">錄製檔案無資料</string>
     <string name="chart_playback_done">回放結束</string>
+    <string name="chart_share">截圖分享</string>
+    <string name="chart_no_live_data">圖表尚無資料</string>
     <string name="chart_history_title">歷史數據圖</string>
     <string name="chart_select_signals">選擇訊號</string>
     <string name="chart_no_data">尚無歷史數據</string>
@@ -575,4 +627,18 @@
     <string name="common_unit_celsius">°C</string>
     <string name="common_unit_volt">V</string>
     <string name="feature_wip">開發中，敬請期待</string>
+
+    <!-- VW TP 2.0 -->
+    <string name="feat_vwtp">VW TP 2.0</string>
+    <string name="feat_desc_vwtp">VAG 感測器公式表瀏覽與模擬計算</string>
+    <string name="vwtp_title">VW TP 2.0 感測器</string>
+    <string name="vwtp_raw_a_hint">A (0-255)</string>
+    <string name="vwtp_raw_b_hint">B (0-255)</string>
+    <string name="vwtp_random">隨機</string>
+    <string name="vwtp_hint">模擬模式：輸入 raw 位元組 A/B 即時計算全部感測器</string>
+    <string name="vwtp_sensor_count">共 %1$d 個感測器</string>
+    <string name="vwtp_kennzahl_format">#%1$d</string>
+    <string name="vwtp_formula_label">公式：%1$s</string>
+    <string name="vwtp_else">否則</string>
+    <string name="vwtp_no_data">感測器公式表載入失敗</string>
 </resources>

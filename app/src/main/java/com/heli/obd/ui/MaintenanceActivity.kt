@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.os.Bundle
@@ -6,7 +11,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.maintenance.MaintenanceStore
@@ -18,7 +23,7 @@ import java.util.Locale
  * 保養提醒 + 電池健康畫面。
  * 里程由車速積分估計並持久化；電池狀態以即時電壓判斷。
  */
-class MaintenanceActivity : AppCompatActivity(), ObdManager.Listener {
+class MaintenanceActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
     private lateinit var store: MaintenanceStore

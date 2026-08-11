@@ -1,6 +1,6 @@
 # HeliOBD
 
-機車 OBD-II 車機檢測 App（Android 8.0+，橫向車機介面）。
+汽機車 OBD-II 車機檢測 App（Android 8.0+，直向介面）。
 
 ## 下載 APK
 

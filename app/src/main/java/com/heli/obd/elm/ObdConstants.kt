@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.elm
 
 import androidx.annotation.StringRes
@@ -11,15 +16,20 @@ object ObdConstants {
     /** 藍牙 SPP（序列埠）標準 UUID */
     const val SPP_UUID = "00001101-0000-1000-8000-00805F9B34FB"
 
-    /** 判斷 ELM327 裝置名稱的關鍵字（配對裝置名稱常見樣式） */
-    val ELM327_NAME_KEYWORDS = listOf("OBD", "ELM", "V-LINK", "CARSCANNER", "MX", "LINK")
+    /** 判斷 ELM327 裝置名稱的關鍵字（配對裝置常見品牌/樣式，放寬以涵蓋山寨晶片） */
+    val ELM327_NAME_KEYWORDS = listOf(
+        "OBD", "ELM", "V-LINK", "CARSCANNER", "OBDLINK", "KIWI", "PLX",
+        "ICAR", "VEEPEAK", "BAFX", "KONNWEI", "OBDMATE", "AUTOPHIX", "MX", "LINK",
+    )
 
     // ===== ELM327 AT 指令 =====
     const val CMD_RESET = "ATZ"          // 重設
     const val CMD_ECHO_OFF = "ATE0"      // 關閉回應
     const val CMD_LINEFEED_OFF = "ATL0"  // 關閉換行
+    const val CMD_SPACES_OFF = "ATS0"    // 關閉空格
     const val CMD_HEADERS_OFF = "ATH0"   // 關閉標頭
     const val CMD_AUTO_PROTOCOL = "ATSP0" // 自動協定
+    const val CMD_AUTO_PROTOCOL_ALT = "ATSP A0" // 自動協定（空白寫法，部分 clone 才接受）
     const val CMD_VOLTAGE = "ATRV"       // 電瓶電壓
 
     // ===== OBD 服務模式 =====
@@ -38,6 +48,7 @@ object ObdConstants {
     const val PID_COOLANT = "05"         // 水溫
     const val PID_SHORT_FUEL_TRIM = "06" // 短期燃油修正
     const val PID_LONG_FUEL_TRIM = "07"  // 長期燃油修正
+    const val PID_INTAKE = "0F"          // 進氣溫度
     const val PID_MAF = "10"             // 空氣流量
     const val PID_RPM = "0C"             // 引擎轉速
     const val PID_SPEED = "0D"           // 車速

@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.os.Bundle
@@ -5,13 +10,13 @@ import android.view.View
 import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.R
 
 /**
  * 閾值警示設定：設定水溫上限 / 轉速上限 / 電壓下限，超限時由 AlertMonitor 發出提醒。
  */
-class AlertsActivity : AppCompatActivity() {
+class AlertsActivity : BaseActivity() {
 
     private lateinit var enabledSwitch: Switch
     private lateinit var coolantField: EditText

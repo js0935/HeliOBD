@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd
 
 import android.content.Intent
@@ -8,7 +13,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.elm.AlertMonitor
 import com.heli.obd.elm.DemoConfig
 import com.heli.obd.elm.ObdManager
 import com.heli.obd.ui.AccelerationActivity
@@ -25,15 +30,18 @@ import com.heli.obd.ui.HealthCheckActivity
 import com.heli.obd.ui.MaintenanceActivity
 import com.heli.obd.ui.ObdMonitorActivity
 import com.heli.obd.ui.RealtimeChartActivity
+import com.heli.obd.ui.SettingsActivity
+import com.heli.obd.ui.TerminalActivity
 import com.heli.obd.ui.TripActivity
 import com.heli.obd.ui.VehiclesActivity
+import com.heli.obd.ui.VwtpSensorsActivity
 
 /**
  * 主畫面：HeliOBD 功能入口。
  *
  * 即時數據、故障碼為 OBD 基礎功能；六個 PLUS 功能本體逐版完善中。
  */
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private lateinit var obdStatusText: TextView
 
@@ -51,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     Entry(R.drawable.ic_hud, R.string.feat_hud, R.string.feat_desc_hud),
         Entry(R.drawable.ic_alert, R.string.feat_alerts, R.string.feat_desc_alerts),
         Entry(R.drawable.ic_pid, R.string.feat_custom_pid, R.string.feat_desc_custom_pid),
+        Entry(R.drawable.ic_pid, R.string.feat_vwtp, R.string.feat_desc_vwtp),
         Entry(R.drawable.ic_accel, R.string.feat_accel, R.string.feat_desc_accel),
         Entry(R.drawable.ic_chart, R.string.feat_chart, R.string.feat_desc_chart),
         Entry(R.drawable.ic_fuel, R.string.feat_fuel, R.string.feat_desc_fuel),
@@ -58,6 +67,8 @@ class MainActivity : AppCompatActivity() {
         Entry(R.drawable.ic_maintenance, R.string.feat_maintenance, R.string.feat_desc_maintenance),
         Entry(R.drawable.ic_alert, R.string.feat_health_check, R.string.feat_desc_health_check),
         Entry(R.drawable.ic_demo, R.string.feat_demo, R.string.feat_desc_demo),
+        Entry(R.drawable.ic_obd, R.string.feat_connection, R.string.feat_desc_connection),
+        Entry(R.drawable.ic_pid, R.string.feat_terminal, R.string.feat_desc_terminal),
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,8 +77,19 @@ class MainActivity : AppCompatActivity() {
 
         obdStatusText = findViewById(R.id.obd_status)
 
+        // 模擬模式預設關閉：每次啟動一律重置為關閉，不自動恢復上次的 Demo 狀態
+        DemoConfig.setEnabled(this, false)
+        ObdManagerHolder.obd(this).setDemoMode(false)
+        AlertMonitor.attach(ObdManagerHolder.obd(this), applicationContext)
+
         buildFeatureGrid()
         refreshStatus()
+    }
+
+    override fun onDestroy() {
+        AlertMonitor.detach(ObdManagerHolder.obd(this))
+        AlertMonitor.release()
+        super.onDestroy()
     }
 
     override fun onResume() {
@@ -120,12 +142,15 @@ class MainActivity : AppCompatActivity() {
             R.string.feat_hud -> HudActivity::class.java
             R.string.feat_alerts -> AlertsActivity::class.java
             R.string.feat_custom_pid -> CustomPidActivity::class.java
+            R.string.feat_vwtp -> VwtpSensorsActivity::class.java
             R.string.feat_accel -> AccelerationActivity::class.java
             R.string.feat_chart -> RealtimeChartActivity::class.java
             R.string.feat_fuel -> TripActivity::class.java
             R.string.feat_score -> DrivingScoreActivity::class.java
             R.string.feat_maintenance -> MaintenanceActivity::class.java
             R.string.feat_health_check -> HealthCheckActivity::class.java
+            R.string.feat_connection -> SettingsActivity::class.java
+            R.string.feat_terminal -> TerminalActivity::class.java
             else -> FeaturePlaceholderActivity::class.java
         }
         startActivity(
@@ -152,15 +177,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshStatus() {
-        // OBD 連線狀態
         val obd = ObdManagerHolder.obd(this)
-        val connected = obd.isConnected()
-        obdStatusText.setText(
-            if (connected) R.string.obd_connected else R.string.obd_disconnected
-        )
-        obdStatusText.setTextColor(
-            getColor(if (connected) R.color.success else R.color.text_secondary)
-        )
+        when {
+            obd.isDemoMode() -> {
+                obdStatusText.setText(R.string.demo_status_on)
+                obdStatusText.setTextColor(getColor(R.color.accent))
+            }
+            obd.isConnected() -> {
+                obdStatusText.setText(R.string.obd_connected)
+                obdStatusText.setTextColor(getColor(R.color.success))
+            }
+            else -> {
+                obdStatusText.setText(R.string.obd_disconnected)
+                obdStatusText.setTextColor(getColor(R.color.text_secondary))
+            }
+        }
     }
 
     /** ObdManager 全域單例（避免各頁面重複連線） */

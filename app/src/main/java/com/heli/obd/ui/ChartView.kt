@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.content.Context
@@ -54,10 +59,25 @@ class ChartView @JvmOverloads constructor(
 
     fun addSample(values: Map<String, Float>) {
         if (values.isEmpty()) return
-        samples.addLast(values)
+        val prev = samples.lastOrNull()
+        // 斷線補點（carry-forward）：低頻訊號缺值時沿用前一筆，曲線不中斷
+        val merged = if (prev != null) {
+            val result = LinkedHashMap<String, Float>()
+            for (key in seriesMap.keys) {
+                val v = values[key] ?: prev[key] ?: continue
+                result[key] = v
+            }
+            result
+        } else {
+            values
+        }
+        if (merged.isEmpty()) return
+        samples.addLast(merged)
         while (samples.size > windowSize) samples.removeFirst()
         invalidate()
     }
+
+    fun hasData(): Boolean = samples.isNotEmpty()
 
     fun clear() {
         samples.clear()
@@ -69,7 +89,7 @@ class ChartView @JvmOverloads constructor(
         val w = width.toFloat()
         val h = height.toFloat()
         val padLeft = dp(46f)
-        val padBottom = dp(22f)
+        val padBottom = dp(44f)
         val plotW = w - padLeft - dp(10f)
         val plotH = h - padBottom - dp(10f)
         if (plotW <= 0 || plotH <= 0) return
@@ -77,6 +97,7 @@ class ChartView @JvmOverloads constructor(
         drawGrid(canvas, padLeft, plotW, plotH, padBottom)
         drawSeriesLines(canvas, padLeft, plotW, plotH, padBottom)
         drawLegend(canvas, padLeft, plotW, padBottom)
+        drawStats(canvas, padLeft, plotW, padBottom)
     }
 
     private fun drawGrid(canvas: Canvas, padLeft: Float, plotW: Float, plotH: Float, padBottom: Float) {
@@ -134,6 +155,28 @@ class ChartView @JvmOverloads constructor(
             x += tw + dp(14f)
         }
     }
+
+    private fun drawStats(canvas: Canvas, padLeft: Float, plotW: Float, padBottom: Float) {
+        if (samples.size < 2) return
+        var x = padLeft
+        val baseline = height.toFloat() - dp(24f)
+        for (s in series) {
+            val pts = samples.mapNotNull { it[s.label] }
+            if (pts.size < 2) continue
+            val max = pts.max()
+            val min = pts.min()
+            val avg = pts.average().toFloat()
+            val text = "${s.label} MAX ${fmt(max)} MIN ${fmt(min)} AVG ${fmt(avg)}"
+            badgePaint.color = s.color
+            val tw = badgePaint.measureText(text)
+            if (x + tw > padLeft + plotW) break
+            canvas.drawText(text, x, baseline, badgePaint)
+            x += tw + dp(14f)
+        }
+    }
+
+    private fun fmt(value: Float): String =
+        String.format(if (value >= 100f) "%.0f" else "%.1f", value)
 
     private fun dp(value: Float): Float =
         value * resources.displayMetrics.density

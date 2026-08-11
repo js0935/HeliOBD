@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.elm
 
 import androidx.annotation.StringRes
@@ -51,6 +56,13 @@ object ObdDecoder {
 
     /** 水溫（PID 05）：A-40 → °C */
     fun coolantTemp(hexResponse: String): Int? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3) return null
+        return bytes[2] - 40
+    }
+
+    /** 進氣溫度（PID 0F）：A-40 → °C */
+    fun intakeTemp(hexResponse: String): Int? {
         val bytes = parseBytes(hexResponse) ?: return null
         if (bytes.size < 3) return null
         return bytes[2] - 40

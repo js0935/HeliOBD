@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.vehicles
 
 import android.content.Context
@@ -18,6 +23,7 @@ class VehicleStore(private val context: Context) {
         val brand: String,
         val engineCc: String,
         val note: String,
+        val type: String = TYPE_MOTORCYCLE,
     )
 
     private val prefs: SharedPreferences =
@@ -36,6 +42,7 @@ class VehicleStore(private val context: Context) {
                     brand = j.optString("brand"),
                     engineCc = j.optString("engineCc"),
                     note = j.optString("note"),
+                    type = j.optString("type", TYPE_MOTORCYCLE),
                 )
             }
         }.getOrDefault(emptyList())
@@ -70,6 +77,7 @@ class VehicleStore(private val context: Context) {
                     put("brand", v.brand)
                     put("engineCc", v.engineCc)
                     put("note", v.note)
+                    put("type", v.type)
                 }
             )
         }
@@ -81,5 +89,7 @@ class VehicleStore(private val context: Context) {
 
     companion object {
         private const val KEY_CURRENT = "current_vehicle_id"
+        const val TYPE_CAR = "car"
+        const val TYPE_MOTORCYCLE = "motorcycle"
     }
 }

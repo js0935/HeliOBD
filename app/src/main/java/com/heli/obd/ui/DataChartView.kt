@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.content.Context
@@ -5,7 +10,10 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
+import kotlin.math.roundToInt
 
 /**
  * 歷史數據重疊圖：多系列各自自動縮放（比較趨勢形狀），
@@ -35,22 +43,61 @@ class DataChartView @JvmOverloads constructor(
         textSize = 12f * resources.displayMetrics.density
     }
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val crosshairPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0x668A99A8
+        strokeWidth = 1f * resources.displayMetrics.density
+        style = Paint.Style.STROKE
+    }
 
     private var seriesList: List<Series> = emptyList()
+    private var selectedIndex = -1
+
+    private val gestureDetector by lazy {
+        GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onLongPress(e: MotionEvent) {
+                selectIndexAt(e.x)
+            }
+        })
+    }
 
     fun setSeries(series: List<Series>) {
         seriesList = series
         invalidate()
     }
 
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        gestureDetector.onTouchEvent(event)
+        when (event.actionMasked) {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (selectedIndex >= 0) {
+                    selectedIndex = -1
+                    invalidate()
+                }
+            }
+        }
+        return true
+    }
+
+    private fun selectIndexAt(x: Float) {
+        val chartLeft = (10f * density).toFloat()
+        val chartRight = (width - 52f * density).toFloat()
+        if (x < chartLeft || x > chartRight) return
+        val maxSize = seriesList.maxOfOrNull { it.points.size } ?: 1
+        if (maxSize < 2) return
+        val ratio = ((x - chartLeft) / (chartRight - chartLeft)).coerceIn(0f, 1f)
+        selectedIndex = (ratio * (maxSize - 1)).roundToInt()
+        invalidate()
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val pad = (10f * density).toInt()
+        val padRight = (52f * density).toInt()
         val legendHeight = seriesList.size * (18f * density).toInt()
         val chartTop = (pad + legendHeight).toFloat()
         val chartBottom = (height - pad).toFloat()
         val chartLeft = pad.toFloat()
-        val chartRight = (width - pad).toFloat()
+        val chartRight = (width - padRight).toFloat()
 
         var ly = (14f * density).toFloat()
         for (s in seriesList) {
@@ -65,7 +112,8 @@ class DataChartView @JvmOverloads constructor(
             }
             val current = s.points.lastOrNull()
             val label = if (current != null) {
-                String.format("%s %.1f  [%s]", s.name, current, range)
+                val avg = if (s.points.size > 1) s.points.average().toFloat() else current
+                String.format("%s %.1f  [%s]  AVG %.1f", s.name, current, range, avg)
             } else {
                 s.name
             }
@@ -94,7 +142,61 @@ class DataChartView @JvmOverloads constructor(
             linePaint.color = s.color
             canvas.drawPath(path, linePaint)
         }
+
+        drawAxisLabels(canvas, chartRight)
+        drawCrosshair(canvas, chartLeft, chartRight, chartTop, chartBottom, plotH)
     }
+
+    private fun drawAxisLabels(canvas: Canvas, chartRight: Float) {
+        var ry = (14f * density).toFloat()
+        for (s in seriesList) {
+            if (s.points.size >= 2) {
+                val min = s.points.minOrNull() ?: 0f
+                val max = s.points.maxOrNull() ?: 0f
+                textPaint.color = s.color
+                canvas.drawText("${fmt(max)}/${fmt(min)}", chartRight + 6f * density, ry, textPaint)
+            }
+            ry += 18f * density
+        }
+    }
+
+    private fun drawCrosshair(
+        canvas: Canvas,
+        chartLeft: Float,
+        chartRight: Float,
+        chartTop: Float,
+        chartBottom: Float,
+        plotH: Float,
+    ) {
+        if (selectedIndex < 0) return
+        val maxSize = seriesList.maxOfOrNull { it.points.size } ?: 0
+        if (maxSize < 2) return
+        val cx = chartLeft + (chartRight - chartLeft) * selectedIndex / (maxSize - 1)
+        canvas.drawLine(cx, chartTop, cx, chartBottom, crosshairPaint)
+        for (s in seriesList) {
+            if (s.points.isEmpty()) continue
+            val idx = (selectedIndex.toFloat() * (s.points.size - 1) / (maxSize - 1))
+                .roundToInt().coerceIn(0, s.points.size - 1)
+            val v = s.points[idx]
+            val min = s.points.minOrNull() ?: 0f
+            val max = s.points.maxOrNull() ?: 0f
+            val span = (max - min).takeIf { it > 0f } ?: 1f
+            val py = chartBottom - (v - min) / span * plotH
+            dotPaint.color = s.color
+            canvas.drawCircle(cx, py, 4f * density, dotPaint)
+            textPaint.color = s.color
+            val text = "${s.name} ${String.format("%.1f", v)}"
+            val textW = textPaint.measureText(text)
+            val tx = if (cx + 8f * density + textW > width.toFloat()) {
+                cx - 8f * density - textW
+            } else {
+                cx + 8f * density
+            }
+            canvas.drawText(text, tx, py - 8f * density, textPaint)
+        }
+    }
+
+    private fun fmt(value: Float): String = String.format("%.0f", value)
 
     companion object {
         const val GRID_COUNT = 4

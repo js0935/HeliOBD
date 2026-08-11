@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.os.Bundle
@@ -6,7 +11,7 @@ import android.os.Looper
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.pid.PidStore
@@ -15,7 +20,7 @@ import com.heli.obd.pid.PidStore
  * 歷史數據重疊圖：以 ObdManager 的歷史 ring buffer 繪製多 PID 折線（含自訂 PID），
  * 每系列各自自動縮放、依單位制換算，可勾選要繪製的訊號。
  */
-class ChartActivity : AppCompatActivity() {
+class ChartActivity : BaseActivity() {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 

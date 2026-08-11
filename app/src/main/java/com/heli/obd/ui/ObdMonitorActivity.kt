@@ -1,10 +1,19 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.DragEvent
 import android.view.GestureDetector
 import android.view.LayoutInflater
@@ -16,7 +25,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.BtPermissions
@@ -31,7 +40,7 @@ import kotlin.math.absoluteValue
  * 「自訂」勾選額外數據（內建 10 項 + 自訂 PID）以 tile 網格呈現，
  * 支援單位制切換（公制/英制）、多頁翻頁、長按拖放排序，與歷史數據圖表入口。
  */
-class ObdMonitorActivity : AppCompatActivity(), ObdManager.Listener {
+class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 
@@ -100,6 +109,7 @@ class ObdMonitorActivity : AppCompatActivity(), ObdManager.Listener {
 
         obd.addListener(this)
         renderState(obd.state)
+        autoReconnect()
     }
 
     override fun onResume() {
@@ -120,11 +130,40 @@ class ObdMonitorActivity : AppCompatActivity(), ObdManager.Listener {
     // ===== 連線 =====
 
     private fun ensurePermissionAndConnect() {
+        if (!locationEnabledIfNeeded()) return
         if (BtPermissions.hasAll(this)) {
             pickDevice()
         } else {
             requestPermissions(BtPermissions.required(), REQ_BT_PERMISSION)
         }
+    }
+
+    /** Android 11 以下掃描藍牙需位置服務開啟，關閉時引導使用者開啟並回傳 false */
+    private fun locationEnabledIfNeeded(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return true
+        val lm = getSystemService(LOCATION_SERVICE) as? LocationManager ?: return true
+        val enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+            lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        if (!enabled) {
+            AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                .setTitle(R.string.obd_location_title)
+                .setMessage(R.string.obd_location_message)
+                .setPositiveButton(R.string.obd_open_settings) { _, _ ->
+                    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                }
+                .setNegativeButton(R.string.common_cancel, null)
+                .show()
+        }
+        return enabled
+    }
+
+    private fun autoReconnect() {
+        if (obd.isConnected()) return
+        val address = obd.lastDeviceAddress() ?: return
+        if (!BtPermissions.hasAll(this)) return
+        val bt = BluetoothAdapter.getDefaultAdapter() ?: return
+        val device = runCatching { bt.getRemoteDevice(address) }.getOrNull() ?: return
+        connectTo(device)
     }
 
     override fun onRequestPermissionsResult(

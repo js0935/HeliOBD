@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.elm
 
 import android.bluetooth.BluetoothAdapter
@@ -7,6 +12,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
@@ -21,6 +27,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.DataInputStream
+import java.io.IOException
 import java.io.OutputStream
 import java.util.UUID
 
@@ -61,6 +68,7 @@ class ObdManager(private val appContext: Context) {
         val torqueNm: Float? = null,
         val fuelTrim: Float? = null,
         val afr: Float? = null,
+        val intake: Int? = null,
         val customValues: Map<Long, Float?> = emptyMap(),
     )
 
@@ -72,6 +80,8 @@ class ObdManager(private val appContext: Context) {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val lock = Any()
+    private val prefs: SharedPreferences =
+        appContext.getSharedPreferences("obd_prefs", Context.MODE_PRIVATE)
 
     private var socket: BluetoothSocket? = null
     private var input: DataInputStream? = null
@@ -88,6 +98,37 @@ class ObdManager(private val appContext: Context) {
 
     @Volatile
     private var customPids: List<PidStore.CustomPid> = emptyList()
+
+    // ===== 自動配對（PAIRING_REQUEST）：ELM327 常見 PIN 1234，自動回應省去手動輸入 =====
+    private val pairingReceiver = object : BroadcastReceiver() {
+        @Suppress("DEPRECATION")
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != BluetoothDevice.ACTION_PAIRING_REQUEST) return
+            val device = intent.getParcelableExtraCompat(BluetoothDevice.EXTRA_DEVICE) ?: return
+            val variant = intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, Int.MIN_VALUE)
+            try {
+                when (variant) {
+                    // 0=PIN 輸入、3=Passkey 輸入：回應 ELM327 常見 PIN 1234
+                    0, 3 -> DeviceReflection.setPin(device, "1234")
+                    // 2=Passkey 確認、4=Consent：直接同意
+                    2, 4 -> DeviceReflection.confirmPairing(device)
+                }
+            } catch (_: Exception) {
+                // 隱藏 API 呼叫失敗時忽略，配對退回系統/手動流程
+            }
+        }
+    }
+
+    init {
+        runCatching {
+            ContextCompat.registerReceiver(
+                appContext,
+                pairingReceiver,
+                IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
+        }
+    }
 
     // ===== 分組輪詢（快每輪 / 慢 2 輪 / 自訂 4 輪，跳過輪沿用上次值） =====
     private var pollTick = 0
@@ -119,6 +160,12 @@ class ObdManager(private val appContext: Context) {
 
     fun isConnected(): Boolean = demoMode || socket?.isConnected == true
 
+    fun isDemoMode(): Boolean = demoMode
+
+    /** 上次成功連線的裝置位址（供自動重連） */
+    fun lastDeviceAddress(): String? =
+        if (prefs.contains(KEY_LAST_DEVICE)) prefs.getString(KEY_LAST_DEVICE, null) else null
+
     /**
      * 切換 Demo 模擬模式。開啟時不需藍牙連線，立即以模擬資料輪詢；
      * 關閉時若無真實連線則回到 Idle。
@@ -147,7 +194,7 @@ class ObdManager(private val appContext: Context) {
         @Suppress("DEPRECATION")
         get() = BluetoothAdapter.getDefaultAdapter()
 
-    /** 掃描 ELM327 裝置：先回傳已配對，再進行 6 秒搜尋合併回傳 */
+    /** 掃描 ELM327 裝置：已配對裝置（全部）先列入，再進行 10 秒搜尋合併回傳 */
     @Suppress("DEPRECATION")
     fun discover(callback: (List<BluetoothDevice>) -> Unit) {
         val bt = adapter
@@ -156,29 +203,47 @@ class ObdManager(private val appContext: Context) {
             return
         }
         val results = linkedMapOf<String, BluetoothDevice>()
-        bt.bondedDevices?.forEach { if (isElm327(it)) results[it.address] = it }
+        // 已配對裝置全部列入：使用者既已配對，名稱不含關鍵字也不應被過濾
+        bt.bondedDevices?.forEach { results[it.address] = it }
 
+        var reported = false
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == BluetoothDevice.ACTION_FOUND) {
-                    val device = intent.getParcelableExtraCompat(BluetoothDevice.EXTRA_DEVICE) ?: return
-                    if (isElm327(device)) results[device.address] = device
+                when (intent?.action) {
+                    BluetoothDevice.ACTION_FOUND -> {
+                        val device = intent.getParcelableExtraCompat(BluetoothDevice.EXTRA_DEVICE) ?: return
+                        if (isElm327(device)) results[device.address] = device
+                    }
+                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                        bt.cancelDiscovery()
+                        if (!reported) {
+                            reported = true
+                            runCatching { appContext.unregisterReceiver(this) }
+                            mainHandler.post { callback(results.values.toList()) }
+                        }
+                    }
                 }
             }
         }
         ContextCompat.registerReceiver(
             appContext,
             receiver,
-            IntentFilter(BluetoothDevice.ACTION_FOUND),
+            IntentFilter().apply {
+                addAction(BluetoothDevice.ACTION_FOUND)
+                addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+            },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         bt.startDiscovery()
 
         ioScope.launch {
-            delay(6000)
+            delay(10000)
             bt.cancelDiscovery()
-            runCatching { appContext.unregisterReceiver(receiver) }
-            mainHandler.post { callback(results.values.toList()) }
+            if (!reported) {
+                reported = true
+                runCatching { appContext.unregisterReceiver(receiver) }
+                mainHandler.post { callback(results.values.toList()) }
+            }
         }
     }
 
@@ -196,11 +261,12 @@ class ObdManager(private val appContext: Context) {
         setState(State.Connecting)
         ioScope.launch {
             val (ok, msg) = try {
-                val sock = device.createRfcommSocketToServiceRecord(UUID.fromString(ObdConstants.SPP_UUID))
-                sock.connect()
+                val sock = openSocket(device) ?: throw IOException("RFCOMM connect failed")
                 socket = sock
                 input = DataInputStream(sock.inputStream)
                 output = sock.outputStream
+                // 連線成立後稍等，避免首批 AT 指令被剛建立的 socket 丟棄
+                Thread.sleep(500)
                 val initOk = initElm327()
                 if (!initOk) {
                     closeQuietly()
@@ -213,6 +279,7 @@ class ObdManager(private val appContext: Context) {
                 false to (e.message ?: appContext.getString(R.string.obd_connect_error))
             }
             if (ok) {
+                prefs.edit().putString(KEY_LAST_DEVICE, device.address).apply()
                 setState(State.Ready)
                 startPolling()
             } else {
@@ -222,6 +289,37 @@ class ObdManager(private val appContext: Context) {
         }
     }
 
+    /**
+     * 以多層 fallback 建立 RFCOMM socket（提高廉價 ELM327 相容性）：
+     * 已配對 → secure SPP → channel 1 reflection → insecure SPP；
+     * 未配對 → insecure SPP → channel 1 reflection → secure SPP。
+     */
+    @Suppress("DEPRECATION")
+    private fun openSocket(device: BluetoothDevice): BluetoothSocket? {
+        val spp = UUID.fromString(ObdConstants.SPP_UUID)
+        val bonded = device.bondState == BluetoothDevice.BOND_BONDED
+        // true = secure（需配對）、false = insecure（免配對）、null = reflection channel 1
+        val modes = if (bonded) listOf(true, null, false) else listOf(false, null, true)
+        for (mode in modes) {
+            val sock = try {
+                when (mode) {
+                    true -> device.createRfcommSocketToServiceRecord(spp)
+                    false -> device.createInsecureRfcommSocketToServiceRecord(spp)
+                    else -> DeviceReflection.channel1(device) ?: continue
+                }
+            } catch (_: Exception) {
+                continue
+            }
+            try {
+                sock.connect()
+                return sock
+            } catch (_: Exception) {
+                runCatching { sock.close() }
+            }
+        }
+        return null
+    }
+
     fun disconnect() {
         pollJob?.cancel()
         pollJob = null
@@ -229,18 +327,26 @@ class ObdManager(private val appContext: Context) {
         setState(State.Idle)
     }
 
-    /** ELM327 初始化指令序列；全部執行成功回傳 true */
+    /** ELM327 初始化：ATZ 必成功，其餘設定指令失敗不立即放棄（部分山寨晶片回 '?'） */
     private fun initElm327(): Boolean {
-        val bootCmds = listOf(
-            ObdConstants.CMD_RESET,
-            ObdConstants.CMD_ECHO_OFF,
+        if (sendCommand(ObdConstants.CMD_RESET) == null) return false
+        // ATZ 後等待裝置重置，否則後續指令常被忽略（pires 實測）
+        Thread.sleep(500)
+        // ATE0 送兩次：便宜 ELM327 常漏掉第一次
+        sendCommand(ObdConstants.CMD_ECHO_OFF)
+        sendCommand(ObdConstants.CMD_ECHO_OFF)
+        listOf(
             ObdConstants.CMD_LINEFEED_OFF,
+            ObdConstants.CMD_SPACES_OFF,
             ObdConstants.CMD_HEADERS_OFF,
             ObdConstants.CMD_AUTO_PROTOCOL,
-        )
-        for (cmd in bootCmds) {
-            if (sendCommand(cmd) == null) return false
+        ).forEach { cmd ->
+            if (sendCommand(cmd) == null && cmd == ObdConstants.CMD_AUTO_PROTOCOL) {
+                sendCommand(ObdConstants.CMD_AUTO_PROTOCOL_ALT)
+            }
         }
+        val custom = prefs.getString(KEY_ELM_CMDS, "").orEmpty()
+        custom.lines().map { it.trim() }.filter { it.isNotEmpty() }.forEach { sendCommand(it) }
         // ATRV 可順帶確認通訊正常（回應含電壓）
         return sendCommand(ObdConstants.CMD_VOLTAGE) != null
     }
@@ -274,6 +380,57 @@ class ObdManager(private val appContext: Context) {
             lastLine(sb.toString()).takeIf { it.isNotBlank() }
         } catch (_: Exception) {
             null
+        }
+    }
+
+    /**
+     * 送出 ELM327 指令並回傳「完整」原始回應（保留所有行，不含 '>' prompt）。
+     * 供 OBD 終端機顯示用；一般功能請使用 sendCommand()（只取最後一行）。
+     * 模擬模式下回傳對應的假回應。
+     */
+    fun sendRawCommand(cmd: String): String? = synchronized(lock) {
+        if (demoMode) return@synchronized demoTerminalResponse(cmd)
+        val out = output ?: return null
+        val inStream = input ?: return null
+        try {
+            out.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
+            out.flush()
+
+            val sb = StringBuilder()
+            val deadline = System.currentTimeMillis() + ObdConstants.COMMAND_TIMEOUT_MS
+            while (System.currentTimeMillis() < deadline) {
+                while (inStream.available() > 0) {
+                    val c = inStream.read()
+                    if (c == -1) return@synchronized null
+                    if (c.toChar() == '>') {
+                        return@synchronized sb.toString().trim()
+                    }
+                    sb.append(c.toChar())
+                }
+                Thread.sleep(15)
+            }
+            sb.toString().trim().takeIf { it.isNotBlank() }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** 模擬模式終端機回應：常用 AT 指令給固定假回應，其餘依模式給簡單回應 */
+    private fun demoTerminalResponse(cmd: String): String {
+        val c = cmd.trim().uppercase()
+        return when {
+            c == "ATZ" -> "ELM327 v1.5a"
+            c == "ATI" || c == "ATI0" -> "ELM327 v1.5a"
+            c == "ATVN" -> "12.34.56"
+            c == "ATRV" || c == "ATRV0" -> "13.8V"
+            c == "ATE0" || c == "ATL0" || c == "ATS0" || c == "ATH0" ||
+                c == "ATSP0" || c == "ATSP A0" || c == "ATAT2" -> "OK"
+            c.startsWith("AT") -> "OK"
+            c.startsWith("01") || c.startsWith("010") -> "41 ${c.drop(2).padEnd(2, '0')} 00 00"
+            c.startsWith("03") -> "43 01 03 00 00 00 00"
+            c.startsWith("09") -> "49 02 4D 4F 54 4F 44 49 41 47 00"
+            c.startsWith("02") -> "42 ${c.drop(2).padEnd(2, '0')} 00 00"
+            else -> "7F 00 12"
         }
     }
 
@@ -313,6 +470,8 @@ class ObdManager(private val appContext: Context) {
             ?.let { ObdDecoder.speed(it) }
         val coolant = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_COOLANT)
             ?.let { ObdDecoder.coolantTemp(it) }
+        val intake = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_INTAKE)
+            ?.let { ObdDecoder.intakeTemp(it) }
         val voltage = sendCommand(ObdConstants.CMD_VOLTAGE)
             ?.let { ObdDecoder.voltage(it) }
         val load = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_LOAD)
@@ -343,7 +502,7 @@ class ObdManager(private val appContext: Context) {
         } else {
             lastCustom
         }
-        return LiveData(rpm, speed, coolant, voltage, load, maf, fuelRate, torqueNm, fuelTrim, afr, customValues)
+        return LiveData(rpm, speed, coolant, voltage, load, maf, fuelRate, torqueNm, fuelTrim, afr, intake, customValues)
             .also { recordHistory(it) }
     }
 
@@ -372,6 +531,7 @@ class ObdManager(private val appContext: Context) {
         push("rpm", data.rpm?.toFloat())
         push("speed", data.speed?.toFloat())
         push("coolant", data.coolant?.toFloat())
+        push("intake", data.intake?.toFloat())
         push("voltage", data.voltage)
         push("load", data.load?.toFloat())
         push("maf", data.maf)
@@ -477,6 +637,9 @@ class ObdManager(private val appContext: Context) {
         val elapsedMin = (System.currentTimeMillis() - simStartMs) / 60000.0
         val coolant = (40.0 + elapsedMin * 25.0).coerceIn(0.0, 90.0).toInt()
 
+        val intake = (15.0 + Math.random() * 25.0 + (rpm - 1100) / 300.0)
+            .coerceIn(0.0, 80.0).toInt()
+
         val voltage = (13.9 + (Math.random() - 0.5) * 0.6).toFloat()
 
         val load = (25.0 + (rpm - 1100) / 100.0 * 3.0 + (Math.random() - 0.5) * 6)
@@ -486,7 +649,7 @@ class ObdManager(private val appContext: Context) {
         val torqueNm = (10.0 + load / 100.0 * 85.0 + (Math.random() - 0.5) * 4.0).toFloat()
         val fuelTrim = ((Math.random() - 0.5) * 8.0).toFloat()
         val afr = (14.0 + (Math.random() - 0.5) * 1.5).toFloat()
-        return LiveData(rpm, speed, coolant, voltage, load, maf, fuelRate, torqueNm, fuelTrim, afr)
+        return LiveData(rpm, speed, coolant, voltage, load, maf, fuelRate, torqueNm, fuelTrim, afr, intake)
     }
 
     // ===== 內部 =====
@@ -525,5 +688,8 @@ class ObdManager(private val appContext: Context) {
 
     companion object {
         private const val HISTORY_MAX = 300
+        private const val KEY_LAST_DEVICE = "last_device_address"
+        const val PREFS = "obd_prefs"
+        const val KEY_ELM_CMDS = "custom_init_cmds"
     }
 }

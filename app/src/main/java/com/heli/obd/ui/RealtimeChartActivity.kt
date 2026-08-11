@@ -1,6 +1,15 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -11,11 +20,13 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
+import androidx.core.content.FileProvider
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.ObdManager
 import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -23,7 +34,7 @@ import java.util.Locale
 /**
  * 即時數據曲線圖：多訊號捲動折線 + CSV 記錄與回放。
  */
-class RealtimeChartActivity : AppCompatActivity(), ObdManager.Listener {
+class RealtimeChartActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 
@@ -32,6 +43,7 @@ class RealtimeChartActivity : AppCompatActivity(), ObdManager.Listener {
     private lateinit var pauseBtn: Button
     private lateinit var recordBtn: Button
     private lateinit var playbackBtn: Button
+    private lateinit var shareBtn: Button
 
     private var paused = false
     private var recording = false
@@ -72,6 +84,7 @@ class RealtimeChartActivity : AppCompatActivity(), ObdManager.Listener {
         pauseBtn = findViewById(R.id.btn_chart_pause)
         recordBtn = findViewById(R.id.btn_chart_record)
         playbackBtn = findViewById(R.id.btn_chart_playback)
+        shareBtn = findViewById(R.id.btn_chart_share)
 
         chart.setSeries(
             listOf(
@@ -95,6 +108,7 @@ class RealtimeChartActivity : AppCompatActivity(), ObdManager.Listener {
         playbackBtn.setOnClickListener {
             if (playingBack) stopPlayback() else showRecordings()
         }
+        shareBtn.setOnClickListener { shareChart() }
 
         obd.addListener(this)
         renderState(obd.state)
@@ -152,6 +166,32 @@ class RealtimeChartActivity : AppCompatActivity(), ObdManager.Listener {
         playbackHandler.removeCallbacks(playbackTick)
         playbackBtn.setText(R.string.chart_playback)
         playbackBtn.setBackgroundResource(R.drawable.bg_card)
+    }
+
+    /** 將目前曲線畫面存成 PNG 並透過 FileProvider 分享 */
+    private fun shareChart() {
+        if (!chart.hasData()) {
+            Toast.makeText(this, R.string.chart_no_live_data, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val dir = File(filesDir, "export").apply { mkdirs() }
+        val file = File(dir, "chart_${System.currentTimeMillis()}.png")
+        val bitmap = Bitmap.createBitmap(chart.width, chart.height, Bitmap.Config.ARGB_8888)
+        chart.draw(Canvas(bitmap))
+        try {
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+        } finally {
+            bitmap.recycle()
+        }
+        val uri: Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+        val share = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(share, getString(R.string.chart_share)))
     }
 
     /** 列出所有錄製檔（最新在前），供選取回放或刪除 */

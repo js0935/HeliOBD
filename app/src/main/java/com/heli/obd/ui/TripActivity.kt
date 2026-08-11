@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.Manifest
@@ -16,12 +21,13 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.heli.obd.MainActivity
 import com.heli.obd.R
+import com.heli.obd.trip.FuelCalibration
 import com.heli.obd.trip.TripRecorder
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -30,7 +36,7 @@ import java.util.Locale
 /**
  * 行程回顧：記錄每次騎乘的統計數據（時長/里程/速度/轉速），並檢視歷史行程。
  */
-class TripActivity : AppCompatActivity() {
+class TripActivity : BaseActivity() {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
     private val recorder by lazy { TripRecorder(this, obd) }
@@ -46,9 +52,13 @@ class TripActivity : AppCompatActivity() {
     private lateinit var liveFuelTotal: TextView
     private lateinit var liveFuelDynamic: TextView
     private lateinit var liveFuelStatic: TextView
+    private lateinit var liveIdleTime: TextView
     private lateinit var liveFuelCost: TextView
     private lateinit var fuelPriceEdit: android.widget.EditText
+    private lateinit var calBtn: TextView
     private lateinit var historyContainer: LinearLayout
+    private lateinit var totalStatsCard: LinearLayout
+    private lateinit var totalStatsText: TextView
 
     private val prefs by lazy { getSharedPreferences("trip_prefs", MODE_PRIVATE) }
 
@@ -75,9 +85,13 @@ class TripActivity : AppCompatActivity() {
         liveFuelTotal = findViewById(R.id.live_fuel_total)
         liveFuelDynamic = findViewById(R.id.live_fuel_dynamic)
         liveFuelStatic = findViewById(R.id.live_fuel_static)
+        liveIdleTime = findViewById(R.id.live_idle_time)
         liveFuelCost = findViewById(R.id.live_fuel_cost)
         fuelPriceEdit = findViewById(R.id.fuel_price_edit)
+        calBtn = findViewById(R.id.btn_calibration)
         historyContainer = findViewById(R.id.history_container)
+        totalStatsCard = findViewById(R.id.total_stats_card)
+        totalStatsText = findViewById(R.id.total_stats_text)
 
         fuelPriceEdit.setText(
             prefs.getFloat(KEY_FUEL_PRICE, 30f).let {
@@ -89,6 +103,14 @@ class TripActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
+        calBtn.setOnClickListener { showCalibrationDialog() }
+        calBtn.text = getString(
+            if (FuelCalibration.startOdo(this) != null) {
+                R.string.trip_cal_active
+            } else {
+                R.string.trip_calibration
+            }
+        )
         recordBtn.setOnClickListener {
             if (recorder.isRecording()) stopRecording() else startRecording()
         }
@@ -195,19 +217,26 @@ class TripActivity : AppCompatActivity() {
         liveMaxSpeed.text = live.maxSpeed.toString()
         liveAvgSpeed.text = "%.0f".format(live.avgSpeedKmh)
         liveFuelRate.text = getString(
-            R.string.trip_fuel_unit,
-            if (live.avgFuelRateLh > 0.0) {
-                "%.1f".format(live.avgFuelRateLh)
-            } else {
-                "%.1f".format(recorder.fuelRate(live.avgSpeedKmh))
-            }
+            R.string.trip_fuel_unit, "%.1f".format(fuelConsumption(live))
         )
-        liveFuelTotal.text = getString(R.string.trip_fuel_liter, "%.2f".format(live.totalFuelL))
+        liveFuelTotal.text = getString(
+            R.string.trip_fuel_liter, "%.2f".format(live.totalFuelL * FuelCalibration.factor(this))
+        )
         liveFuelDynamic.text = "%.2f".format(live.litersDynamic)
         liveFuelStatic.text = "%.2f".format(live.litersStatic)
+        liveIdleTime.text = formatDuration(live.idleTimeSec)
         liveFuelCost.text = getString(
-            R.string.trip_fuel_cost_value, live.totalFuelL * currentFuelPrice()
+            R.string.trip_fuel_cost_value,
+            live.totalFuelL * FuelCalibration.factor(this) * currentFuelPrice(),
         )
+    }
+
+    /** 平均油耗（L/100km）：有實測油量時以 油量/里程 換算並套用校正係數，否則退回速度查表 */
+    private fun fuelConsumption(trip: TripRecorder.TripSummary): Double {
+        if (trip.distanceKm > 0.0 && trip.totalFuelL > 0.0) {
+            return trip.totalFuelL * FuelCalibration.factor(this) / trip.distanceKm * 100.0
+        }
+        return recorder.fuelRate(trip.avgSpeedKmh)
     }
 
     private fun currentFuelPrice(): Float =
@@ -221,9 +250,123 @@ class TripActivity : AppCompatActivity() {
         }
     }
 
+    private fun showCalibrationDialog() {
+        if (FuelCalibration.startOdo(this) == null) {
+            showBeginCalibration()
+        } else {
+            showFinishCalibration()
+        }
+    }
+
+    private fun showBeginCalibration() {
+        val input = android.widget.EditText(this).apply {
+            hint = getString(R.string.trip_cal_odo_hint)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(getColor(R.color.text_primary))
+            setHintTextColor(getColor(R.color.text_secondary))
+        }
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), 0)
+            addView(input)
+        }
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.trip_cal_begin_title)
+            .setMessage(R.string.trip_cal_begin_msg)
+            .setView(box)
+            .setPositiveButton(R.string.common_ok) { _, _ ->
+                val odo = input.text.toString().toFloatOrNull()
+                if (odo != null && odo > 0f) {
+                    FuelCalibration.begin(this, odo)
+                    calBtn.text = getString(R.string.trip_cal_active)
+                    Toast.makeText(
+                        this,
+                        getString(R.string.trip_cal_begin_done, "%.1f".format(odo)),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                } else {
+                    Toast.makeText(this, R.string.trip_cal_invalid, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    private fun showFinishCalibration() {
+        val odoInput = android.widget.EditText(this).apply {
+            hint = getString(R.string.trip_cal_odo_hint)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(getColor(R.color.text_primary))
+            setHintTextColor(getColor(R.color.text_secondary))
+        }
+        val fuelInput = android.widget.EditText(this).apply {
+            hint = getString(R.string.trip_cal_fuel_hint)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(getColor(R.color.text_primary))
+            setHintTextColor(getColor(R.color.text_secondary))
+        }
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), 0)
+            addView(odoInput)
+            addView(fuelInput)
+        }
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.trip_cal_finish_title)
+            .setMessage(R.string.trip_cal_finish_msg)
+            .setView(box)
+            .setPositiveButton(R.string.common_ok) { _, _ ->
+                val odo = odoInput.text.toString().toFloatOrNull()
+                val fuel = fuelInput.text.toString().toFloatOrNull()
+                if (odo != null && fuel != null && odo > 0f && fuel > 0f) {
+                    val estFuel = recorder.loadTrips()
+                        .filter { it.startTime >= FuelCalibration.startTime(this) }
+                        .sumOf { it.totalFuelL }
+                    val result = FuelCalibration.finish(this, odo, fuel, estFuel)
+                    if (result == null) {
+                        Toast.makeText(this, R.string.trip_cal_invalid, Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    calBtn.text = getString(R.string.trip_calibration)
+                    val msg = if (result.estL100 > 0.0) {
+                        getString(
+                            R.string.trip_cal_result,
+                            "%.1f".format(result.actualL100),
+                            "%.1f".format(result.estL100),
+                            "%.2f".format(result.factor),
+                        )
+                    } else {
+                        getString(
+                            R.string.trip_cal_actual_only, "%.1f".format(result.actualL100)
+                        )
+                    }
+                    AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                        .setTitle(R.string.trip_cal_finish_title)
+                        .setMessage(msg)
+                        .setPositiveButton(R.string.common_ok, null)
+                        .show()
+                    renderTotalStats(recorder.loadTrips())
+                    renderHistory()
+                } else {
+                    Toast.makeText(this, R.string.trip_cal_invalid, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .setNeutralButton(R.string.trip_cal_cancel) { _, _ ->
+                FuelCalibration.cancel(this)
+                calBtn.text = getString(R.string.trip_calibration)
+                Toast.makeText(this, R.string.trip_cal_cancel, Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
     private fun renderHistory() {
         historyContainer.removeAllViews()
         val trips = recorder.loadTrips()
+        renderTotalStats(trips)
         if (trips.isEmpty()) {
             val empty = TextView(this)
             empty.text = getString(R.string.trip_empty)
@@ -234,6 +377,28 @@ class TripActivity : AppCompatActivity() {
             return
         }
         trips.forEach { addTripCard(it) }
+    }
+
+    /** 旅程總覽：所有歷史行程的合計統計 */
+    private fun renderTotalStats(trips: List<TripRecorder.TripSummary>) {
+        if (trips.isEmpty()) {
+            totalStatsCard.visibility = View.GONE
+            return
+        }
+        totalStatsCard.visibility = View.VISIBLE
+        val totalDistance = trips.sumOf { it.distanceKm }
+        val totalDuration = trips.sumOf { it.durationSec }
+        val totalFuel = trips.sumOf { it.totalFuelL * FuelCalibration.factor(this) }
+        val totalCost = trips.sumOf { it.totalFuelL * FuelCalibration.factor(this) * currentFuelPrice() }
+        totalStatsText.text = buildString {
+            append(getString(R.string.trip_total_count, trips.size)).append('\n')
+            append(getString(R.string.trip_total_distance, totalDistance)).append('\n')
+            append(getString(R.string.trip_total_duration, formatDuration(totalDuration)))
+            if (totalFuel > 0.0) {
+                append('\n').append(getString(R.string.trip_total_fuel, totalFuel))
+                append('\n').append(getString(R.string.trip_total_cost, totalCost))
+            }
+        }
     }
 
     private fun addTripCard(trip: TripRecorder.TripSummary) {
@@ -369,9 +534,13 @@ class TripActivity : AppCompatActivity() {
         append(getString(R.string.trip_avg_rpm)).append("：").append("%.0f".format(trip.avgRpm)).append('\n')
         append(getString(R.string.trip_avg_coolant)).append("：")
             .append("%.0f".format(trip.avgCoolant)).append(getString(R.string.common_unit_celsius)).append('\n')
+        if (trip.idleTimeSec > 0) {
+            append(getString(R.string.trip_idle_time)).append("：")
+                .append(formatDuration(trip.idleTimeSec)).append('\n')
+        }
         if (trip.totalFuelL > 0) {
             append(getString(R.string.trip_fuel_total)).append("：")
-                .append("%.2f".format(trip.totalFuelL)).append(" L\n")
+                .append("%.2f".format(trip.totalFuelL * FuelCalibration.factor(this@TripActivity))).append(" L\n")
         }
         if (trip.litersDynamic > 0.0 || trip.litersStatic > 0.0) {
             append(getString(R.string.trip_fuel_dynamic)).append("：")
@@ -381,7 +550,8 @@ class TripActivity : AppCompatActivity() {
             append(getString(R.string.trip_fuel_cost_label)).append("（")
                 .append(getString(R.string.trip_fuel_price_per_l, currentFuelPrice())).append("）：")
                 .append(getString(
-                    R.string.trip_fuel_cost_value, trip.totalFuelL * currentFuelPrice()
+                    R.string.trip_fuel_cost_value,
+                    trip.totalFuelL * FuelCalibration.factor(this@TripActivity) * currentFuelPrice(),
                 )).append('\n')
         }
         append(getString(R.string.trip_samples)).append("：").append(trip.samples)

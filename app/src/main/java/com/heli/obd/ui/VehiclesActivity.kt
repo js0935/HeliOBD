@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.graphics.Typeface
@@ -11,7 +16,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.MainActivity
 import com.heli.obd.R
@@ -23,7 +28,7 @@ import kotlinx.coroutines.withContext
 /**
  * 多車管理：新增/編輯/刪除車籍資料，並指定目前使用的車輛。
  */
-class VehiclesActivity : AppCompatActivity() {
+class VehiclesActivity : BaseActivity() {
 
     private val store by lazy { VehicleStore(this) }
     private lateinit var container: LinearLayout
@@ -98,7 +103,11 @@ class VehiclesActivity : AppCompatActivity() {
         card.addView(head)
 
         val detail = TextView(this)
-        val parts = listOf(vehicle.brand, vehicle.engineCc, vehicle.note).filter { it.isNotBlank() }
+        val typeLabel = when (vehicle.type) {
+            VehicleStore.TYPE_CAR -> getString(R.string.vehicle_type_car)
+            else -> getString(R.string.vehicle_type_motorcycle)
+        }
+        val parts = listOf(typeLabel, vehicle.brand, vehicle.engineCc, vehicle.note).filter { it.isNotBlank() }
         detail.text = if (parts.isEmpty()) "" else parts.joinToString(" ｜ ")
         detail.textSize = 13f
         detail.setTextColor(getColor(R.color.text_secondary))
@@ -195,6 +204,51 @@ class VehiclesActivity : AppCompatActivity() {
                 setHintTextColor(getColor(R.color.text_secondary))
             }
 
+        var selectedType = existing?.type ?: VehicleStore.TYPE_MOTORCYCLE
+
+        val typeRow = LinearLayout(this)
+        typeRow.orientation = LinearLayout.HORIZONTAL
+        typeRow.gravity = Gravity.CENTER_VERTICAL
+
+        var carChip: TextView? = null
+        var bikeChip: TextView? = null
+
+        fun styleChip(chip: TextView, selected: Boolean) {
+            chip.setBackgroundResource(if (selected) R.drawable.bg_button_accent else R.drawable.bg_card)
+            chip.setTextColor(
+                if (selected) android.graphics.Color.WHITE else getColor(R.color.text_secondary)
+            )
+        }
+
+        fun refreshChips() {
+            carChip?.let { styleChip(it, selectedType == VehicleStore.TYPE_CAR) }
+            bikeChip?.let { styleChip(it, selectedType == VehicleStore.TYPE_MOTORCYCLE) }
+        }
+
+        fun makeChip(textRes: Int, key: String): TextView = TextView(this).apply {
+            text = getString(textRes)
+            textSize = 14f
+            setPadding(dp(16), dp(6), dp(16), dp(6))
+            setOnClickListener {
+                selectedType = key
+                refreshChips()
+            }
+        }
+
+        carChip = makeChip(R.string.vehicle_type_car, VehicleStore.TYPE_CAR)
+        bikeChip = makeChip(R.string.vehicle_type_motorcycle, VehicleStore.TYPE_MOTORCYCLE)
+        refreshChips()
+
+        val carLp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
+        carLp.setMargins(0, dp(8), dp(8), dp(8))
+        typeRow.addView(carChip, carLp)
+        typeRow.addView(bikeChip)
+
+        form.addView(typeRow)
+
         val nameField = field(R.string.vehicles_name_hint, existing?.name.orEmpty())
         val brandField = field(R.string.vehicles_brand_hint, existing?.brand.orEmpty())
         val ccField = field(R.string.vehicles_cc_hint, existing?.engineCc.orEmpty())
@@ -224,6 +278,7 @@ class VehiclesActivity : AppCompatActivity() {
                         brand = brandField.text.toString().trim(),
                         engineCc = ccField.text.toString().trim(),
                         note = noteField.text.toString().trim(),
+                        type = selectedType,
                     )
                 )
                 renderList()

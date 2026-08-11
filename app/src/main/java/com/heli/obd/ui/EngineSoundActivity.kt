@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.media.AudioAttributes
@@ -9,7 +14,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.ObdManager
@@ -24,7 +29,7 @@ import kotlin.random.Random
  * 近似引擎點火脈衝，另加隨轉速放大的氣流雜訊；頻率平滑追蹤產生轉速
  * 爬升/下降時的滑音感。
  */
-class EngineSoundActivity : AppCompatActivity(), ObdManager.Listener {
+class EngineSoundActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 

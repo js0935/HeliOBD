@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.content.Context
@@ -28,6 +33,7 @@ class GaugeView @JvmOverloads constructor(
     private var redBelow = 0f
     private var value = 0f
     private var hasValue = false
+    private var customColor: Int? = null
 
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -85,6 +91,12 @@ class GaugeView @JvmOverloads constructor(
         }
     }
 
+    /** 設定單色模式：弧環/指針/數值使用指定顏色（取代彩虹漸層）。傳 null 恢復漸層。 */
+    fun setColor(color: Int?) {
+        customColor = color
+        invalidate()
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val cx = width / 2f
@@ -93,7 +105,7 @@ class GaugeView @JvmOverloads constructor(
         val stroke = if (isLarge()) dp(14f) else dp(10f)
         val radius = minOf(width, height) / 2f - stroke / 2f - dp(4f)
 
-        val primary = colorRes(R.color.primary)
+        val primary = customColor ?: colorRes(R.color.primary)
         val danger = colorRes(R.color.danger)
         val textPrimary = colorRes(R.color.text_primary)
         val textSecondary = colorRes(R.color.text_secondary)
@@ -106,8 +118,8 @@ class GaugeView @JvmOverloads constructor(
         minorTickPaint.strokeWidth = dp(1f)
 
         trackPaint.color = colorRes(R.color.surface_alt)
-        pointerPaint.color = textPrimary
-        valuePaint.color = textPrimary
+        pointerPaint.color = customColor ?: textPrimary
+        valuePaint.color = customColor ?: textPrimary
         unitPaint.color = textSecondary
         majorTickPaint.color = textSecondary
         minorTickPaint.color = textSecondary
@@ -131,10 +143,17 @@ class GaugeView @JvmOverloads constructor(
         }
 
         val alert = (redFrom <= max && value >= redFrom) || (redBelow > 0f && value <= redBelow)
+        if (alert) {
+            pointerPaint.color = danger
+            valuePaint.color = danger
+        }
         if (progress > 0f) {
             if (alert) {
                 arcPaint.shader = null
                 arcPaint.color = danger
+            } else if (customColor != null) {
+                arcPaint.shader = null
+                arcPaint.color = customColor!!
             } else {
                 arcPaint.color = primary
                 arcPaint.shader = SweepGradient(

@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.os.Bundle
@@ -5,7 +10,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.ObdManager
@@ -14,7 +19,7 @@ import com.heli.obd.scoring.DrivingScoreEngine
 /**
  * 駕駛評分畫面：即時監聽 OBD 數據，以本機規則計算本次騎乘評分。
  */
-class DrivingScoreActivity : AppCompatActivity(), ObdManager.Listener {
+class DrivingScoreActivity : BaseActivity(), ObdManager.Listener {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
     private val engine = DrivingScoreEngine()

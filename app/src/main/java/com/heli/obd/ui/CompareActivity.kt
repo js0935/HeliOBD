@@ -1,3 +1,8 @@
+/*
+ * 軟體屬名：禾秝軟體開發團隊
+ * 代碼：洪俊士
+ * 版本：1.0.0
+ */
 package com.heli.obd.ui
 
 import android.os.Bundle
@@ -7,7 +12,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.ObdManager
@@ -18,7 +23,7 @@ import java.util.Locale
 /**
  * 數據對比：捕捉兩組 OBD 即時數據快照，逐項比較並顯示差異。
  */
-class CompareActivity : AppCompatActivity() {
+class CompareActivity : BaseActivity() {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
 
