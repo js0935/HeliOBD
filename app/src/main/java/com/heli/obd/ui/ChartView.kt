@@ -11,12 +11,15 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
+import kotlin.math.roundToInt
 
 /**
  * 捲動多線曲線圖（自繪，無外部依賴）。
  *
  * 每系列以固定範圍正規化（避免 RPM 壓扁其他訊號），顯示最近 [windowSize] 個樣本。
+ * 支援縮放（[setWindowSize]）、觸控游標讀值（[onCursorMoved]）與直方圖模式（[histogramMode]）。
  */
 class ChartView @JvmOverloads constructor(
     context: Context,
@@ -25,8 +28,22 @@ class ChartView @JvmOverloads constructor(
 
     data class Series(val label: String, val unit: String, val maxValue: Float, val color: Int)
 
-    private val windowSize = 60
+    private var windowSize = 60
     private val samples = ArrayDeque<Map<String, Float>>()
+
+    /** 游標所在樣本索引（-1 表示無游標），由觸控更新 */
+    var cursorIndex = -1
+        private set
+
+    /** 游標移動回呼：回傳該樣本的所有系列值，無游標時為 null */
+    var onCursorMoved: ((Map<String, Float>?) -> Unit)? = null
+
+    /** 直方圖模式：以最左側（最早）樣本為基準，顯示最近樣本的數值分布 */
+    var histogramMode = false
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     private var series: List<Series> = emptyList()
     private var seriesMap = emptyMap<String, Series>()
@@ -50,12 +67,26 @@ class ChartView @JvmOverloads constructor(
         color = Color.rgb(148, 163, 184)
         textSize = 18f
     }
+    private val cursorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(255, 255, 255)
+        style = Paint.Style.STROKE
+        strokeWidth = 1.5f
+    }
 
     fun setSeries(list: List<Series>) {
         series = list
         seriesMap = list.associateBy { it.label }
         invalidate()
     }
+
+    /** 調整顯示視窗大小（縮放）：值越小圖形放大，顯示越少樣本 */
+    fun setWindowSize(size: Int) {
+        windowSize = size.coerceIn(10, 600)
+        while (samples.size > windowSize) samples.removeFirst()
+        invalidate()
+    }
+
+    fun getWindowSize(): Int = windowSize
 
     fun addSample(values: Map<String, Float>) {
         if (values.isEmpty()) return
@@ -81,6 +112,39 @@ class ChartView @JvmOverloads constructor(
 
     fun clear() {
         samples.clear()
+        cursorIndex = -1
+        invalidate()
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (samples.isEmpty()) return super.onTouchEvent(event)
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                updateCursor(event.x)
+                return true
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                cursorIndex = -1
+                onCursorMoved?.invoke(null)
+                invalidate()
+                return true
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+    private fun updateCursor(touchX: Float) {
+        val padLeft = dp(46f)
+        val plotW = width.toFloat() - padLeft - dp(10f)
+        if (plotW <= 0f) return
+        val n = samples.size
+        if (n < 1) return
+        val stepX = plotW / windowSize
+        // 與 drawSeriesLines 相同的座標映射：x = padLeft + plotW - (n-1-i)*stepX
+        val raw = (padLeft + plotW - touchX) / stepX
+        val i = (n - 1 - raw).roundToInt().coerceIn(0, n - 1)
+        cursorIndex = i
+        onCursorMoved?.invoke(samples[i])
         invalidate()
     }
 
@@ -95,9 +159,14 @@ class ChartView @JvmOverloads constructor(
         if (plotW <= 0 || plotH <= 0) return
 
         drawGrid(canvas, padLeft, plotW, plotH, padBottom)
-        drawSeriesLines(canvas, padLeft, plotW, plotH, padBottom)
+        if (histogramMode) {
+            drawHistogram(canvas, padLeft, plotW, plotH, padBottom)
+        } else {
+            drawSeriesLines(canvas, padLeft, plotW, plotH, padBottom)
+        }
         drawLegend(canvas, padLeft, plotW, padBottom)
         drawStats(canvas, padLeft, plotW, padBottom)
+        drawCursor(canvas, padLeft, plotW, plotH, padBottom)
     }
 
     private fun drawGrid(canvas: Canvas, padLeft: Float, plotW: Float, plotH: Float, padBottom: Float) {
@@ -139,6 +208,58 @@ class ChartView @JvmOverloads constructor(
             }
             canvas.drawPath(path, linePaint)
         }
+    }
+
+    /** 直方圖：將各系列數值分 bin 統計，繪製出現次數條狀圖 */
+    private fun drawHistogram(
+        canvas: Canvas,
+        padLeft: Float,
+        plotW: Float,
+        plotH: Float,
+        padBottom: Float,
+    ) {
+        val n = samples.size
+        if (n < 2) return
+        val top = dp(10f)
+        val base = top + plotH
+        val binCount = 10
+        val barW = plotW / binCount
+        for (s in series) {
+            val pts = samples.mapNotNull { it[s.label] }
+            if (pts.size < 2) continue
+            val min = pts.min()
+            val max = pts.max()
+            val range = (max - min).coerceAtLeast(1e-6f)
+            val bins = IntArray(binCount)
+            for (v in pts) {
+                val idx = (((v - min) / range) * binCount).toInt().coerceIn(0, binCount - 1)
+                bins[idx]++
+            }
+            val maxCount = bins.max().coerceAtLeast(1)
+            linePaint.color = s.color
+            linePaint.strokeWidth = (barW * 0.7f).coerceAtLeast(1f)
+            for (b in 0 until binCount) {
+                val h = plotH * (bins[b].toFloat() / maxCount)
+                val cx = padLeft + barW * (b + 0.5f)
+                canvas.drawLine(cx, base, cx, base - h, linePaint)
+            }
+            linePaint.strokeWidth = 3f
+        }
+    }
+
+    private fun drawCursor(
+        canvas: Canvas,
+        padLeft: Float,
+        plotW: Float,
+        plotH: Float,
+        padBottom: Float,
+    ) {
+        if (cursorIndex < 0 || cursorIndex >= samples.size) return
+        val n = samples.size
+        val stepX = plotW / windowSize
+        val x = padLeft + plotW - (n - 1 - cursorIndex) * stepX
+        val top = dp(10f)
+        canvas.drawLine(x, top, x, top + plotH, cursorPaint)
     }
 
     private fun drawLegend(canvas: Canvas, padLeft: Float, plotW: Float, padBottom: Float) {

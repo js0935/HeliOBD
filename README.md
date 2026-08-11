@@ -27,6 +27,9 @@ APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
 |---|---|
 | 即時數據（轉速/車速/水溫/電壓） | 完成 |
 | 故障碼讀取 / 清除 | 完成 |
+| ECU 模組掃描（11-bit CAN header 探測） | 完成 |
+| O2/EVAP 測試（Mode 05 / Mode 08） | 完成 |
+| 多階段測試助理（RPM 階梯/燃油修正/O2 響應） | 完成 |
 | 引擎聲浪模擬 | 完成 |
 | AI 診斷（自訂規則引擎） | 完成 |
 | 行程回顧（含 GPS 軌跡、油耗估算、CSV 匯出） | 完成 |
@@ -39,6 +42,7 @@ APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
 | 馬力/扭力估算（Dyno） | 完成 |
 | 即時油耗（含加油校準） | 完成 |
 | 數據錄製 / 回放（JSON/CSV） | 完成 |
+| 回放進階分析（參數多選/縮放/游標讀值/直方圖） | 完成 |
 | 語音警示開關 | 完成 |
 | 日夜模式（深色/淺色/跟隨系統） | 完成 |
 | 甩尾圓環（G 值量測） | 完成 |
@@ -59,8 +63,8 @@ app/src/main/java/com/heli/obd/
 │   └── LicenseActivity.kt  授權管理畫面
 ├── elm/                    ELM327 藍牙層
 │   ├── ObdManager.kt       掃描/連線/AT 指令/輪詢/故障碼/模擬模式
-│   ├── ObdDecoder.kt       回應解碼（RPM/車速/水溫/電壓/DTC）
-│   ├── ObdConstants.kt     PID 與 DTC 描述表
+│   ├── ObdDecoder.kt       回應解碼（RPM/車速/水溫/電壓/DTC/O2/EVAP）
+│   ├── ObdConstants.kt     PID 與 DTC 描述表（含 ECU header / Mode 05 / Mode 08）
 │   ├── BtPermissions.kt    藍牙權限（8–11 與 12+）
 │   ├── AlertMonitor.kt     閾值警示（水溫/轉速/電壓 + 音效/震動）
 │   └── DemoConfig.kt       模擬模式全域開關（SharedPreferences）
@@ -87,12 +91,15 @@ app/src/main/java/com/heli/obd/
     ├── DataReplayActivity.kt 數據回放（曲線圖）
     ├── SkidPadActivity.kt    甩尾圓環 G 值量測
     ├── SkidPadView.kt        圓環軌跡繪圖 View
+    ├── EcuScanActivity.kt    ECU 模組掃描
+    ├── O2EvapActivity.kt     O2/EVAP 測試
+    ├── StageTestActivity.kt 多階段測試助理
     ├── TripTrackView.kt      軌跡繪圖 View
     └── FeaturePlaceholderActivity.kt  占位
 ```
 
 ## 現況
 
-全功能已交付並通過 `assembleDebug` 建置。主畫面包含 23 個功能入口；
+全功能已交付並通過 `assembleDebug` 建置。主畫面包含 26 個功能入口；
 支援日夜模式（設定 → 外觀模式：深色/淺色/跟隨系統）；
 模擬模式提供完整體驗（無需 ELM327 硬體）。

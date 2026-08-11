@@ -37,6 +37,27 @@ data class MonitorTest(
     val cylinder: Int? = null,
 )
 
+/** Mode 05 氧感測器測試單一結果 */
+data class O2Test(
+    val sensor: Int,
+    val pid: Int,
+    val nameRes: Int,
+    val value: Float?,
+    val unit: String,
+)
+
+/** Mode 08 雙向控制測試結果 */
+data class EvapTest(
+    val status: Int,
+    @StringRes val statusRes: Int,
+)
+
+/** ECU 模組掃描結果（11-bit CAN header → 模組名稱） */
+data class EcuModule(
+    val header: String,
+    @StringRes val nameRes: Int,
+)
+
 /**
  * OBD 回應解碼器（純邏輯，無 Android 依賴）。
  *
@@ -201,6 +222,41 @@ object ObdDecoder {
     }
 
     private fun valueWidth(tid: Int, testId: Int): Int = 2
+
+    /**
+     * Mode 05 氧感測器測試結果（`45 <PID> <A> <B> <C> <D>`）。
+     * PID 01-06 為感測器 1、07-0C 為感測器 2、0D-12 為感測器 3、13-18 為感測器 4；
+     * 每組內 1-4 為閾值電壓（/8192 V）、5-6 為轉換時間（/1000 s）。
+     */
+    fun o2Tests(hexResponse: String): List<O2Test> {
+        val bytes = parseBytes(hexResponse) ?: return emptyList()
+        if (bytes.size < 3 || bytes[0] != 0x45) return emptyList()
+        val result = mutableListOf<O2Test>()
+        var i = 1
+        while (i + 5 <= bytes.size) {
+            val pid = bytes[i]
+            val a = bytes[i + 1]
+            val b = bytes[i + 2]
+            val sensor = ObdConstants.o2SensorOf(pid) ?: break
+            val nameRes = ObdConstants.O2_TEST_NAMES[pid] ?: break
+            val withinGroup = ((pid - 1) % 6) + 1
+            val isVoltage = withinGroup <= 4
+            val raw = (a shl 8) or b
+            val value = if (isVoltage) raw / 8192f else raw / 1000f
+            result.add(O2Test(sensor, pid, nameRes, value, if (isVoltage) "V" else "s"))
+            i += 5
+        }
+        return result
+    }
+
+    /** Mode 08 EVAP 測試狀態（`48 <PID> <status>`）：0=未開始、1=進行中、2=通過、3=失敗、4=無法執行 */
+    fun evapStatus(hexResponse: String): EvapTest? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3 || bytes[0] != 0x48) return null
+        val status = bytes[2]
+        val nameRes = ObdConstants.EVAP_STATUS_NAMES[status] ?: R.string.evap_status_unknown
+        return EvapTest(status, nameRes)
+    }
 
     /**
      * 校正 ID（mode 09 PID 0A）：多幀 ASCII，解析方式同 VIN（剝離 ISO-TP 幀標頭與續幀索引）。

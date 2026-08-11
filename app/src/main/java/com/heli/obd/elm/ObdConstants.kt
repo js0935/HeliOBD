@@ -37,10 +37,61 @@ object ObdConstants {
     const val MODE_FREEZE_FRAME = "02"   // 凍結框
     const val MODE_DTC = "03"            // 讀取故障碼
     const val MODE_CLEAR_DTC = "04"      // 清除故障碼
+    const val MODE_O2_TEST = "05"        // 氧感測器測試（非 CAN 協定）
     const val MODE_MONITOR_TESTS = "06"  // 車載監控測試結果
     const val MODE_PENDING_DTC = "07"    // 待處理故障碼
+    const val MODE_EVAP_TEST = "08"      // 雙向控制測試（EVAP 洩漏）
     const val MODE_VEHICLE_INFO = "09"   // 車輛資訊（VIN）
     const val MODE_PERMANENT_DTC = "0A"  // 永久故障碼
+
+    // ===== Mode 05 氧感測器測試（非 CAN 協定專用） =====
+    /** Mode 05 PID → 測試名稱資源；PID 01-06 為感測器 1、07-0C 感測器 2、0D-12 感測器 3、13-18 感測器 4 */
+    val O2_TEST_NAMES: Map<Int, Int> = mapOf(
+        0x01 to R.string.o2_test_rich_lean_v,
+        0x02 to R.string.o2_test_lean_rich_v,
+        0x03 to R.string.o2_test_low_v,
+        0x04 to R.string.o2_test_high_v,
+        0x05 to R.string.o2_test_rich_lean_t,
+        0x06 to R.string.o2_test_lean_rich_t,
+    )
+
+    /** 依 Mode 05 PID 計算感測器編號（1-4）；超過範圍回傳 null */
+    fun o2SensorOf(pid: Int): Int? {
+        val idx = pid - 1
+        return if (idx in 0 until 24) idx / 6 + 1 else null
+    }
+
+    /** Mode 05 感測器測試 PID 清單（依順序嘗試，支援最多 4 顆感測器） */
+    val O2_TEST_PIDS = (1..24).map { it.toString(16).uppercase().padStart(2, '0') }
+
+    // ===== Mode 08 雙向控制測試 =====
+    const val EVAP_TEST_PID = "01"       // EVAP 系統洩漏測試
+
+    /** EVAP 測試狀態（Mode 08 回應位元組 → 名稱資源） */
+    val EVAP_STATUS_NAMES: Map<Int, Int> = mapOf(
+        0 to R.string.evap_status_idle,
+        1 to R.string.evap_status_running,
+        2 to R.string.evap_status_pass,
+        3 to R.string.evap_status_fail,
+        4 to R.string.evap_status_unavailable,
+    )
+
+    // ===== ECU 模組掃描 =====
+    const val CMD_SET_HEADER = "ATSH"    // 設定 CAN header（後接 3 byte hex）
+    const val CMD_HEADER_OFF = "ATH0"    // 關閉回應 header 顯示
+    const val CMD_HEADER_ON = "ATH1"     // 開啟回應 header 顯示
+
+    /** 常見 ECU 模組 header（11-bit CAN）：header → 模組名稱資源 */
+    val ECU_HEADERS: List<Pair<String, Int>> = listOf(
+        "7E0" to R.string.ecu_engine,
+        "7E1" to R.string.ecu_transmission,
+        "7E2" to R.string.ecu_abs,
+        "7E3" to R.string.ecu_airbag,
+        "7E4" to R.string.ecu_bcm,
+        "7E5" to R.string.ecu_instrument,
+        "7E6" to R.string.ecu_eps,
+        "7E7" to R.string.ecu_4wd,
+    )
 
     // ===== Mode 06 測試 ID（TID）與測試項目（TestID） =====
     const val TID_MISFIRE = "01"         // 失火監測
@@ -56,6 +107,7 @@ object ObdConstants {
     )
 
     // ===== 常用 PID =====
+    const val PID_SUPPORTED = "00"       // 支援的 PID 清單（01-20）
     const val PID_STATUS = "01"          // I/M 就緒狀態
     const val PID_FREEZE_DTC = "02"      // 凍結框觸發碼
     const val PID_LOAD = "04"            // 引擎負載

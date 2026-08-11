@@ -130,8 +130,10 @@ class ObdManager(private val appContext: Context) {
         }
     }
 
-    // ===== 分組輪詢（快每輪 / 慢 2 輪 / 自訂 4 輪，跳過輪沿用上次值） =====
+    // ===== 分層輪詢（fast 每輪 / medium 每 2 輪 / slow 每 4 輪，跳過輪沿用上次值） =====
     private var pollTick = 0
+    private var lastVoltage: Float? = null
+    private var lastIntake: Int? = null
     private var lastMaf: Float? = null
     private var lastFuelRate: Float? = null
     private var lastTorqueNm: Float? = null
@@ -462,29 +464,33 @@ class ObdManager(private val appContext: Context) {
         if (demoMode) return simulateLiveData().also { recordHistory(it) }
         if (!isConnected()) return null
         val tick = ++pollTick
-        val slow = tick % 2 == 1
-        val custom = tick % 4 == 1
+        val medium = tick % 2 == 1
+        val slow = tick % 4 == 1
         val rpm = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_RPM)
             ?.let { ObdDecoder.rpm(it) }
         val speed = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SPEED)
             ?.let { ObdDecoder.speed(it) }
         val coolant = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_COOLANT)
             ?.let { ObdDecoder.coolantTemp(it) }
-        val intake = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_INTAKE)
-            ?.let { ObdDecoder.intakeTemp(it) }
-        val voltage = sendCommand(ObdConstants.CMD_VOLTAGE)
-            ?.let { ObdDecoder.voltage(it) }
         val load = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_LOAD)
             ?.let { ObdDecoder.engineLoad(it) }
-        val maf = if (slow) {
+        val voltage = if (medium) {
+            sendCommand(ObdConstants.CMD_VOLTAGE)
+                ?.let { ObdDecoder.voltage(it) }?.also { lastVoltage = it }
+        } else lastVoltage
+        val intake = if (medium) {
+            sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_INTAKE)
+                ?.let { ObdDecoder.intakeTemp(it) }?.also { lastIntake = it }
+        } else lastIntake
+        val maf = if (medium) {
             sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_MAF)
                 ?.let { ObdDecoder.maf(it) }?.also { lastMaf = it }
         } else lastMaf
-        val fuelRate = if (slow) {
+        val fuelRate = if (medium) {
             sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_FUEL_RATE)
                 ?.let { ObdDecoder.fuelRate(it) }?.also { lastFuelRate = it }
         } else lastFuelRate
-        val torqueNm = if (slow) {
+        val torqueNm = if (medium) {
             sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_TORQUE)
                 ?.let { ObdDecoder.torqueNm(it) }?.also { lastTorqueNm = it }
         } else lastTorqueNm
@@ -496,7 +502,7 @@ class ObdManager(private val appContext: Context) {
             sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_WIDEBAND_AFR)
                 ?.let { ObdDecoder.widebandAfr(it) }?.also { lastAfr = it }
         } else lastAfr
-        val customValues = if (custom) {
+        val customValues = if (slow) {
             lastCustom = readCustomPids()
             lastCustom
         } else {
@@ -628,6 +634,61 @@ class ObdManager(private val appContext: Context) {
             resp?.let { result += ObdDecoder.monitorTests(it) }
         }
         return result
+    }
+
+    /**
+     * 氧感測器測試（mode 05）：僅非 CAN 協定支援，依序嘗試 01-18 PID，
+     * 每組 6 個 PID 對應一顆感測器；不支援的 PID 回應 NO DATA 自動跳過。
+     */
+    fun readO2Tests(): List<O2Test> {
+        if (demoMode) {
+            return listOf(
+                O2Test(1, 0x01, ObdConstants.O2_TEST_NAMES[0x01]!!, 0.45f, "V"),
+                O2Test(1, 0x02, ObdConstants.O2_TEST_NAMES[0x02]!!, 0.10f, "V"),
+                O2Test(1, 0x05, ObdConstants.O2_TEST_NAMES[0x05]!!, 0.08f, "s"),
+                O2Test(2, 0x07, ObdConstants.O2_TEST_NAMES[0x01]!!, 0.55f, "V"),
+            )
+        }
+        if (!isConnected()) return emptyList()
+        val result = mutableListOf<O2Test>()
+        for (pid in ObdConstants.O2_TEST_PIDS) {
+            val resp = sendCommand(ObdConstants.MODE_O2_TEST + pid)
+            resp?.let { result += ObdDecoder.o2Tests(it) }
+        }
+        return result
+    }
+
+    /** EVAP 系統洩漏測試（mode 08 PID 01）：回傳測試狀態 */
+    fun runEvapTest(): EvapTest? {
+        if (demoMode) return EvapTest(2, ObdConstants.EVAP_STATUS_NAMES[2]!!)
+        if (!isConnected()) return null
+        val resp = sendCommand(ObdConstants.MODE_EVAP_TEST + ObdConstants.EVAP_TEST_PID)
+        return resp?.let { ObdDecoder.evapStatus(it) }
+    }
+
+    /**
+     * ECU 模組掃描：依序對常見 11-bit CAN header 送出 mode 01 PID 00，
+     * 有回應代表該模組存在（引擎/變速箱/ABS…）。掃描後重設 header。
+     */
+    fun scanEcuModules(): List<EcuModule> {
+        if (demoMode) {
+            return listOf(
+                EcuModule("7E0", R.string.ecu_engine),
+                EcuModule("7E1", R.string.ecu_transmission),
+                EcuModule("7E2", R.string.ecu_abs),
+            )
+        }
+        if (!isConnected()) return emptyList()
+        val found = mutableListOf<EcuModule>()
+        for ((header, nameRes) in ObdConstants.ECU_HEADERS) {
+            sendCommand(ObdConstants.CMD_SET_HEADER + header)
+            val resp = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SUPPORTED)
+            if (resp?.startsWith("41 00") == true) {
+                found.add(EcuModule(header, nameRes))
+            }
+        }
+        sendCommand(ObdConstants.CMD_SET_HEADER + "0")
+        return found
     }
 
     // ===== 故障碼 =====

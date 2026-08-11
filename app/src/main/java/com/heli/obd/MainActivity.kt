@@ -25,16 +25,19 @@ import com.heli.obd.ui.DataLoggerActivity
 import com.heli.obd.ui.DtcActivity
 import com.heli.obd.ui.DrivingScoreActivity
 import com.heli.obd.ui.DynoActivity
+import com.heli.obd.ui.EcuScanActivity
 import com.heli.obd.ui.EngineSoundActivity
 import com.heli.obd.ui.FeaturePlaceholderActivity
 import com.heli.obd.ui.HudActivity
 import com.heli.obd.ui.HealthCheckActivity
 import com.heli.obd.ui.LiveFuelActivity
-import com.heli.obd.ui.SkidPadActivity
 import com.heli.obd.ui.MaintenanceActivity
+import com.heli.obd.ui.O2EvapActivity
 import com.heli.obd.ui.ObdMonitorActivity
 import com.heli.obd.ui.RealtimeChartActivity
 import com.heli.obd.ui.SettingsActivity
+import com.heli.obd.ui.SkidPadActivity
+import com.heli.obd.ui.StageTestActivity
 import com.heli.obd.ui.TerminalActivity
 import com.heli.obd.ui.TripActivity
 import com.heli.obd.ui.VehiclesActivity
@@ -55,6 +58,9 @@ class MainActivity : BaseActivity() {
     private val entries = listOf(
         Entry(R.drawable.ic_obd, R.string.nav_obd, R.string.obd_desc),
         Entry(R.drawable.ic_dtc, R.string.nav_dtc, R.string.dtc_desc),
+        Entry(R.drawable.ic_obd, R.string.feat_ecu_scan, R.string.feat_desc_ecu_scan),
+        Entry(R.drawable.ic_alert, R.string.feat_o2_evap, R.string.feat_desc_o2_evap),
+        Entry(R.drawable.ic_pid, R.string.feat_stage_test, R.string.feat_desc_stage_test),
         Entry(R.drawable.ic_sound, R.string.feat_engine_sound, R.string.feat_desc_engine_sound),
         Entry(R.drawable.ic_ai, R.string.feat_ai_diag, R.string.feat_desc_ai_diag),
         Entry(R.drawable.ic_trip, R.string.feat_trip_review, R.string.feat_desc_trip_review),
@@ -142,6 +148,9 @@ class MainActivity : BaseActivity() {
         val target: Class<*> = when (entry.titleRes) {
             R.string.nav_obd -> ObdMonitorActivity::class.java
             R.string.nav_dtc -> DtcActivity::class.java
+            R.string.feat_ecu_scan -> EcuScanActivity::class.java
+            R.string.feat_o2_evap -> O2EvapActivity::class.java
+            R.string.feat_stage_test -> StageTestActivity::class.java
             R.string.feat_engine_sound -> EngineSoundActivity::class.java
             R.string.feat_ai_diag -> AiDiagnoseActivity::class.java
             R.string.feat_trip_review -> TripActivity::class.java
