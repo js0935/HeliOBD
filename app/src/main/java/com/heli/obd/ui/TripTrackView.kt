@@ -8,6 +8,7 @@ package com.heli.obd.ui
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
 import com.heli.obd.trip.TripRecorder
@@ -32,6 +33,7 @@ class TripTrackView @JvmOverloads constructor(
     }
     private val startPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF2ECC71.toInt() }
     private val endPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFE74C3C.toInt() }
+    private val trackPath = Path()
 
     fun setSamples(list: List<TripRecorder.Sample>) {
         samples = list.filter { it.lat != 0.0 || it.lng != 0.0 }
@@ -61,11 +63,11 @@ class TripTrackView @JvmOverloads constructor(
         }
 
         val points = samples.map { project(it) }
-        val path = android.graphics.Path()
+        trackPath.reset()
         points.forEachIndexed { index, (x, y) ->
-            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            if (index == 0) trackPath.moveTo(x, y) else trackPath.lineTo(x, y)
         }
-        canvas.drawPath(path, trackPaint)
+        canvas.drawPath(trackPath, trackPaint)
 
         val (sx, sy) = points.first()
         val (ex, ey) = points.last()

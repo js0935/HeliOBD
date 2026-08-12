@@ -52,6 +52,7 @@ class DataChartView @JvmOverloads constructor(
 
     private var seriesList: List<Series> = emptyList()
     private var selectedIndex = -1
+    private val linePath = Path()
 
     private val gestureDetector by lazy {
         GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
@@ -140,14 +141,14 @@ class DataChartView @JvmOverloads constructor(
             val min = s.points.minOrNull() ?: 0f
             val max = s.points.maxOrNull() ?: 0f
             val span = (max - min).takeIf { it > 0f } ?: 1f
-            val path = Path()
+            linePath.reset()
             s.points.forEachIndexed { i, v ->
                 val x = chartLeft + (chartRight - chartLeft) * i / (s.points.size - 1)
                 val py = chartBottom - (v - min) / span * plotH
-                if (i == 0) path.moveTo(x, py) else path.lineTo(x, py)
+                if (i == 0) linePath.moveTo(x, py) else linePath.lineTo(x, py)
             }
             linePaint.color = s.color
-            canvas.drawPath(path, linePaint)
+            canvas.drawPath(linePath, linePaint)
         }
 
         drawAxisLabels(canvas, chartRight)

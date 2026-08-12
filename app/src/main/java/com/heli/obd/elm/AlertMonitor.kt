@@ -5,6 +5,7 @@
  */
 package com.heli.obd.elm
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.media.ToneGenerator
 import android.os.Build
@@ -19,7 +20,12 @@ import java.util.Locale
  * 閾值警示監聽器：掛在 ObdManager 上，當水溫/轉速/電壓超過設定值時發出提示。
  * 閾值由 AlertsActivity 寫入 SharedPreferences（alert_prefs）。
  * 可被多個畫面重複 attach，內部只掛一個監聽執行個體。
+ *
+ * 注意：此單例僅持有 application context（attach 時由 MainActivity 以
+ * applicationContext 傳入，此處再以 applicationContext 正規化），
+ * 與應用程式同生命週期，不會造成 Activity/Fragment 洩漏。
  */
+@SuppressLint("StaticFieldLeak")
 object AlertMonitor {
 
     private const val PREFS = "alert_prefs"
@@ -51,7 +57,7 @@ object AlertMonitor {
     fun attach(obd: ObdManager, appContext: Context) {
         if (attached) return
         attached = true
-        context = appContext
+        context = appContext.applicationContext
         obd.addListener(listener)
     }
 

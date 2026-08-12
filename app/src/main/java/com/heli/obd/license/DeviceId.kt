@@ -5,6 +5,7 @@
  */
 package com.heli.obd.license
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.provider.Settings
 import java.security.MessageDigest
@@ -22,6 +23,7 @@ import java.security.MessageDigest
 object DeviceId {
 
     /** 取得目前裝置的設備碼（32 hex）。 */
+    @SuppressLint("HardwareIds")
     fun get(context: Context): String {
         val androidId = Settings.Secure.getString(
             context.contentResolver,

@@ -332,6 +332,7 @@
 
             <Button
                 android:id="@+id/btn_backup_export"
+                style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_marginEnd="6dp"
@@ -343,6 +344,7 @@
 
             <Button
                 android:id="@+id/btn_backup_import"
+                style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_marginStart="6dp"

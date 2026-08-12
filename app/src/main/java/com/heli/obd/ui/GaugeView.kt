@@ -70,6 +70,23 @@ class GaugeView @JvmOverloads constructor(
     private val startAngle = 135f
     private val sweepAngle = 270f
 
+    private val arcRect = RectF()
+    private var sweepGradient: SweepGradient? = null
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        sweepGradient = SweepGradient(
+            w / 2f, h / 2f,
+            intArrayOf(
+                colorRes(R.color.primary),
+                colorRes(R.color.primary),
+                colorRes(R.color.amber),
+                colorRes(R.color.danger),
+            ),
+            floatArrayOf(0f, 0.375f, 0.75f, 1f),
+        )
+    }
+
     fun setUnit(text: String) {
         unit = text
         invalidate()
@@ -125,7 +142,9 @@ class GaugeView @JvmOverloads constructor(
         minorTickPaint.color = textSecondary
         minorTickPaint.alpha = 0x66
 
-        val rect = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
+        val rect = arcRect.apply {
+            set(cx - radius, cy - radius, cx + radius, cy + radius)
+        }
 
         canvas.drawArc(rect, startAngle, sweepAngle, false, trackPaint)
 
@@ -156,11 +175,7 @@ class GaugeView @JvmOverloads constructor(
                 arcPaint.color = customColor!!
             } else {
                 arcPaint.color = primary
-                arcPaint.shader = SweepGradient(
-                    cx, cy,
-                    intArrayOf(primary, primary, colorRes(R.color.amber), danger),
-                    floatArrayOf(0f, 0.375f, 0.75f, 1f)
-                )
+                arcPaint.shader = sweepGradient
             }
             canvas.drawArc(rect, startAngle, sweepAngle * progress, false, arcPaint)
         }
