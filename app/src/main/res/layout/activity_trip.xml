@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -84,6 +83,7 @@
             android:textStyle="bold" />
 
         <LinearLayout
+            android:baselineAligned="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -206,6 +206,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:baselineAligned="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -314,11 +315,13 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:labelFor="@+id/fuel_price_edit"
                 android:text="@string/trip_fuel_price_label"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
             <EditText
+                android:importantForAutofill="no"
                 android:id="@+id/fuel_price_edit"
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"

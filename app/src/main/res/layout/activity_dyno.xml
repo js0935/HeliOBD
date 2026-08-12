@@ -2,7 +2,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -104,6 +103,7 @@
             android:textSize="13sp" />
 
         <LinearLayout
+            android:baselineAligned="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
@@ -241,6 +241,7 @@
             android:textSize="14sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/dyno_weight"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -261,6 +262,7 @@
             android:textSize="14sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/dyno_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -392,7 +392,7 @@ class TripActivity : BaseActivity() {
         val totalFuel = trips.sumOf { it.totalFuelL * FuelCalibration.factor(this) }
         val totalCost = trips.sumOf { it.totalFuelL * FuelCalibration.factor(this) * currentFuelPrice() }
         totalStatsText.text = buildString {
-            append(getString(R.string.trip_total_count, trips.size)).append('\n')
+            append(resources.getQuantityString(R.plurals.trip_total_count, trips.size, trips.size)).append('\n')
             append(getString(R.string.trip_total_distance, totalDistance)).append('\n')
             append(getString(R.string.trip_total_duration, formatDuration(totalDuration)))
             if (totalFuel > 0.0) {

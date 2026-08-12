@@ -2,7 +2,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -61,7 +60,7 @@
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
 
-            <Switch
+            <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/alert_enabled"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
@@ -82,7 +81,7 @@
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
 
-            <Switch
+            <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/alert_voice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
@@ -92,11 +91,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:labelFor="@+id/alert_coolant"
             android:text="@string/alerts_coolant_label"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/alert_coolant"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -110,11 +111,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:labelFor="@+id/alert_rpm"
             android:text="@string/alerts_rpm_label"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/alert_rpm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -128,11 +131,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:labelFor="@+id/alert_voltage"
             android:text="@string/alerts_voltage_label"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/alert_voltage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

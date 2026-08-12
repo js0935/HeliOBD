@@ -2,7 +2,6 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
     android:fillViewport="true">
 
     <LinearLayout
@@ -78,6 +77,7 @@
 
         <!-- 輸入授權碼 -->
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/license_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

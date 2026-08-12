@@ -66,10 +66,16 @@ class DataChartView @JvmOverloads constructor(
         invalidate()
     }
 
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         gestureDetector.onTouchEvent(event)
         when (event.actionMasked) {
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                performClick()
                 if (selectedIndex >= 0) {
                     selectedIndex = -1
                     invalidate()

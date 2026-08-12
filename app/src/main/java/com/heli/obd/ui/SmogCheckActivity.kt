@@ -95,7 +95,7 @@ class SmogCheckActivity : BaseActivity() {
             R.string.smog_mil,
             getString(if (im.milOn) R.string.smog_mil_on else R.string.smog_mil_off),
         )
-        monitorCountText.text = getString(R.string.smog_ready_count, im.readyCount, im.supportedCount)
+        monitorCountText.text = resources.getQuantityString(R.plurals.smog_ready_count, im.readyCount, im.readyCount, im.supportedCount)
 
         // 判決：MIL/故障碼 → 不可驗車；未就緒 > 2 → 需驅動週期；否則可驗車
         val notReady = im.tests.count { it.supported && !it.ready }
@@ -108,7 +108,7 @@ class SmogCheckActivity : BaseActivity() {
             notReady > 2 -> {
                 verdictText.text = getString(R.string.smog_wait)
                 verdictText.setTextColor(getColor(R.color.amber))
-                verdictDesc.text = getString(R.string.smog_wait_desc, notReady)
+                verdictDesc.text = resources.getQuantityString(R.plurals.smog_wait_desc, notReady, notReady)
             }
             else -> {
                 verdictText.text = getString(R.string.smog_pass)

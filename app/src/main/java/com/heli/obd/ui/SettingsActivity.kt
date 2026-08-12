@@ -314,7 +314,7 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
                 renderState(obd.state)
                 Toast.makeText(
                     this@SettingsActivity,
-                    getString(R.string.backup_imported, restored),
+                    resources.getQuantityString(R.plurals.backup_imported, restored, restored),
                     Toast.LENGTH_LONG,
                 ).show()
             }

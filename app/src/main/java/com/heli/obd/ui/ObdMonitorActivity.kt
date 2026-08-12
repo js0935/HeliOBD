@@ -5,6 +5,7 @@
  */
 package com.heli.obd.ui
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.ClipData
@@ -453,6 +454,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         tileContainer.animate().alpha(1f).translationX(0f).setDuration(200L).start()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setupPageSwipe() {
         val detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(
@@ -470,6 +472,9 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
             }
         })
         tileScroll.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> tileScroll.performClick()
+            }
             detector.onTouchEvent(event)
             false
         }

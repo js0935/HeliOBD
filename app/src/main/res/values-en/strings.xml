@@ -213,7 +213,7 @@
     <string name="feat_custom_pid">Custom PIDs</string>
     <string name="feat_desc_custom_pid">Add sensors &amp; formulas</string>
     <string name="feat_accel">Acceleration Test</string>
-    <string name="feat_desc_accel">0-100 timing, best records</string>
+    <string name="feat_desc_accel">0–100 timing, best records</string>
     <string name="feat_demo">Demo Mode</string>
     <string name="feat_desc_demo">Experience everything without hardware</string>
     <string name="feat_connection">Connection</string>
@@ -247,7 +247,7 @@
     <string name="ff_rule_overheat">Freeze frame: engine overheating</string>
     <string name="ff_advice_overheat">Coolant exceeded 110°C when the fault occurred; check coolant and cooling fan</string>
     <string name="ff_rule_coolant_high">Freeze frame: coolant high</string>
-    <string name="ff_advice_coolant_high">Coolant was in the 101-110°C range when the fault occurred; watch the cooling system</string>
+    <string name="ff_advice_coolant_high">Coolant was in the 101–110°C range when the fault occurred; watch the cooling system</string>
     <string name="ff_rule_high_load">Freeze frame: high load, low speed</string>
     <string name="ff_advice_high_load">High load with low speed when the fault occurred; possible hill climb, heavy load or drivetrain drag</string>
     <string name="ff_rule_overrev">Freeze frame: engine over-rev</string>
@@ -485,7 +485,10 @@
     <string name="trip_fuel_price_per_l">%1$.1f /L</string>
     <string name="trip_idle_time">Idle Time</string>
     <string name="trip_total_stats">Trip Overview</string>
-    <string name="trip_total_count">%1$d trips</string>
+    <plurals name="trip_total_count">
+        <item quantity="one">%1$d trip</item>
+        <item quantity="other">%1$d trips</item>
+    </plurals>
     <string name="trip_total_distance">Total %1$.1f km</string>
     <string name="trip_total_duration">Total Time %1$s</string>
     <string name="trip_total_fuel">Total Fuel %1$.2f L</string>
@@ -535,7 +538,10 @@
     <string name="score_start">Start</string>
     <string name="score_stop">Stop</string>
     <string name="score_counting">Scoring…</string>
-    <string name="score_live">Scoring… (%1$d samples)</string>
+    <plurals name="score_live">
+        <item quantity="one">Scoring… (%1$d sample)</item>
+        <item quantity="other">Scoring… (%1$d samples)</item>
+    </plurals>
     <string name="score_insufficient">Insufficient data — ride for a few more seconds</string>
     <string name="score_done">Done</string>
     <string name="score_hint_idle">Press Start and ride for a while</string>
@@ -559,9 +565,9 @@
     <!-- Acceleration test -->
     <string name="accel_title">Acceleration Test</string>
     <string name="accel_speed_label">Speed km/h</string>
-    <string name="accel_mode_100">0-100 km/h</string>
-    <string name="accel_mode_60">0-60 km/h</string>
-    <string name="accel_mode_quarter">1/4 Mile</string>
+    <string name="accel_mode_100">0–100 km/h</string>
+    <string name="accel_mode_60">0–60 km/h</string>
+    <string name="accel_mode_quarter">¼ Mile</string>
     <string name="accel_time_zero">0.00 s</string>
     <string name="accel_time_format">%.2f s</string>
     <string name="accel_result_format">Time: %.2f s</string>
@@ -611,9 +617,15 @@
     <string name="pid_export_csp">Export .csp</string>
     <string name="pid_import_csp">Import .csp</string>
     <string name="pid_export_empty">No custom PIDs to export</string>
-    <string name="pid_exported">Exported %1$d custom PIDs</string>
+    <plurals name="pid_exported">
+        <item quantity="one">Exported %1$d custom PID</item>
+        <item quantity="other">Exported %1$d custom PIDs</item>
+    </plurals>
     <string name="pid_import_failed">Import failed: bad file format</string>
-    <string name="pid_imported">Imported %1$d custom PIDs</string>
+    <plurals name="pid_imported">
+        <item quantity="one">Imported %1$d custom PID</item>
+        <item quantity="other">Imported %1$d custom PIDs</item>
+    </plurals>
 
     <!-- HUD -->
     <string name="hud_back">← Back</string>
@@ -646,7 +658,10 @@
     <string name="backup_export">Export Backup</string>
     <string name="backup_import">Restore Backup</string>
     <string name="backup_exported">Backup exported</string>
-    <string name="backup_imported">Restored %1$d items. Restart the app to apply.</string>
+    <plurals name="backup_imported">
+        <item quantity="one">Restored %1$d item. Restart the app to apply.</item>
+        <item quantity="other">Restored %1$d items. Restart the app to apply.</item>
+    </plurals>
     <string name="backup_import_failed">Backup failed: bad file format</string>
 
     <!-- EV Leaf battery health -->
@@ -723,10 +738,16 @@
     <string name="skid_pad_hint">Use on a safe closed course; keep the phone level and fixed. Accelerate = longitudinal +, brake = longitudinal −, turn left = lateral −, turn right = lateral +.</string>
     <string name="logger_record">Start recording</string>
     <string name="logger_stop">Stop recording</string>
-    <string name="logger_recording">Recording… %1$d samples</string>
+    <plurals name="logger_recording">
+        <item quantity="one">Recording… %1$d sample</item>
+        <item quantity="other">Recording… %1$d samples</item>
+    </plurals>
     <string name="logger_empty">(empty)</string>
     <string name="logger_no_files">No recordings yet</string>
-    <string name="logger_file_format">%1$d samples</string>
+    <plurals name="logger_file_format">
+        <item quantity="one">%1$d sample</item>
+        <item quantity="other">%1$d samples</item>
+    </plurals>
     <string name="logger_menu_replay">Replay</string>
     <string name="logger_menu_export">Export CSV</string>
     <string name="logger_menu_delete">Delete</string>
@@ -750,7 +771,7 @@
     <string name="dyno_peak">Peak this run</string>
     <string name="dyno_peak_at">Peak @ %1$d RPM</string>
     <string name="dyno_weight_label">Vehicle weight (kg)</string>
-    <string name="dyno_time_label">0-100 km/h seconds</string>
+    <string name="dyno_time_label">0–100 km/h seconds</string>
     <string name="dyno_calc">Calculate</string>
     <string name="dyno_avg_power">Average power</string>
     <string name="dyno_est_peak">Estimated peak HP</string>
@@ -871,11 +892,14 @@
     <string name="feat_vwtp">VW TP 2.0</string>
     <string name="feat_desc_vwtp">VAG sensor formula table browser and simulation</string>
     <string name="vwtp_title">VW TP 2.0 Sensors</string>
-    <string name="vwtp_raw_a_hint">A (0-255)</string>
-    <string name="vwtp_raw_b_hint">B (0-255)</string>
+    <string name="vwtp_raw_a_hint">A (0–255)</string>
+    <string name="vwtp_raw_b_hint">B (0–255)</string>
     <string name="vwtp_random">Random</string>
     <string name="vwtp_hint">Simulation mode: enter raw bytes A/B to compute all sensors instantly</string>
-    <string name="vwtp_sensor_count">%1$d sensors total</string>
+    <plurals name="vwtp_sensor_count">
+        <item quantity="one">%1$d sensor total</item>
+        <item quantity="other">%1$d sensors total</item>
+    </plurals>
     <string name="vwtp_kennzahl_format">#%1$d</string>
     <string name="vwtp_formula_label">Formula: %1$s</string>
     <string name="vwtp_else">else</string>
@@ -916,7 +940,7 @@
     <string name="evap_status_fail">Fail</string>
     <string name="evap_status_unavailable">Not available</string>
     <string name="evap_status_unknown">Unknown</string>
-    <string name="evap_note">Test requires the engine off and fuel level 15-85%%</string>
+    <string name="evap_note">Test requires the engine off and fuel level 15–85%%</string>
     <string name="feat_stage_test">Multi-stage Test</string>
     <string name="feat_desc_stage_test">Structured diagnostic test flow</string>
     <string name="stage_title">Multi-stage Test Assistant</string>
@@ -958,14 +982,20 @@
     <string name="smog_wait">Drive cycle needed</string>
     <string name="smog_fail">Not ready</string>
     <string name="smog_pass_desc">All emissions monitors are ready and no DTCs are set. Expected to pass.</string>
-    <string name="smog_wait_desc">%1$d monitor(s) not ready. Most inspection standards allow up to 2 not-ready monitors for 2000-and-newer vehicles (1 for 1996–1999). Complete the drive cycle below to become ready.</string>
+    <plurals name="smog_wait_desc">
+        <item quantity="one">%1$d monitor not ready. Most inspection standards allow up to 2 not-ready monitors for 2000-and-newer vehicles (1 for 1996–1999). Complete the drive cycle below to become ready.</item>
+        <item quantity="other">%1$d monitors not ready. Most inspection standards allow up to 2 not-ready monitors for 2000-and-newer vehicles (1 for 1996–1999). Complete the drive cycle below to become ready.</item>
+    </plurals>
     <string name="smog_fail_desc">MIL is on or DTCs are set. Fix the problem and clear the codes first.</string>
     <string name="smog_mil">MIL: %1$s</string>
     <string name="smog_mil_on">On</string>
     <string name="smog_mil_off">Off</string>
     <string name="smog_no_data">Cannot read monitor status (not connected)</string>
     <string name="smog_monitors">Monitor status</string>
-    <string name="smog_ready_count">%1$d / %2$d ready</string>
+    <plurals name="smog_ready_count">
+        <item quantity="one">%1$d / %2$d ready</item>
+        <item quantity="other">%1$d / %2$d ready</item>
+    </plurals>
     <string name="smog_drive_cycle">Drive cycle guide</string>
     <string name="smog_drive_cycle_desc">For each not-ready monitor, drive as follows to complete it within 1–3 drive cycles: cold start → city 4–5 min → highway cruise 5–10 min → idle 30 s → coast down to stop.</string>
     <string name="smog_hint_misfire">Continuous: completes after a few minutes of driving.</string>

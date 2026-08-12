@@ -117,6 +117,11 @@ class ChartView @JvmOverloads constructor(
         invalidate()
     }
 
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (samples.isEmpty()) return super.onTouchEvent(event)
         when (event.actionMasked) {
@@ -125,6 +130,7 @@ class ChartView @JvmOverloads constructor(
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                performClick()
                 cursorIndex = -1
                 onCursorMoved?.invoke(null)
                 invalidate()

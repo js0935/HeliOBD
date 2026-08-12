@@ -83,7 +83,7 @@ class CustomPidActivity : BaseActivity() {
                 out.write(content.toByteArray(Charsets.UTF_8))
             } ?: error("null stream")
         }.onSuccess {
-            Toast.makeText(this, getString(R.string.pid_exported, pids.size), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, resources.getQuantityString(R.plurals.pid_exported, pids.size, pids.size), Toast.LENGTH_SHORT).show()
         }.onFailure {
             Toast.makeText(this, R.string.pid_import_failed, Toast.LENGTH_SHORT).show()
         }
@@ -125,7 +125,7 @@ class CustomPidActivity : BaseActivity() {
             count++
         }
         renderList()
-        Toast.makeText(this, getString(R.string.pid_imported, count), Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, resources.getQuantityString(R.plurals.pid_imported, count, count), Toast.LENGTH_SHORT).show()
     }
 
     override fun onResume() {

@@ -96,7 +96,7 @@ class DataLoggerActivity : BaseActivity(), ObdManager.Listener {
         startedAt = System.currentTimeMillis()
         recording = true
         btnRecord.text = getString(R.string.logger_stop)
-        statusText.text = getString(R.string.logger_recording, 0)
+        statusText.text = resources.getQuantityString(R.plurals.logger_recording, 0, 0)
     }
 
     private fun stopRecording() {
@@ -156,7 +156,7 @@ class DataLoggerActivity : BaseActivity(), ObdManager.Listener {
             data.fuelLevel,
             data.moduleVoltage,
         )
-        statusText.text = getString(R.string.logger_recording, samples.size)
+        statusText.text = resources.getQuantityString(R.plurals.logger_recording, samples.size, samples.size)
     }
 
     private fun refreshList() {
@@ -181,7 +181,7 @@ class DataLoggerActivity : BaseActivity(), ObdManager.Listener {
             val count = parseSamples(file).size
             val row = LayoutInflater.from(this).inflate(R.layout.item_dtc, listContainer, false)
             row.findViewById<TextView>(R.id.dtc_code).text = file.name
-            row.findViewById<TextView>(R.id.dtc_desc).text = getString(R.string.logger_file_format, count)
+            row.findViewById<TextView>(R.id.dtc_desc).text = resources.getQuantityString(R.plurals.logger_file_format, count, count)
             row.isClickable = true
             row.setOnClickListener { showFileMenu(file) }
             listContainer.addView(row)

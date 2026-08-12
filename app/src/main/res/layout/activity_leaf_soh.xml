@@ -2,7 +2,6 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
     android:fillViewport="true">
 
     <LinearLayout
@@ -132,6 +131,7 @@
                     android:textSize="13sp" />
 
                 <EditText
+                    android:importantForAutofill="no"
                     android:id="@+id/leaf_edit_km"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -160,6 +160,7 @@
                     android:textSize="13sp" />
 
                 <EditText
+                    android:importantForAutofill="no"
                     android:id="@+id/leaf_edit_soh"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -187,6 +188,7 @@
                     android:textSize="13sp" />
 
                 <EditText
+                    android:importantForAutofill="no"
                     android:id="@+id/leaf_edit_ahr"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -214,6 +216,7 @@
                     android:textSize="13sp" />
 
                 <EditText
+                    android:importantForAutofill="no"
                     android:id="@+id/leaf_edit_hx"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -241,6 +244,7 @@
                     android:textSize="13sp" />
 
                 <EditText
+                    android:importantForAutofill="no"
                     android:id="@+id/leaf_edit_gids"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -256,6 +260,7 @@
             </LinearLayout>
 
             <EditText
+                android:importantForAutofill="no"
                 android:id="@+id/leaf_edit_note"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

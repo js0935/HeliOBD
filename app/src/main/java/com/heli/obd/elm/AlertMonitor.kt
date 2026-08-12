@@ -102,14 +102,9 @@ object AlertMonitor {
         runCatching {
             val vibrator = ctx.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
             if (vibrator?.hasVibrator() == true) {
-                if (Build.VERSION.SDK_INT >= 26) {
-                    vibrator.vibrate(
-                        VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)
-                    )
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator.vibrate(300)
-                }
+                vibrator.vibrate(
+                    VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)
+                )
             }
         }
         Toast.makeText(ctx, message, Toast.LENGTH_LONG).show()

@@ -146,7 +146,10 @@
     <string name="backup_export">匯出備份</string>
     <string name="backup_import">還原備份</string>
     <string name="backup_exported">備份已匯出</string>
-    <string name="backup_imported">已還原 %1$d 筆資料，請重新啟動 App 以套用</string>
+    <plurals name="backup_imported">
+        <item quantity="one">已還原 %1$d 筆資料，請重新啟動 App 以套用</item>
+        <item quantity="other">已還原 %1$d 筆資料，請重新啟動 App 以套用</item>
+    </plurals>
     <string name="backup_import_failed">備份處理失敗：檔案格式錯誤</string>
 
     <!-- 行程回顧 -->
@@ -230,7 +233,7 @@
     <string name="feat_custom_pid">自訂 PID</string>
     <string name="feat_desc_custom_pid">新增車廠專用感測器與公式</string>
     <string name="feat_accel">加速測試</string>
-    <string name="feat_desc_accel">0-100 計時，記錄最佳成績</string>
+    <string name="feat_desc_accel">0–100 計時，記錄最佳成績</string>
     <string name="feat_dyno">馬力/扭力</string>
     <string name="feat_desc_dyno">即時功率與加速性能推算</string>
     <string name="feat_live_fuel">即時油耗</string>
@@ -267,10 +270,16 @@
 <string name="skid_pad_hint">於安全封閉場地使用；手機水平固定放置，加速＝縱向＋、煞車＝縱向－、左轉＝橫向－、右轉＝橫向＋</string>
     <string name="logger_record">開始錄製</string>
     <string name="logger_stop">停止錄製</string>
-    <string name="logger_recording">錄製中… %1$d 筆</string>
+    <plurals name="logger_recording">
+        <item quantity="one">錄製中… %1$d 筆</item>
+        <item quantity="other">錄製中… %1$d 筆</item>
+    </plurals>
     <string name="logger_empty">（空）</string>
     <string name="logger_no_files">尚無錄製檔</string>
-    <string name="logger_file_format">%1$d 筆</string>
+    <plurals name="logger_file_format">
+        <item quantity="one">%1$d 筆</item>
+        <item quantity="other">%1$d 筆</item>
+    </plurals>
     <string name="logger_menu_replay">回放</string>
     <string name="logger_menu_export">匯出 CSV</string>
     <string name="logger_menu_delete">刪除</string>
@@ -294,7 +303,7 @@
     <string name="dyno_peak">本趟峰值</string>
     <string name="dyno_peak_at">峰值 @ %1$d RPM</string>
     <string name="dyno_weight_label">車重（公斤）</string>
-    <string name="dyno_time_label">0-100 km/h 秒數</string>
+    <string name="dyno_time_label">0–100 km/h 秒數</string>
     <string name="dyno_calc">計算</string>
     <string name="dyno_avg_power">平均功率</string>
     <string name="dyno_est_peak">估算峰值馬力</string>
@@ -355,7 +364,7 @@
     <string name="ff_rule_overheat">凍結框：引擎過熱</string>
     <string name="ff_advice_overheat">故障發生時水溫超過 110°C，立即檢查冷卻液與散熱風扇</string>
     <string name="ff_rule_coolant_high">凍結框：水溫偏高</string>
-    <string name="ff_advice_coolant_high">故障發生時水溫位於 101-110°C 高溫區，留意冷卻系統</string>
+    <string name="ff_advice_coolant_high">故障發生時水溫位於 101–110°C 高溫區，留意冷卻系統</string>
     <string name="ff_rule_high_load">凍結框：高負載低速</string>
     <string name="ff_advice_high_load">故障發生時負載高且車速低，可能為爬坡、重拖或傳動阻力</string>
     <string name="ff_rule_overrev">凍結框：引擎超轉</string>
@@ -682,7 +691,10 @@
     <string name="trip_fuel_price_per_l">%1$.1f 元/L</string>
     <string name="trip_idle_time">怠速時間</string>
     <string name="trip_total_stats">旅程總覽</string>
-    <string name="trip_total_count">共 %1$d 趟</string>
+    <plurals name="trip_total_count">
+        <item quantity="one">共 %1$d 趟</item>
+        <item quantity="other">共 %1$d 趟</item>
+    </plurals>
     <string name="trip_total_distance">總里程 %1$.1f km</string>
     <string name="trip_total_duration">總時長 %1$s</string>
     <string name="trip_total_fuel">總油耗 %1$.2f L</string>
@@ -732,7 +744,10 @@
     <string name="score_start">開始計分</string>
     <string name="score_stop">結束</string>
     <string name="score_counting">計分中…</string>
-    <string name="score_live">即時評分中…（樣本 %1$d）</string>
+    <plurals name="score_live">
+        <item quantity="one">即時評分中…（樣本 %1$d）</item>
+        <item quantity="other">即時評分中…（樣本 %1$d）</item>
+    </plurals>
     <string name="score_insufficient">數據不足，請至少騎乘數秒後再結束</string>
     <string name="score_done">本次評分完成</string>
     <string name="score_hint_idle">按下「開始計分」並騎乘一段時間</string>
@@ -756,9 +771,9 @@
     <!-- 加速測試 -->
     <string name="accel_title">加速測試</string>
     <string name="accel_speed_label">車速 km/h</string>
-    <string name="accel_mode_100">0-100 km/h</string>
-    <string name="accel_mode_60">0-60 km/h</string>
-    <string name="accel_mode_quarter">1/4 英里</string>
+    <string name="accel_mode_100">0–100 km/h</string>
+    <string name="accel_mode_60">0–60 km/h</string>
+    <string name="accel_mode_quarter">¼ 英里</string>
     <string name="accel_time_zero">0.00 秒</string>
     <string name="accel_time_format">%.2f 秒</string>
     <string name="accel_result_format">成績：%.2f 秒</string>
@@ -809,9 +824,15 @@
     <string name="pid_export_csp">匯出 .csp</string>
     <string name="pid_import_csp">匯入 .csp</string>
     <string name="pid_export_empty">沒有可匯出的自訂 PID</string>
-    <string name="pid_exported">已匯出 %1$d 筆自訂 PID</string>
+    <plurals name="pid_exported">
+        <item quantity="one">已匯出 %1$d 筆自訂 PID</item>
+        <item quantity="other">已匯出 %1$d 筆自訂 PID</item>
+    </plurals>
     <string name="pid_import_failed">匯入失敗：檔案格式錯誤</string>
-    <string name="pid_imported">已匯入 %1$d 筆自訂 PID</string>
+    <plurals name="pid_imported">
+        <item quantity="one">已匯入 %1$d 筆自訂 PID</item>
+        <item quantity="other">已匯入 %1$d 筆自訂 PID</item>
+    </plurals>
 
     <!-- HUD -->
     <string name="hud_back">← 返回</string>
@@ -850,11 +871,14 @@
     <string name="feat_vwtp">VW TP 2.0</string>
     <string name="feat_desc_vwtp">VAG 感測器公式表瀏覽與模擬計算</string>
     <string name="vwtp_title">VW TP 2.0 感測器</string>
-    <string name="vwtp_raw_a_hint">A (0-255)</string>
-    <string name="vwtp_raw_b_hint">B (0-255)</string>
+    <string name="vwtp_raw_a_hint">A (0–255)</string>
+    <string name="vwtp_raw_b_hint">B (0–255)</string>
     <string name="vwtp_random">隨機</string>
     <string name="vwtp_hint">模擬模式：輸入 raw 位元組 A/B 即時計算全部感測器</string>
-    <string name="vwtp_sensor_count">共 %1$d 個感測器</string>
+    <plurals name="vwtp_sensor_count">
+        <item quantity="one">共 %1$d 個感測器</item>
+        <item quantity="other">共 %1$d 個感測器</item>
+    </plurals>
     <string name="vwtp_kennzahl_format">#%1$d</string>
     <string name="vwtp_formula_label">公式：%1$s</string>
     <string name="vwtp_else">否則</string>
@@ -899,7 +923,7 @@
     <string name="evap_status_fail">失敗</string>
     <string name="evap_status_unavailable">無法執行</string>
     <string name="evap_status_unknown">未知狀態</string>
-    <string name="evap_note">測試需引擎熄火且燃油量 15-85%%</string>
+    <string name="evap_note">測試需引擎熄火且燃油量 15–85%%</string>
 
     <!-- 多階段測試助理 -->
     <string name="feat_stage_test">多階段測試</string>
@@ -946,14 +970,20 @@
     <string name="smog_wait">需先完成驅動週期</string>
     <string name="smog_fail">不可驗車</string>
     <string name="smog_pass_desc">所有排放監測器已就緒且無故障碼，預期可通過檢驗。</string>
-    <string name="smog_wait_desc">尚有 %1$d 個監測器未就緒。多數檢驗標準容許 2000 年後車款最多 2 個未就緒（1996–1999 年款最多 1 個），完成下方驅動週期後即可驗車。</string>
+    <plurals name="smog_wait_desc">
+        <item quantity="one">尚有 %1$d 個監測器未就緒。多數檢驗標準容許 2000 年後車款最多 2 個未就緒（1996–1999 年款最多 1 個），完成下方驅動週期後即可驗車。</item>
+        <item quantity="other">尚有 %1$d 個監測器未就緒。多數檢驗標準容許 2000 年後車款最多 2 個未就緒（1996–1999 年款最多 1 個），完成下方驅動週期後即可驗車。</item>
+    </plurals>
     <string name="smog_fail_desc">檢測燈亮起或存在故障碼，需先排除故障並清除故障碼。</string>
     <string name="smog_mil">檢測燈（MIL）：%1$s</string>
     <string name="smog_mil_on">亮起</string>
     <string name="smog_mil_off">熄滅</string>
     <string name="smog_no_data">無法讀取監測器狀態（未連線）</string>
     <string name="smog_monitors">監測器狀態</string>
-    <string name="smog_ready_count">就緒 %1$d / %2$d</string>
+    <plurals name="smog_ready_count">
+        <item quantity="one">就緒 %1$d / %2$d</item>
+        <item quantity="other">就緒 %1$d / %2$d</item>
+    </plurals>
     <string name="smog_drive_cycle">驅動週期引導</string>
     <string name="smog_drive_cycle_desc">針對未就緒的監測器，依下列方式行駛即可在 1–3 個行車循環內完成：冷啟動 → 市區 4–5 分鐘 → 高速巡航 5–10 分鐘 → 怠速 30 秒 → 滑行減速停車。</string>
     <string name="smog_hint_misfire">連續型：行駛幾分鐘即完成。</string>

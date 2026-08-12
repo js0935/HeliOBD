@@ -132,7 +132,7 @@ class DrivingScoreActivity : BaseActivity(), ObdManager.Listener {
             val score = engine.score()
             scoreNumber.text = String.format(Locale.US, "%d", score)
             scoreGrade.text = gradeText(engine.grade(score))
-            scoreHint.text = getString(R.string.score_live, count)
+            scoreHint.text = resources.getQuantityString(R.plurals.score_live, count, count)
             renderBreakdown()
         }
     }

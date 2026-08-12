@@ -107,7 +107,7 @@ class VwtpSensorsActivity : BaseActivity() {
         valueViews.clear()
 
         val header = TextView(this)
-        header.text = getString(R.string.vwtp_sensor_count, formulas.size)
+        header.text = resources.getQuantityString(R.plurals.vwtp_sensor_count, formulas.size, formulas.size)
         header.textSize = 13f
         header.setTextColor(getColor(R.color.text_secondary))
         header.setPadding(0, dp(2), 0, dp(4))

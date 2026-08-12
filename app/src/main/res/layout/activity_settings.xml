@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -121,6 +120,7 @@
             android:textSize="13sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/settings_elm_cmds"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -239,6 +239,7 @@
             android:textSize="14sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/settings_llm_base_url"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -261,6 +262,7 @@
             android:textSize="14sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/settings_llm_api_key"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -283,6 +285,7 @@
             android:textSize="14sp" />
 
         <EditText
+            android:importantForAutofill="no"
             android:id="@+id/settings_llm_model"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

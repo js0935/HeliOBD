@@ -8,8 +8,8 @@ package com.heli.obd.ui
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
-import android.widget.Switch
 import android.widget.Toast
+import androidx.appcompat.widget.SwitchCompat
 import com.heli.obd.BaseActivity
 import com.heli.obd.R
 import java.util.Locale
@@ -19,8 +19,8 @@ import java.util.Locale
  */
 class AlertsActivity : BaseActivity() {
 
-    private lateinit var enabledSwitch: Switch
-    private lateinit var voiceSwitch: Switch
+    private lateinit var enabledSwitch: SwitchCompat
+    private lateinit var voiceSwitch: SwitchCompat
     private lateinit var coolantField: EditText
     private lateinit var rpmField: EditText
     private lateinit var voltageField: EditText
