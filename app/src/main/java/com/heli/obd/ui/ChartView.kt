@@ -13,6 +13,7 @@ import android.graphics.Path
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -268,7 +269,7 @@ class ChartView @JvmOverloads constructor(
         val baseline = height.toFloat() - dp(6f)
         for (s in series) {
             val value = latest[s.label]
-            val text = "${s.label} ${value?.let { String.format("%.0f%s", it, s.unit) } ?: "—"}"
+            val text = "${s.label} ${value?.let { String.format(Locale.US, "%.0f%s", it, s.unit) } ?: "—"}"
             badgePaint.color = s.color
             val tw = badgePaint.measureText(text)
             if (x + tw > padLeft + plotW) break

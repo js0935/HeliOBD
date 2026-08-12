@@ -23,10 +23,12 @@
         <item name="colorAccent">@color/accent</item>
     </style>
 
-    <style name="Theme.HeliOBD.Splash" parent="Theme.HeliOBD">
-        <!-- 冷啟動期間即顯示深色底，避免白閃 -->
-        <item name="android:windowBackground">@color/bg</item>
-        <item name="android:windowDisablePreview">false</item>
+    <style name="Theme.HeliOBD.Splash" parent="Theme.SplashScreen">
+        <!-- 冷啟動即顯示深色底 + Logo，避免白閃；Android 12+ 由系統繪製，低版本由 compat 層繪製 -->
+        <item name="windowSplashScreenBackground">@color/bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="windowSplashScreenAnimationDuration">500</item>
+        <item name="postSplashScreenTheme">@style/Theme.HeliOBD</item>
     </style>
 
     <style name="CardText" parent="">
@@ -34,13 +36,6 @@
         <item name="android:textSize">16sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:lineSpacingMultiplier">1.2</item>
-    </style>
-
-    <style name="TitleText" parent="">
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:textSize">22sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:lineSpacingMultiplier">1.1</item>
     </style>
 
     <style name="SubText" parent="">

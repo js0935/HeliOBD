@@ -16,8 +16,6 @@
     <color name="amber">#FFC107</color>
 
     <!-- 按壓狀態色（按鈕/卡片按下時） -->
-    <color name="surface_pressed">#141B23</color>
-    <color name="surface_alt_pressed">#1E2833</color>
     <color name="accent_pressed">#D9531F</color>
     <color name="primary_pressed">#086A80</color>
 

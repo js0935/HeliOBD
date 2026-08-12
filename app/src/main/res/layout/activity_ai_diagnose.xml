@@ -138,6 +138,16 @@
                 android:text="@string/ai_diag_start"
                 android:textColor="@android:color/white"
                 android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btn_llm_diagnose"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_button"
+                android:text="@string/llm_analyze_btn"
+                android:textColor="@color/primary"
+                android:textSize="16sp" />
         </LinearLayout>
 
         <!-- 下方：結果 -->

@@ -58,7 +58,7 @@
             android:id="@+id/accel_speed_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="--"
+            android:text="@string/placeholder_dash"
             android:textColor="@color/text_primary"
             android:textSize="120sp"
             android:textStyle="bold" />

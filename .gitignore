@@ -9,6 +9,9 @@ build/
 
 # Local
 local.properties
+keystore.properties
+*.keystore
+*.jks
 
 # 編譯日誌
 build_log.txt

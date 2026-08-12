@@ -12,6 +12,7 @@ import android.widget.Switch
 import android.widget.Toast
 import com.heli.obd.BaseActivity
 import com.heli.obd.R
+import java.util.Locale
 
 /**
  * 閾值警示設定：設定水溫上限 / 轉速上限 / 電壓下限，超限時由 AlertMonitor 發出提醒。
@@ -43,9 +44,9 @@ class AlertsActivity : BaseActivity() {
         val prefs = getSharedPreferences("alert_prefs", MODE_PRIVATE)
         enabledSwitch.isChecked = prefs.getBoolean("enabled", false)
         voiceSwitch.isChecked = prefs.getBoolean("voice", true)
-        coolantField.setText(prefs.getInt("coolantMax", 110).toString())
-        rpmField.setText(prefs.getInt("rpmMax", 9000).toString())
-        voltageField.setText(prefs.getFloat("voltageMin", 11.5f).toString())
+        coolantField.setText(String.format(Locale.US, "%d", prefs.getInt("coolantMax", 110)))
+        rpmField.setText(String.format(Locale.US, "%d", prefs.getInt("rpmMax", 9000)))
+        voltageField.setText(String.format(Locale.US, "%.1f", prefs.getFloat("voltageMin", 11.5f)))
     }
 
     private fun save() {

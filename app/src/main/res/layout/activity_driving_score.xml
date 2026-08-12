@@ -55,7 +55,7 @@
             android:id="@+id/score_number"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="—"
+            android:text="@string/common_dash"
             android:textColor="@color/text_primary"
             android:textSize="96sp"
             android:textStyle="bold" />

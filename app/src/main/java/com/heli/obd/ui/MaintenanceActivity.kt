@@ -75,10 +75,10 @@ class MaintenanceActivity : BaseActivity(), ObdManager.Listener {
     }
 
     private fun loadSettingsToForm() {
-        editLastKm.setText(store.lastServiceKm.toString())
+        editLastKm.setText(String.format(Locale.US, "%d", store.lastServiceKm))
         editLastDate.setText(dateFormat.format(store.lastServiceDateMs))
-        editIntervalKm.setText(store.serviceIntervalKm.toString())
-        editIntervalDays.setText(store.serviceIntervalDays.toString())
+        editIntervalKm.setText(String.format(Locale.US, "%d", store.serviceIntervalKm))
+        editIntervalDays.setText(String.format(Locale.US, "%d", store.serviceIntervalDays))
     }
 
     private fun saveSettings() {
@@ -110,7 +110,7 @@ class MaintenanceActivity : BaseActivity(), ObdManager.Listener {
             getString(R.string.mnt_remaining_none)
         } else {
             val days = if (store.lastServiceKm > 0) remainingDays.toString() else "—"
-            getString(R.string.mnt_remaining, remainingKm, days)
+            getString(R.string.mnt_remaining, remainingKm.toString(), days)
         }
         odometerText.text = getString(
             R.string.mnt_odometer, store.currentKm, store.lastServiceKm

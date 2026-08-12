@@ -21,6 +21,7 @@ import com.heli.obd.vwtp.VwtpFormulaEngine
 import com.heli.obd.vwtp.VwtpFormulaStore
 import com.heli.obd.vwtp.VwtpUnitSymbols
 import org.json.JSONObject
+import java.util.Locale
 
 /**
  * VW TP 2.0（VAG）感測器瀏覽：載入 163 條感測器公式表，輸入 raw 位元組
@@ -49,8 +50,8 @@ class VwtpSensorsActivity : BaseActivity() {
 
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
         findViewById<View>(R.id.btn_random).setOnClickListener {
-            inputA.setText(kotlin.random.Random.nextInt(256).toString())
-            inputB.setText(kotlin.random.Random.nextInt(256).toString())
+            inputA.setText(String.format(Locale.US, "%d", kotlin.random.Random.nextInt(256)))
+            inputB.setText(String.format(Locale.US, "%d", kotlin.random.Random.nextInt(256)))
         }
 
         val watcher = object : TextWatcher {
@@ -76,8 +77,8 @@ class VwtpSensorsActivity : BaseActivity() {
         }
 
         renderList()
-        inputA.setText("128")
-        inputB.setText("128")
+        inputA.setText(getString(R.string.vwtp_default_input))
+        inputB.setText(getString(R.string.vwtp_default_input))
     }
 
     /** 讀取 vwtp_sensors.json（formulaId → {de, zh} 感測器名稱）。 */

@@ -132,7 +132,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp"
                     android:textIsSelectable="true" />
@@ -142,7 +142,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp"
                     android:textIsSelectable="true" />
@@ -152,7 +152,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp"
                     android:textIsSelectable="true" />
@@ -179,7 +179,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/danger"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -189,7 +189,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -222,7 +222,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 

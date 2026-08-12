@@ -17,10 +17,16 @@ import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.diag.DiagnosisEngine
+import com.heli.obd.llm.LlmClient
+import com.heli.obd.llm.LlmStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * AI 診斷：勾選症狀 + 故障碼，由離線規則引擎輸出診斷建議。
@@ -50,6 +56,7 @@ class AiDiagnoseActivity : BaseActivity() {
         findViewById<Button>(R.id.btn_read_dtc).setOnClickListener { readDtcFromObd() }
         findViewById<Button>(R.id.btn_add_dtc).setOnClickListener { addManualDtc() }
         findViewById<Button>(R.id.btn_diagnose).setOnClickListener { runDiagnosis() }
+        findViewById<Button>(R.id.btn_llm_diagnose).setOnClickListener { runLlmDiagnosis() }
 
         buildSymptomChips()
     }
@@ -142,6 +149,90 @@ class AiDiagnoseActivity : BaseActivity() {
         results.forEach { addResultCard(it.rule, it.rule.severity, it.confidence) }
     }
 
+    private fun runLlmDiagnosis() {
+        if (selectedSymptoms.isEmpty() && dtcCodes.isEmpty()) {
+            Toast.makeText(this, R.string.ai_diag_empty, Toast.LENGTH_LONG).show()
+            return
+        }
+        if (!LlmStore.isConfigured(this)) {
+            Toast.makeText(this, R.string.llm_not_configured, Toast.LENGTH_LONG).show()
+            return
+        }
+        val config = LlmStore.load(this)
+        val symptomNames = DiagnosisEngine.SYMPTOMS
+            .filter { it.id in selectedSymptoms }
+            .map { getString(it.labelRes) }
+        val codes = dtcCodes.toList()
+
+        resultContainer.removeAllViews()
+        val loading = TextView(this)
+        loading.text = getString(R.string.llm_analyzing)
+        loading.textSize = 15f
+        loading.setTextColor(getColor(R.color.text_secondary))
+        loading.setPadding(0, dp(10), 0, 0)
+        resultContainer.addView(loading)
+
+        lifecycleScope.launch {
+            resultContainer.removeAllViews()
+            try {
+                val answer = withContext(Dispatchers.IO) {
+                    val liveSummary = if (obd.isConnected()) {
+                        obd.requestLiveData()?.let { data ->
+                            "RPM=${data.rpm} 車速=${data.speed} 水溫=${data.coolant} 電壓=${data.voltage}"
+                        }
+                    } else null
+                    LlmClient.chat(
+                        config = config,
+                        systemPrompt = LLM_SYSTEM_PROMPT,
+                        userPrompt = LlmClient.buildDiagnosisPrompt(codes, symptomNames, liveSummary),
+                    )
+                }
+                addLlmResultCard(answer)
+            } catch (e: Exception) {
+                showLlmError(e.message ?: "unknown")
+            }
+        }
+    }
+
+    private fun showLlmError(message: String) {
+        val err = TextView(this)
+        err.text = getString(R.string.llm_analyze_failed, message)
+        err.textSize = 14f
+        err.setTextColor(getColor(R.color.danger))
+        err.setPadding(0, dp(10), 0, 0)
+        resultContainer.addView(err)
+    }
+
+    private fun addLlmResultCard(answer: String) {
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.setPadding(dp(14), dp(12), dp(14), dp(12))
+        card.setBackgroundResource(R.drawable.bg_card)
+
+        val lp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
+        lp.topMargin = dp(8)
+        card.layoutParams = lp
+
+        val title = TextView(this)
+        title.text = getString(R.string.llm_analyze_btn)
+        title.textSize = 15f
+        title.setTypeface(title.typeface, Typeface.BOLD)
+        title.setTextColor(getColor(R.color.primary))
+        card.addView(title)
+
+        val body = TextView(this)
+        body.text = answer
+        body.textSize = 14f
+        body.setTextColor(getColor(R.color.text_primary))
+        body.setPadding(0, dp(8), 0, 0)
+        card.addView(body)
+
+        resultContainer.addView(card)
+    }
+
     private fun addResultCard(
         rule: DiagnosisEngine.Rule,
         severity: DiagnosisEngine.Severity,
@@ -199,4 +290,10 @@ class AiDiagnoseActivity : BaseActivity() {
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
+
+    companion object {
+        private const val LLM_SYSTEM_PROMPT =
+            "你是專業汽車維修技師。請用繁體中文、以車主能理解的白話解釋以下故障碼與症狀：" +
+            "每個故障碼說明 1) 它的含義 2) 可能原因 3) 建議檢查與維修方向 4) 緊急程度。請條列式輸出，不要使用 Markdown 表格。"
+    }
 }

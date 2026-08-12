@@ -25,6 +25,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
@@ -32,8 +33,12 @@ import com.heli.obd.elm.BtPermissions
 import com.heli.obd.elm.ObdDecoder
 import com.heli.obd.elm.ObdManager
 import com.heli.obd.pid.PidStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.absoluteValue
+import java.util.Locale
 
 /**
  * 即時數據畫面：藍牙連線 ELM327 顯示轉速/車速/水溫/電壓 + 馬力/扭力估算；
@@ -178,6 +183,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         }
     }
 
+    @android.annotation.SuppressLint("MissingPermission") // 權限由本頁於 pickDevice 前申請
     private fun pickDevice() {
         statusText.text = getString(R.string.obd_scanning)
         obd.discover { devices ->
@@ -201,12 +207,31 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         statusText.text = getString(R.string.obd_connecting)
         obd.connect(device) { success, message ->
             if (!success) {
-                Toast.makeText(
-                    this,
-                    message?.let { getString(R.string.obd_connect_failed, it) }
-                        ?: getString(R.string.obd_init_failed),
-                    Toast.LENGTH_LONG,
-                ).show()
+                showConnectGuide(message)
+            } else {
+                checkSuspiciousAdapter()
+            }
+        }
+    }
+
+    /** 連線失敗引導：依序檢查插頭／點火／其他 App／通訊協定，避免新手卡關 */
+    private fun showConnectGuide(message: String?) {
+        val detail = message?.let { getString(R.string.obd_connect_failed, it) }
+            ?: getString(R.string.obd_init_failed)
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.obd_connect_guide_title)
+            .setMessage(getString(R.string.obd_connect_guide_body, detail))
+            .setPositiveButton(R.string.obd_connect_guide_retry) { _, _ -> pickDevice() }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    /** 連線成功後於背景偵測山寨晶片（ATI 讀取會阻塞，不可在主執行緒執行） */
+    private fun checkSuspiciousAdapter() {
+        lifecycleScope.launch {
+            val suspicious = withContext(Dispatchers.IO) { obd.isSuspiciousAdapter() }
+            if (suspicious) {
+                Toast.makeText(this@ObdMonitorActivity, R.string.obd_adapter_suspicious, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -460,13 +485,14 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     }
 
     private fun formatValue(v: Float): String =
-        if (v % 1.0f == 0.0f) v.toInt().toString() else String.format("%.1f", v)
+        if (v % 1.0f == 0.0f) v.toInt().toString() else String.format(Locale.US, "%.1f", v)
 
     // ===== 固定儀表 =====
 
     private fun renderPower(data: ObdManager.LiveData) {
         data.torqueNm?.let {
             torqueText.text = String.format(
+                Locale.US,
                 if (unitSystem == UnitSystem.IMPERIAL) "%.1f lb-ft" else "%.1f Nm",
                 unitSystem.torque(it),
             )
@@ -480,14 +506,14 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
             data.maf?.let { ObdDecoder.powerKwFromMaf(it) }
         }
         powerText.text = if (kw != null) {
-            String.format("%.1f kW / %.1f HP", kw, ObdDecoder.kwToHp(kw))
+            String.format(Locale.US, "%.1f kW / %.1f HP", kw, ObdDecoder.kwToHp(kw))
         } else {
             "—"
         }
     }
 
     private fun renderFuelTrim(value: Float?) {
-        fuelTrimText.text = value?.let { String.format("%+.1f%%", it) } ?: "—"
+        fuelTrimText.text = value?.let { String.format(Locale.US, "%+.1f%%", it) } ?: "—"
         fuelTrimText.setTextColor(
             getColor(
                 when {
@@ -501,7 +527,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     }
 
     private fun renderAfr(value: Float?) {
-        afrText.text = value?.let { String.format("%.1f", it) } ?: "—"
+        afrText.text = value?.let { String.format(Locale.US, "%.1f", it) } ?: "—"
         afrText.setTextColor(
             getColor(
                 when {

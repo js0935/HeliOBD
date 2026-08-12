@@ -6,6 +6,7 @@
 package com.heli.obd.ui
 
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -15,11 +16,14 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import com.heli.obd.BaseActivity
 import com.heli.obd.R
+import com.heli.obd.pid.CspCodec
 import com.heli.obd.pid.PidEvaluator
 import com.heli.obd.pid.PidStore
+import java.util.Locale
 
 /**
  * 自訂 PID 編輯器：新增/編輯/刪除車廠專用 PID，支援公式（A/B/C/D 為 raw 位元組）與即時預覽。
@@ -29,6 +33,16 @@ class CustomPidActivity : BaseActivity() {
     private val store by lazy { PidStore(this) }
     private lateinit var container: LinearLayout
 
+    private val exportCspLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+            if (uri != null) exportCsp(uri)
+        }
+
+    private val importCspLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) importCsp(uri)
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_custom_pid)
@@ -36,6 +50,82 @@ class CustomPidActivity : BaseActivity() {
         container = findViewById(R.id.pid_container)
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
         findViewById<Button>(R.id.btn_add).setOnClickListener { showEditDialog(null) }
+        findViewById<Button>(R.id.btn_export_csp).setOnClickListener {
+            val pids = store.load()
+            if (pids.isEmpty()) {
+                Toast.makeText(this, R.string.pid_export_empty, Toast.LENGTH_SHORT).show()
+            } else {
+                exportCspLauncher.launch("HeliOBD_PIDs.csp")
+            }
+        }
+        findViewById<Button>(R.id.btn_import_csp).setOnClickListener {
+            importCspLauncher.launch(arrayOf("text/*", "application/octet-stream", "text/csv"))
+        }
+    }
+
+    private fun exportCsp(uri: Uri) {
+        val pids = store.load()
+        val content = CspCodec.export(
+            pids.map {
+                CspCodec.CspPid(
+                    name = it.name,
+                    mode = it.mode,
+                    pid = it.pid,
+                    equation = it.formula,
+                    min = it.min,
+                    max = it.max,
+                    unit = it.unit,
+                )
+            }
+        )
+        runCatching {
+            contentResolver.openOutputStream(uri)?.use { out ->
+                out.write(content.toByteArray(Charsets.UTF_8))
+            } ?: error("null stream")
+        }.onSuccess {
+            Toast.makeText(this, getString(R.string.pid_exported, pids.size), Toast.LENGTH_SHORT).show()
+        }.onFailure {
+            Toast.makeText(this, R.string.pid_import_failed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun importCsp(uri: Uri) {
+        val text = runCatching {
+            contentResolver.openInputStream(uri)?.use { input ->
+                input.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            }
+        }.getOrNull()
+        if (text.isNullOrBlank()) {
+            Toast.makeText(this, R.string.pid_import_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val imported = CspCodec.parse(text)
+        if (imported.isEmpty()) {
+            Toast.makeText(this, R.string.pid_import_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val existing = store.load()
+        var count = 0
+        imported.forEach { csp ->
+            val dup = existing.firstOrNull {
+                it.name == csp.name && it.mode == csp.mode && it.pid == csp.pid
+            }
+            store.upsert(
+                PidStore.CustomPid(
+                    id = dup?.id ?: System.currentTimeMillis(),
+                    name = csp.name,
+                    mode = csp.mode,
+                    pid = csp.pid,
+                    unit = csp.unit,
+                    formula = csp.equation,
+                    min = csp.min,
+                    max = csp.max,
+                )
+            )
+            count++
+        }
+        renderList()
+        Toast.makeText(this, getString(R.string.pid_imported, count), Toast.LENGTH_SHORT).show()
     }
 
     override fun onResume() {
@@ -107,7 +197,8 @@ class CustomPidActivity : BaseActivity() {
             card.addView(head)
 
             val info = TextView(this)
-            info.text = "${pid.mode}${pid.pid}  ${pid.formula}${if (pid.unit.isNotBlank()) " ${pid.unit}" else ""}"
+            val unitSuffix = if (pid.unit.isNotBlank()) " ${pid.unit}" else ""
+            info.text = String.format(Locale.US, "%s%s  %s%s", pid.mode, pid.pid, pid.formula, unitSuffix)
             info.textSize = 13f
             info.setTextColor(getColor(R.color.text_secondary))
             info.setPadding(0, dp(6), 0, 0)

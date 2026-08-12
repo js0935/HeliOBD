@@ -118,7 +118,7 @@ class DynoActivity : BaseActivity(), ObdManager.Listener {
     override fun onLiveData(data: ObdManager.LiveData) {
         val rpm = data.rpm ?: 0
         val torque = data.torqueNm
-        rpmValue.text = rpm.toString()
+        rpmValue.text = String.format(Locale.US, "%d", rpm)
         if (torque == null) {
             torqueValue.text = "—"
             powerKw.text = "—"

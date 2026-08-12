@@ -21,6 +21,7 @@ import com.heli.obd.elm.ObdManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
  * ECU 模組掃描畫面：依序探測常見 11-bit CAN header，
@@ -68,7 +69,7 @@ class EcuScanActivity : BaseActivity() {
         statusText.text = getString(R.string.ecu_count, modules.size)
         for (m in modules) {
             container.addView(TextView(this).apply {
-                text = m.header + "  " + getString(m.nameRes)
+                text = String.format(Locale.US, "%s  %s", m.header, getString(m.nameRes))
                 setTextColor(getColor(R.color.text_primary))
                 textSize = 15f
                 typeface = Typeface.DEFAULT_BOLD

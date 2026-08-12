@@ -22,6 +22,7 @@ import com.heli.obd.elm.ObdManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.Locale
 
 /**
  * 加速測試：以 OBD 車速自動偵測起跑（>0）與目標（0-100 / 0-60 / 1/4 英里），
@@ -128,7 +129,7 @@ class AccelerationActivity : BaseActivity(), ObdManager.Listener {
 
     override fun onLiveData(data: ObdManager.LiveData) {
         currentSpeed = data.speed ?: 0
-        speedValue.text = currentSpeed.toString()
+        speedValue.text = String.format(Locale.US, "%d", currentSpeed)
         if (armed && !running) {
             if (currentSpeed > 0) {
                 running = true

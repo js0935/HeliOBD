@@ -111,7 +111,7 @@ class LicenseActivity : BaseActivity() {
         featureEntries.forEach { (bit, labelRes) ->
             val enabled = status == LicenseManager.Status.VALID && license.isFeatureEnabled(bit)
             val row = TextView(this).apply {
-                text = (if (enabled) "✓ " else "✗ ") + getString(labelRes)
+                text = getString(if (enabled) R.string.license_feature_ok else R.string.license_feature_no, getString(labelRes))
                 setTextColor(getColor(if (enabled) R.color.success else R.color.text_secondary))
                 textSize = 15f
                 setPadding(0, dp(4), 0, dp(4))

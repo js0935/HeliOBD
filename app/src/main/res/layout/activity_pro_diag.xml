@@ -88,7 +88,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 
@@ -105,7 +105,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 
@@ -122,7 +122,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
             </LinearLayout>
@@ -157,7 +157,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 
@@ -174,7 +174,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 
@@ -191,7 +191,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 
@@ -233,7 +233,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="—"
+                    android:text="@string/common_dash"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 

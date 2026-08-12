@@ -125,13 +125,31 @@ object ObdConstants {
     const val PID_FUEL_RATE = "5E"       // 燃油消耗率
     const val PID_TORQUE = "63"          // 引擎扭力
     const val PID_WIDEBAND_AFR = "34"    // 寬域空燃比
+    const val PID_MAP = "0B"             // 進氣歧管絕對壓力
+    const val PID_TIMING_ADVANCE = "0E"  // 點火提前角
+    const val PID_THROTTLE = "11"        // 節氣門位置
+    const val PID_FUEL_LEVEL = "2F"      // 燃油油位
+    const val PID_MODULE_VOLTAGE = "42"  // 控制模組電壓
 
-    /** 凍結框常用 PID（以即時數據相同格式解碼） */
+    /** 凍結框常用 PID（整數型，以即時數據相同格式解碼） */
     val FREEZE_FRAME_PIDS = listOf(
         PID_COOLANT to R.string.pid_name_coolant,
         PID_RPM to R.string.pid_name_rpm,
         PID_SPEED to R.string.pid_name_speed,
         PID_LOAD to R.string.pid_name_load,
+        PID_INTAKE to R.string.pid_name_intake,
+        PID_MAP to R.string.pid_name_map,
+        PID_THROTTLE to R.string.pid_name_throttle,
+        PID_FUEL_LEVEL to R.string.pid_name_fuel_level,
+    )
+
+    /** 凍結框常用 PID（浮點型，與 FREEZE_FRAME_PIDS 分開存放於 FreezeFrame.floatValues） */
+    val FREEZE_FRAME_FLOAT_PIDS = listOf(
+        PID_MAF to R.string.pid_name_maf,
+        PID_TIMING_ADVANCE to R.string.pid_name_timing_advance,
+        PID_MODULE_VOLTAGE to R.string.pid_name_module_voltage,
+        PID_SHORT_FUEL_TRIM to R.string.pid_name_fuel_trim,
+        PID_WIDEBAND_AFR to R.string.pid_name_afr,
     )
 
     /** 即時數據輪詢間隔（毫秒） */

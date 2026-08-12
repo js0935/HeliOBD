@@ -67,6 +67,11 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
         val torqueNm: Float? = null,
         val fuelTrim: Float? = null,
         val afr: Float? = null,
+        val map: Int? = null,
+        val timingAdvance: Float? = null,
+        val throttle: Int? = null,
+        val fuelLevel: Int? = null,
+        val moduleVoltage: Float? = null,
     )
 
     @Volatile
@@ -213,6 +218,11 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
                         torqueNm = data.torqueNm,
                         fuelTrim = data.fuelTrim,
                         afr = data.afr,
+                        map = data.map,
+                        timingAdvance = data.timingAdvance,
+                        throttle = data.throttle,
+                        fuelLevel = data.fuelLevel,
+                        moduleVoltage = data.moduleVoltage,
                     )
                 )
                 if (samples.size > MAX_SAMPLES) {
@@ -261,7 +271,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
 
     fun loadTrips(): List<TripSummary> =
         tripDir().listFiles { f -> f.name.startsWith("trip_") && f.name.endsWith(".json") }
-            ?.mapNotNull { f -> runCatching { fromJson(f.readText()) }.getOrNull() }
+            ?.mapNotNull { f -> runCatching { decodeSummary(f.readText()) }.getOrNull() }
             ?.sortedByDescending { it.startTime }
             ?: emptyList()
 
@@ -273,28 +283,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
     fun loadSamples(id: Long): List<Sample> {
         val file = File(tripDir(), "trip_$id.json")
         if (!file.exists()) return emptyList()
-        return runCatching {
-            val j = JSONObject(file.readText())
-            val arr = j.optJSONArray("samplesArr") ?: j.optJSONArray("samples") ?: return emptyList()
-            (0 until arr.length()).mapNotNull { i ->
-                arr.optJSONObject(i)?.let { j ->
-                    Sample(
-                        time = j.optLong("time"),
-                        rpm = j.optInt("rpm"),
-                        speed = j.optInt("speed"),
-                        coolant = j.optInt("coolant"),
-                        lat = j.optDouble("lat"),
-                        lng = j.optDouble("lng"),
-                        voltage = if (j.has("voltage")) j.getDouble("voltage").toFloat() else null,
-                        maf = if (j.has("maf")) j.getDouble("maf").toFloat() else null,
-                        fuelRate = if (j.has("fuelRate")) j.getDouble("fuelRate").toFloat() else null,
-                        torqueNm = if (j.has("torqueNm")) j.getDouble("torqueNm").toFloat() else null,
-                        fuelTrim = if (j.has("fuelTrim")) j.getDouble("fuelTrim").toFloat() else null,
-                        afr = if (j.has("afr")) j.getDouble("afr").toFloat() else null,
-                    )
-                }
-            }
-        }.getOrElse { emptyList() }
+        return decodeSamples(file.readText())
     }
 
     /** 匯出行程樣本為 CSV，回傳檔案；無樣本或檔案不存在時回傳 null */
@@ -303,34 +292,12 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
         if (samples.isEmpty()) return null
         val dir = File(context.filesDir, "export").apply { mkdirs() }
         val file = File(dir, "trip_$id.csv")
-        val sb = StringBuilder()
-        sb.append("time,rpm,speed,coolant,voltage,maf,fuelRate,torqueNm,fuelTrim,afr,lat,lng\n")
-        samples.forEach { s ->
-            sb.append(s.time).append(',')
-                .append(s.rpm).append(',')
-                .append(s.speed).append(',')
-                .append(s.coolant).append(',')
-                .append(s.voltage?.toString() ?: "").append(',')
-                .append(s.maf?.toString() ?: "").append(',')
-                .append(s.fuelRate?.toString() ?: "").append(',')
-                .append(s.torqueNm?.toString() ?: "").append(',')
-                .append(s.fuelTrim?.toString() ?: "").append(',')
-                .append(s.afr?.toString() ?: "").append(',')
-                .append(s.lat).append(',')
-                .append(s.lng).append('\n')
-        }
-        file.writeText(sb.toString())
+        file.writeText(toCsv(samples))
         return file
     }
 
     /** 依平均速度查表估算油耗（L/100km） */
-    fun fuelRate(avgSpeedKmh: Double): Double = when {
-        avgSpeedKmh < 30 -> 3.5
-        avgSpeedKmh < 60 -> 3.0
-        avgSpeedKmh < 90 -> 3.3
-        avgSpeedKmh < 120 -> 4.0
-        else -> 4.8
-    }
+    fun fuelRate(avgSpeedKmh: Double): Double = fuelRateLookup(avgSpeedKmh)
 
     /** 依平均速度查表估算油耗（L/100km），再乘里程得總耗油量（L） */
     private fun estimateFuel(avgSpeedKmh: Double, distanceKm: Double): Double =
@@ -363,78 +330,154 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
         File(context.filesDir, "trips").apply { mkdirs() }
 
     private fun save(summary: TripSummary) {
-        File(tripDir(), "trip_${summary.id}.json").writeText(toJson(summary).toString())
-    }
-
-    private fun toJson(s: TripSummary): JSONObject = JSONObject().apply {
-        put("id", s.id)
-        put("start", s.startTime)
-        put("end", s.endTime)
-        put("durationSec", s.durationSec)
-        put("distanceKm", s.distanceKm)
-        put("maxSpeed", s.maxSpeed)
-        put("avgSpeedKmh", s.avgSpeedKmh)
-        put("maxRpm", s.maxRpm)
-        put("avgRpm", s.avgRpm)
-        put("avgCoolant", s.avgCoolant)
-        put("samples", s.samples)
-        put("estFuelL", s.estFuelL)
-        put("hasTrack", s.hasTrack)
-        put("litersDynamic", s.litersDynamic)
-        put("litersStatic", s.litersStatic)
-        put("avgFuelRateLh", s.avgFuelRateLh)
-        put("idleTimeSec", s.idleTimeSec)
-        val downsampled = downsample(samples)
-        put("samplesArr", JSONArray(downsampled.map { sampleToJson(it) }))
-    }
-
-    private fun fromJson(text: String): TripSummary {
-        val j = JSONObject(text)
-        return TripSummary(
-            id = j.getLong("id"),
-            startTime = j.getLong("start"),
-            endTime = j.getLong("end"),
-            durationSec = j.getInt("durationSec"),
-            distanceKm = j.getDouble("distanceKm"),
-            maxSpeed = j.getInt("maxSpeed"),
-            avgSpeedKmh = j.getDouble("avgSpeedKmh"),
-            maxRpm = j.getInt("maxRpm"),
-            avgRpm = j.getDouble("avgRpm"),
-            avgCoolant = j.getDouble("avgCoolant"),
-            samples = j.getInt("samples"),
-            estFuelL = if (j.has("estFuelL")) j.getDouble("estFuelL") else 0.0,
-            hasTrack = j.optBoolean("hasTrack", false),
-            litersDynamic = j.optDouble("litersDynamic", 0.0),
-            litersStatic = j.optDouble("litersStatic", 0.0),
-            avgFuelRateLh = j.optDouble("avgFuelRateLh", 0.0),
-            idleTimeSec = j.optInt("idleTimeSec", 0),
-        )
-    }
-
-    /** 降採樣：超過上限時每隔 n 筆保留 1 筆，供軌跡繪圖與 CSV */
-    private fun downsample(list: List<Sample>): List<Sample> {
-        if (list.size <= MAX_SAVED_SAMPLES) return list
-        val step = list.size.toDouble() / MAX_SAVED_SAMPLES
-        return (0 until MAX_SAVED_SAMPLES).map { i -> list[(i * step).toInt()] }
-    }
-
-    private fun sampleToJson(s: Sample): JSONObject = JSONObject().apply {
-        put("time", s.time)
-        put("rpm", s.rpm)
-        put("speed", s.speed)
-        put("coolant", s.coolant)
-        put("lat", s.lat)
-        put("lng", s.lng)
-        s.voltage?.let { put("voltage", it.toDouble()) }
-        s.maf?.let { put("maf", it.toDouble()) }
-        s.fuelRate?.let { put("fuelRate", it.toDouble()) }
-        s.torqueNm?.let { put("torqueNm", it.toDouble()) }
-        s.fuelTrim?.let { put("fuelTrim", it.toDouble()) }
-        s.afr?.let { put("afr", it.toDouble()) }
+        File(tripDir(), "trip_${summary.id}.json").writeText(encodeSummary(summary, samples).toString())
     }
 
     companion object {
         private const val MAX_SAMPLES = 30000
         private const val MAX_SAVED_SAMPLES = 5000
+
+        /** 依平均速度查表估算油耗（L/100km） */
+        fun fuelRateLookup(avgSpeedKmh: Double): Double = when {
+            avgSpeedKmh < 30 -> 3.5
+            avgSpeedKmh < 60 -> 3.0
+            avgSpeedKmh < 90 -> 3.3
+            avgSpeedKmh < 120 -> 4.0
+            else -> 4.8
+        }
+
+        /** 樣本清單 → CSV 字串（含標頭）。null 欄位輸出空字串 */
+        fun toCsv(samples: List<Sample>): String {
+            val sb = StringBuilder()
+            sb.append(
+                "time,rpm,speed,coolant,voltage,maf,fuelRate,torqueNm,fuelTrim,afr," +
+                    "map,timingAdvance,throttle,fuelLevel,moduleVoltage,lat,lng\n"
+            )
+            samples.forEach { s ->
+                sb.append(s.time).append(',')
+                    .append(s.rpm).append(',')
+                    .append(s.speed).append(',')
+                    .append(s.coolant).append(',')
+                    .append(s.voltage?.toString() ?: "").append(',')
+                    .append(s.maf?.toString() ?: "").append(',')
+                    .append(s.fuelRate?.toString() ?: "").append(',')
+                    .append(s.torqueNm?.toString() ?: "").append(',')
+                    .append(s.fuelTrim?.toString() ?: "").append(',')
+                    .append(s.afr?.toString() ?: "").append(',')
+                    .append(s.map?.toString() ?: "").append(',')
+                    .append(s.timingAdvance?.toString() ?: "").append(',')
+                    .append(s.throttle?.toString() ?: "").append(',')
+                    .append(s.fuelLevel?.toString() ?: "").append(',')
+                    .append(s.moduleVoltage?.toString() ?: "").append(',')
+                    .append(s.lat).append(',')
+                    .append(s.lng).append('\n')
+            }
+            return sb.toString()
+        }
+
+        /** 降採樣：超過上限時每隔 n 筆保留 1 筆，供軌跡繪圖與 CSV */
+        fun downsample(list: List<Sample>, max: Int = MAX_SAVED_SAMPLES): List<Sample> {
+            if (list.size <= max) return list
+            val step = list.size.toDouble() / max
+            return (0 until max).map { i -> list[(i * step).toInt()] }
+        }
+
+        /** 行程摘要 + 樣本 → JSONObject（樣本先降採樣） */
+        fun encodeSummary(s: TripSummary, samples: List<Sample>): JSONObject = JSONObject().apply {
+            put("id", s.id)
+            put("start", s.startTime)
+            put("end", s.endTime)
+            put("durationSec", s.durationSec)
+            put("distanceKm", s.distanceKm)
+            put("maxSpeed", s.maxSpeed)
+            put("avgSpeedKmh", s.avgSpeedKmh)
+            put("maxRpm", s.maxRpm)
+            put("avgRpm", s.avgRpm)
+            put("avgCoolant", s.avgCoolant)
+            put("samples", s.samples)
+            put("estFuelL", s.estFuelL)
+            put("hasTrack", s.hasTrack)
+            put("litersDynamic", s.litersDynamic)
+            put("litersStatic", s.litersStatic)
+            put("avgFuelRateLh", s.avgFuelRateLh)
+            put("idleTimeSec", s.idleTimeSec)
+            put("samplesArr", JSONArray(downsample(samples).map { encodeSample(it) }))
+        }
+
+        /** 單筆樣本 → JSONObject（null 欄位省略） */
+        fun encodeSample(s: Sample): JSONObject = JSONObject().apply {
+            put("time", s.time)
+            put("rpm", s.rpm)
+            put("speed", s.speed)
+            put("coolant", s.coolant)
+            put("lat", s.lat)
+            put("lng", s.lng)
+            s.voltage?.let { put("voltage", it.toDouble()) }
+            s.maf?.let { put("maf", it.toDouble()) }
+            s.fuelRate?.let { put("fuelRate", it.toDouble()) }
+            s.torqueNm?.let { put("torqueNm", it.toDouble()) }
+            s.fuelTrim?.let { put("fuelTrim", it.toDouble()) }
+            s.afr?.let { put("afr", it.toDouble()) }
+            s.map?.let { put("map", it) }
+            s.timingAdvance?.let { put("timingAdvance", it.toDouble()) }
+            s.throttle?.let { put("throttle", it) }
+            s.fuelLevel?.let { put("fuelLevel", it) }
+            s.moduleVoltage?.let { put("moduleVoltage", it.toDouble()) }
+        }
+
+        /** 行程 JSON 文字 → TripSummary */
+        fun decodeSummary(text: String): TripSummary {
+            val j = JSONObject(text)
+            return TripSummary(
+                id = j.getLong("id"),
+                startTime = j.getLong("start"),
+                endTime = j.getLong("end"),
+                durationSec = j.getInt("durationSec"),
+                distanceKm = j.getDouble("distanceKm"),
+                maxSpeed = j.getInt("maxSpeed"),
+                avgSpeedKmh = j.getDouble("avgSpeedKmh"),
+                maxRpm = j.getInt("maxRpm"),
+                avgRpm = j.getDouble("avgRpm"),
+                avgCoolant = j.getDouble("avgCoolant"),
+                samples = j.getInt("samples"),
+                estFuelL = if (j.has("estFuelL")) j.getDouble("estFuelL") else 0.0,
+                hasTrack = j.optBoolean("hasTrack", false),
+                litersDynamic = j.optDouble("litersDynamic", 0.0),
+                litersStatic = j.optDouble("litersStatic", 0.0),
+                avgFuelRateLh = j.optDouble("avgFuelRateLh", 0.0),
+                idleTimeSec = j.optInt("idleTimeSec", 0),
+            )
+        }
+
+        /** 行程 JSON 文字 → 樣本清單（空或格式錯誤回空清單） */
+        fun decodeSamples(text: String): List<Sample> {
+            return runCatching {
+                val j = JSONObject(text)
+                val arr = j.optJSONArray("samplesArr") ?: j.optJSONArray("samples") ?: return emptyList()
+                (0 until arr.length()).mapNotNull { i ->
+                    arr.optJSONObject(i)?.let { s ->
+                        Sample(
+                            time = s.optLong("time"),
+                            rpm = s.optInt("rpm"),
+                            speed = s.optInt("speed"),
+                            coolant = s.optInt("coolant"),
+                            lat = s.optDouble("lat"),
+                            lng = s.optDouble("lng"),
+                            voltage = if (s.has("voltage")) s.getDouble("voltage").toFloat() else null,
+                            maf = if (s.has("maf")) s.getDouble("maf").toFloat() else null,
+                            fuelRate = if (s.has("fuelRate")) s.getDouble("fuelRate").toFloat() else null,
+                            torqueNm = if (s.has("torqueNm")) s.getDouble("torqueNm").toFloat() else null,
+                            fuelTrim = if (s.has("fuelTrim")) s.getDouble("fuelTrim").toFloat() else null,
+                            afr = if (s.has("afr")) s.getDouble("afr").toFloat() else null,
+                            map = if (s.has("map")) s.getInt("map") else null,
+                            timingAdvance = if (s.has("timingAdvance")) s.getDouble("timingAdvance").toFloat() else null,
+                            throttle = if (s.has("throttle")) s.getInt("throttle") else null,
+                            fuelLevel = if (s.has("fuelLevel")) s.getInt("fuelLevel") else null,
+                            moduleVoltage = if (s.has("moduleVoltage")) s.getDouble("moduleVoltage").toFloat() else null,
+                        )
+                    }
+                }
+            }.getOrElse { emptyList() }
+        }
     }
 }

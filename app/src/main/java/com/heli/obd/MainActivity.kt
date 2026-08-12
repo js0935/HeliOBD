@@ -25,6 +25,8 @@ import com.heli.obd.ui.ProDiagActivity
 import com.heli.obd.ui.CustomPidActivity
 import com.heli.obd.ui.DataLoggerActivity
 import com.heli.obd.ui.DtcActivity
+import com.heli.obd.ui.FreezeFrameActivity
+import com.heli.obd.ui.VehicleInfoActivity
 import com.heli.obd.ui.DrivingScoreActivity
 import com.heli.obd.ui.DynoActivity
 import com.heli.obd.ui.EcuScanActivity
@@ -33,6 +35,7 @@ import com.heli.obd.ui.FeaturePlaceholderActivity
 import com.heli.obd.ui.HudActivity
 import com.heli.obd.ui.HealthCheckActivity
 import com.heli.obd.ui.LiveFuelActivity
+import com.heli.obd.ui.LeafSoHActivity
 import com.heli.obd.ui.MaintenanceActivity
 import com.heli.obd.ui.O2EvapActivity
 import com.heli.obd.ui.ObdMonitorActivity
@@ -64,6 +67,8 @@ class MainActivity : BaseActivity() {
     private val entries = listOf(
         Entry(R.drawable.ic_obd, R.string.nav_obd, R.string.obd_desc),
         Entry(R.drawable.ic_dtc, R.string.nav_dtc, R.string.dtc_desc),
+        Entry(R.drawable.ic_dtc, R.string.feat_freeze_frame, R.string.feat_desc_freeze_frame),
+        Entry(R.drawable.ic_obd, R.string.feat_vehicle_info, R.string.feat_desc_vehicle_info),
         Entry(R.drawable.ic_obd, R.string.feat_ecu_scan, R.string.feat_desc_ecu_scan),
         Entry(R.drawable.ic_alert, R.string.feat_o2_evap, R.string.feat_desc_o2_evap),
         Entry(R.drawable.ic_pid, R.string.feat_stage_test, R.string.feat_desc_stage_test),
@@ -85,6 +90,7 @@ class MainActivity : BaseActivity() {
         Entry(R.drawable.ic_fuel, R.string.feat_fuel, R.string.feat_desc_fuel),
         Entry(R.drawable.ic_score, R.string.feat_score, R.string.feat_desc_score),
         Entry(R.drawable.ic_maintenance, R.string.feat_maintenance, R.string.feat_desc_maintenance),
+        Entry(R.drawable.ic_pid, R.string.feat_leaf_soh, R.string.feat_desc_leaf_soh),
         Entry(R.drawable.ic_alert, R.string.feat_health_check, R.string.feat_desc_health_check),
         Entry(R.drawable.ic_alert, R.string.feat_smog_check, R.string.feat_desc_smog_check),
         Entry(R.drawable.ic_trip, R.string.feat_report, R.string.feat_desc_report),
@@ -113,8 +119,13 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
-        AlertMonitor.detach(ObdManagerHolder.obd(this))
+        val obd = ObdManagerHolder.obd(this)
+        AlertMonitor.detach(obd)
         AlertMonitor.release()
+        // 僅使用者真正離開（非旋轉/回收）且仍連線時提醒拔除轉接器，避免耗損電瓶
+        if (isFinishing && obd.isConnected() && !obd.isDemoMode()) {
+            Toast.makeText(applicationContext, R.string.obd_remember_unplug, Toast.LENGTH_LONG).show()
+        }
         super.onDestroy()
     }
 
@@ -160,6 +171,8 @@ class MainActivity : BaseActivity() {
         val target: Class<*> = when (entry.titleRes) {
             R.string.nav_obd -> ObdMonitorActivity::class.java
             R.string.nav_dtc -> DtcActivity::class.java
+            R.string.feat_freeze_frame -> FreezeFrameActivity::class.java
+            R.string.feat_vehicle_info -> VehicleInfoActivity::class.java
             R.string.feat_ecu_scan -> EcuScanActivity::class.java
             R.string.feat_o2_evap -> O2EvapActivity::class.java
             R.string.feat_stage_test -> StageTestActivity::class.java
@@ -181,6 +194,7 @@ class MainActivity : BaseActivity() {
             R.string.feat_fuel -> TripActivity::class.java
             R.string.feat_score -> DrivingScoreActivity::class.java
             R.string.feat_maintenance -> MaintenanceActivity::class.java
+            R.string.feat_leaf_soh -> LeafSoHActivity::class.java
             R.string.feat_health_check -> HealthCheckActivity::class.java
             R.string.feat_smog_check -> SmogCheckActivity::class.java
             R.string.feat_report -> VehicleReportActivity::class.java

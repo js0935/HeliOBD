@@ -37,7 +37,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingHorizontal="16dp"
-            android:text="--:--"
+            android:text="@string/placeholder_time"
             android:textColor="#FFFFFF"
             android:textSize="44sp"
             android:textStyle="bold" />
@@ -67,7 +67,7 @@
             android:id="@+id/hud_speed_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="--"
+            android:text="@string/placeholder_dash"
             android:textColor="#FFFFFF"
             android:textSize="120sp"
             android:textStyle="bold" />
@@ -103,7 +103,7 @@
                 android:id="@+id/hud_rpm_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="--"
+                android:text="@string/placeholder_dash"
                 android:textColor="#00B4D8"
                 android:textSize="64sp"
                 android:textStyle="bold" />
@@ -127,7 +127,7 @@
                 android:id="@+id/hud_temp_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="--"
+                android:text="@string/placeholder_dash"
                 android:textColor="#FFFFFF"
                 android:textSize="56sp"
                 android:textStyle="bold" />
@@ -151,7 +151,7 @@
                 android:id="@+id/hud_voltage_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="--"
+                android:text="@string/placeholder_dash"
                 android:textColor="#FFFFFF"
                 android:textSize="56sp"
                 android:textStyle="bold" />

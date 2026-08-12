@@ -80,8 +80,13 @@ class O2EvapActivity : BaseActivity() {
         for (t in tests) {
             val valueText = t.value?.let { String.format(Locale.US, "%.3f %s", it, t.unit) } ?: "—"
             o2Container.addView(TextView(this).apply {
-                text = getString(R.string.o2_test_sensor, t.sensor) +
-                    " · " + getString(t.nameRes) + "：" + valueText
+                text = String.format(
+                    Locale.US,
+                    "%s · %s：%s",
+                    getString(R.string.o2_test_sensor, t.sensor),
+                    getString(t.nameRes),
+                    valueText,
+                )
                 setTextColor(getColor(R.color.text_primary))
                 textSize = 14f
                 typeface = Typeface.DEFAULT_BOLD

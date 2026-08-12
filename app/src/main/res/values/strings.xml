@@ -3,7 +3,6 @@
     <!-- App -->
     <string name="app_name">HeliOBD</string>
     <string name="splash_tagline">汽機車 OBD-II 車機檢測</string>
-    <string name="app_team_credit">禾秝軟體開發團隊｜代碼：洪俊士</string>
     <string name="trip_calibration">油耗校正</string>
     <string name="trip_cal_begin_title">開始油耗校正</string>
     <string name="trip_cal_begin_msg">記錄目前里程表作為基準，行駛一段距離並加油後再回來完成校正</string>
@@ -42,7 +41,6 @@
     <string name="feat_desc_multi_car">一台裝置管理多台愛車</string>
 
     <!-- 授權 -->
-    <string name="license_enter">輸入授權碼</string>
     <string name="license_hint">請輸入 OBD- 開頭的授權碼</string>
     <string name="license_device_id">本機設備碼</string>
     <string name="license_activate">啟用授權</string>
@@ -50,15 +48,14 @@
     <string name="license_copied">設備碼已複製</string>
     <string name="license_deactivate">移除授權</string>
     <string name="license_activated_features">已啟用功能</string>
+    <string name="license_feature_ok">✔ %1$s</string>
+    <string name="license_feature_no">✗ %1$s</string>
     <string name="license_status_valid">✓ 授權有效</string>
     <string name="license_status_expired">授權已過期</string>
     <string name="license_status_mismatch">授權碼綁定其他設備</string>
     <string name="license_status_invalid">授權碼無效（簽章驗證失敗）</string>
     <string name="license_status_rollback">偵測到系統時間倒退，授權已清除</string>
     <string name="license_status_none">尚未授權</string>
-    <string name="license_unknown">授權狀態未知</string>
-    <string name="locked_feature">此功能尚未解鎖</string>
-    <string name="locked_go_license">前往授權</string>
     <string name="license_empty">請先輸入授權碼</string>
 
     <!-- OBD -->
@@ -78,7 +75,6 @@
     <string name="monitor_chart">圖表</string>
     <string name="obd_select_device">選擇 ELM327 裝置</string>
     <string name="obd_no_device">未找到 ELM327 裝置</string>
-    <string name="obd_scan">掃描藍牙</string>
     <string name="obd_rpm">轉速</string>
     <string name="obd_speed">車速</string>
     <string name="obd_temp">水溫</string>
@@ -88,17 +84,22 @@
     <string name="obd_permission_denied">需要藍牙權限才能連接 OBD</string>
     <string name="obd_connect_failed">連接失敗：%1$s</string>
     <string name="obd_connect_error">連線失敗</string>
+    <string name="obd_connect_guide_title">連線失敗，依序檢查以下項目</string>
+    <string name="obd_connect_guide_body">%1$s\n\n① 轉接器是否確實插到底（最常見原因）\n② 點火開關是否轉到 ON（不需發動）\n③ 是否同時開啟其他 OBD App（轉接器一次只能服務一個 App）\n④ 通訊協定是否設為「自動」\n\n若仍無法連線，可改用「模擬模式」體驗全部功能。</string>
+    <string name="obd_connect_guide_retry">再試一次</string>
+    <string name="obd_remember_unplug">OBD 轉接器仍連線中：長時間停放建議拔除，避免耗損電瓶。</string>
+    <string name="obd_adapter_suspicious">偵測到疑似山寨 ELM327 晶片（回報版本 v1.5 為仿冒標記），可能導致斷線或數據異常，建議更換正品轉接器。</string>
     <string name="obd_location_title">開啟位置服務</string>
     <string name="obd_location_message">Android 11 以下系統要求開啟位置服務才能掃描藍牙 OBD 裝置。請開啟後再試。</string>
     <string name="obd_open_settings">開啟設定</string>
-    <string name="obd_bt_off">藍牙未開啟</string>
-    <string name="obd_bt_off_message">請先開啟藍牙再掃描 ELM327 裝置。</string>
-
     <!-- 故障碼 -->
     <string name="dtc_read">讀取故障碼</string>
     <string name="dtc_clear">清除故障碼</string>
-    <string name="dtc_clear_confirm">清除故障碼將一併清除：\n・故障碼（DTC）\n・凍結框資料\n・含氧感測器測試數據\n・監控測試狀態\n・車載監控測試結果\n・MIL 亮起期間行駛里程\n・清除後暖機次數／行駛里程／時間\n\n確定要清除嗎？</string>
+    <string name="dtc_clear_confirm">清除故障碼將一併清除：\n・故障碼（DTC）\n・凍結框資料\n・含氧感測器測試數據\n・監控測試狀態\n・車載監控測試結果\n・MIL 亮起期間行駛里程\n・清除後暖機次數／行駛里程／時間\n\n注意：清除後排放就緒監測（I/M）將重置為「未就緒」，若近期需驗車，請先完成驅動循環。\n\n確定要清除嗎？</string>
     <string name="dtc_cleared">故障碼已清除</string>
+    <string name="dtc_clear_engine_running_title">引擎運轉中</string>
+    <string name="dtc_clear_engine_running">目前引擎轉速 %1$d RPM。\n\n引擎運轉時清除故障碼：\n・ECU 可能立即重新寫入相同的故障碼\n・清除可能失敗或資料不完整\n\n建議先將引擎熄火（保留 ACC 電源）再清除。\n\n仍要繼續嗎？</string>
+    <string name="dtc_clear_anyway">仍要清除</string>
     <string name="dtc_empty">無故障碼，車輛一切正常</string>
     <string name="dtc_read_error">故障碼讀取失敗</string>
     <string name="dtc_tab_current">正式故障碼</string>
@@ -127,6 +128,26 @@
     <string name="ai_diag_no_dtc">未讀取到故障碼</string>
     <string name="ai_diag_no_result">未發現明顯問題，車輛狀態良好</string>
     <string name="ai_diag_confidence">信賴度：%1$d%%</string>
+    <string name="llm_analyze_btn">LLM 深度解讀</string>
+    <string name="llm_analyzing">AI 分析中，請稍候…</string>
+    <string name="llm_analyze_failed">AI 分析失敗：%1$s</string>
+    <string name="llm_not_configured">尚未設定 AI 服務，請先到「連線設定」填入 API 金鑰</string>
+    <string name="llm_section_title">AI 服務設定</string>
+    <string name="llm_section_desc">使用 OpenAI 相容 API（官方、Azure、Groq、Ollama、自架 vLLM 等）進行 DTC 白話解讀與維修建議。資料僅在按下「LLM 深度解讀」時送出。</string>
+    <string name="llm_base_url_label">API 位址</string>
+    <string name="llm_base_url_hint">https://api.openai.com/v1</string>
+    <string name="llm_api_key_label">API 金鑰</string>
+    <string name="llm_api_key_hint">sk-…</string>
+    <string name="llm_model_label">模型名稱</string>
+    <string name="llm_model_hint">gpt-4o-mini</string>
+    <!-- 雲端備份 -->
+    <string name="settings_backup_label">雲端備份</string>
+    <string name="settings_backup_desc">將設定、自訂 PID、保養與電池紀錄等打包為單一備份檔，可存放至 Google Drive 或其他雲端。</string>
+    <string name="backup_export">匯出備份</string>
+    <string name="backup_import">還原備份</string>
+    <string name="backup_exported">備份已匯出</string>
+    <string name="backup_imported">已還原 %1$d 筆資料，請重新啟動 App 以套用</string>
+    <string name="backup_import_failed">備份處理失敗：檔案格式錯誤</string>
 
     <!-- 行程回顧 -->
     <string name="trip_record_start">開始記錄</string>
@@ -201,10 +222,6 @@
     <string name="common_save">儲存</string>
 
     <!-- 移除廣告 -->
-    <string name="noads_status">已啟用</string>
-    <string name="noads_desc">本版本不含任何廣告，體驗純淨無干擾。</string>
-    <string name="noads_note">若未來版本加入廣告，此功能可一鍵關閉廣告顯示。</string>
-
     <!-- 強化功能（第二階段） -->
     <string name="feat_hud">抬頭顯示</string>
     <string name="feat_desc_hud">夜間騎乘大字顯示，安全不分心</string>
@@ -258,7 +275,6 @@
     <string name="logger_menu_export">匯出 CSV</string>
     <string name="logger_menu_delete">刪除</string>
     <string name="logger_saved">已儲存：%1$s</string>
-    <string name="logger_exported">已匯出 CSV</string>
     <string name="logger_deleted">已刪除</string>
     <string name="logger_confirm_delete">刪除此錄製檔？</string>
     <string name="logger_not_connected">請先連線 OBD</string>
@@ -271,7 +287,6 @@
     <string name="replay_done">播放完成</string>
     <string name="dyno_tab_live">即時功率</string>
     <string name="dyno_tab_accel">加速推算</string>
-    <string name="dyno_rpm">轉速</string>
     <string name="dyno_unit_rpm">RPM</string>
     <string name="dyno_torque">扭力</string>
     <string name="dyno_power">功率</string>
@@ -310,7 +325,10 @@
     <string name="settings_elm_desc">每行一個 AT 指令，連線初始化時依序執行。一般使用者不需修改。</string>
 <string name="settings_elm_hint">例如：ATSP0、ATAT2</string>
 <string name="settings_saved">已儲存</string>
-<string name="settings_appearance_label">外觀模式</string>
+    <string name="settings_appearance_label">外觀模式</string>
+    <string name="settings_privacy_label">資料與隱私</string>
+    <string name="settings_privacy_title">診斷資料僅儲存於本機</string>
+    <string name="settings_privacy_body">・車輛診斷資料（故障碼、數據紀錄、行程、車輛資訊）一律儲存在本機裝置，不會上傳至任何伺服器。\n・App 不蒐集個人資料，也不需要網路連線即可完成全部診斷功能。\n・若啟用 AI 診斷功能，僅在你按下「分析」時，才會把當下的故障碼與數據傳送至你設定的 AI 服務。\n・清除 App 資料或解除安裝將永久刪除本機診斷紀錄。</string>
 <string name="settings_appearance_value">目前：%1$s</string>
 <string name="settings_appearance_title">選擇外觀模式</string>
 <string name="settings_appearance_system">跟隨系統</string>
@@ -380,7 +398,6 @@
     <string name="diag_report_share">匯出報告</string>
     <string name="diag_report_generated">產生時間：%1$s</string>
     <string name="diag_report_no_dtc">（無故障碼）</string>
-    <string name="diag_report_shared">報告已產生</string>
     <string name="diag_report_failed">報告匯出失敗</string>
 
     <!-- 診斷知識庫（AI 診斷症狀） -->
@@ -422,10 +439,15 @@
     <string name="pid_name_afr">空燃比</string>
     <string name="pid_name_maf">空氣流量</string>
     <string name="pid_name_fuel_rate">燃油消耗率</string>
+    <string name="pid_name_intake">進氣溫度</string>
+    <string name="pid_name_map">進氣歧管壓力</string>
+    <string name="pid_name_timing_advance">點火提前角</string>
+    <string name="pid_name_throttle">節氣門位置</string>
+    <string name="pid_name_fuel_level">燃油油位</string>
+    <string name="pid_name_module_voltage">模組電壓</string>
 
     <!-- DTC 描述表 -->
     <string name="dtc_unknown">診斷碼 %1$s（未收錄，請參閱原廠手冊）</string>
-    <string name="dtc_export_csv">匯出 CSV</string>
     <string name="dtc_severity_label">嚴重度</string>
     <string name="dtc_advice_label">維修建議</string>
     <string name="dtc_severity_critical">嚴重</string>
@@ -455,6 +477,16 @@
     <string name="dtc_advice_comm">檢查相關電腦的電源／接地與 CAN 匯流排接線，確認無斷路或干擾</string>
     <string name="dtc_advice_generic">建議查閱原廠維修手冊，或交由專業技師診斷</string>
     <string name="feat_health_check">健康檢查</string>
+    <string name="feat_vehicle_info">車輛資訊</string>
+    <string name="feat_desc_vehicle_info">讀取 VIN、校正 ID 與 ECU 名稱</string>
+    <string name="vehicle_info_desc">讀取車輛識別資料與目前通訊協定</string>
+    <string name="vehicle_info_ecu_name">ECU 名稱</string>
+    <string name="vehicle_info_refresh">重新讀取</string>
+    <string name="feat_freeze_frame">凍結框</string>
+    <string name="feat_desc_freeze_frame">故障發生當下的完整數據快照</string>
+    <string name="freeze_desc">顯示故障觸發當下的關鍵感測器數值，協助判斷故障情境</string>
+    <string name="freeze_value_section">凍結數值</string>
+    <string name="freeze_diag_section">診斷建議</string>
     <string name="feat_desc_health_check">即時數據分析，各系統綠/黃/紅健康評分</string>
     <string name="hc_refresh">重新檢查</string>
     <string name="hc_level_green">良好</string>
@@ -774,6 +806,12 @@
     <string name="pid_formula_required">請輸入公式</string>
     <string name="pid_formula_error">公式錯誤或位元組不足</string>
     <string name="pid_result_format">計算結果：%1$s</string>
+    <string name="pid_export_csp">匯出 .csp</string>
+    <string name="pid_import_csp">匯入 .csp</string>
+    <string name="pid_export_empty">沒有可匯出的自訂 PID</string>
+    <string name="pid_exported">已匯出 %1$d 筆自訂 PID</string>
+    <string name="pid_import_failed">匯入失敗：檔案格式錯誤</string>
+    <string name="pid_imported">已匯入 %1$d 筆自訂 PID</string>
 
     <!-- HUD -->
     <string name="hud_back">← 返回</string>
@@ -795,6 +833,13 @@
     <string name="common_cancel">取消</string>
     <string name="common_back">返回</string>
     <string name="common_dash">—</string>
+    <string name="placeholder_dash">--</string>
+    <string name="placeholder_time">--:--</string>
+    <string name="unit_percent">%</string>
+    <string name="unit_afr">AFR</string>
+    <string name="engine_sound_rpm_initial">3000</string>
+    <string name="engine_sound_rpm_label_initial">3000 RPM</string>
+    <string name="skid_pad_zero_g">0.00 G</string>
     <string name="common_unit_rpm">RPM</string>
     <string name="common_unit_kmh">km/h</string>
     <string name="common_unit_celsius">°C</string>
@@ -814,6 +859,7 @@
     <string name="vwtp_formula_label">公式：%1$s</string>
     <string name="vwtp_else">否則</string>
     <string name="vwtp_no_data">感測器公式表載入失敗</string>
+    <string name="vwtp_default_input">128</string>
 
     <!-- ECU 掃描 -->
     <string name="feat_ecu_scan">ECU 掃描</string>
@@ -871,7 +917,6 @@
     <string name="stage_result_pass">通過</string>
     <string name="stage_result_warn">警告</string>
     <string name="stage_result_fail">失敗</string>
-    <string name="stage_rpm_target">目標 %1$d RPM</string>
     <string name="stage_rpm_current">目前 %1$d RPM</string>
     <string name="stage_rpm_stable">轉速穩定（偏差 %1$d RPM）</string>
     <string name="stage_rpm_unstable">轉速不穩（偏差 %1$d RPM）</string>
@@ -882,7 +927,6 @@
     <string name="stage_o2_afr">AFR %1$.1f</string>
     <string name="stage_o2_response_ok">O2 響應正常</string>
     <string name="stage_o2_response_slow">O2 響應遲緩</string>
-    <string name="stage_summary">測試總結</string>
     <string name="stage_phase_n">階段 %1$d/3</string>
 
     <!-- 回放進階分析 -->
@@ -892,11 +936,6 @@
     <string name="replay_histogram">直方圖</string>
     <string name="replay_cursor_value">%1$s：%2$s</string>
     <string name="replay_select_param">選擇參數</string>
-    <string name="replay_stat_max">最大</string>
-    <string name="replay_stat_min">最小</string>
-    <string name="replay_stat_avg">平均</string>
-    <string name="replay_stat_std">標準差</string>
-
     <!-- 驗車準備（I/M Readiness 彙整） -->
     <string name="feat_smog_check">驗車準備</string>
     <string name="feat_desc_smog_check">排放監測器狀態與驗車判決</string>
@@ -912,7 +951,6 @@
     <string name="smog_mil">檢測燈（MIL）：%1$s</string>
     <string name="smog_mil_on">亮起</string>
     <string name="smog_mil_off">熄滅</string>
-    <string name="smog_dtc_count">故障碼 %1$d 個</string>
     <string name="smog_no_data">無法讀取監測器狀態（未連線）</string>
     <string name="smog_monitors">監測器狀態</string>
     <string name="smog_ready_count">就緒 %1$d / %2$d</string>
@@ -987,4 +1025,34 @@
     <string name="pro_diag_permanent">永久</string>
     <string name="pro_diag_empty">無故障碼</string>
     <string name="pro_diag_refresh">重新讀取</string>
+
+    <!-- EV Leaf 電池健康 -->
+    <string name="feat_leaf_soh">EV 電池健康</string>
+    <string name="feat_desc_leaf_soh">Nissan Leaf 電池健康度（SoH）追蹤</string>
+    <string name="leaf_save">儲存</string>
+    <string name="leaf_soh_title">目前電池健康度（SoH）</string>
+    <string name="leaf_no_data">尚無量測紀錄</string>
+    <string name="leaf_state_excellent">極佳</string>
+    <string name="leaf_state_good">良好</string>
+    <string name="leaf_state_warn">注意衰退</string>
+    <string name="leaf_state_critical">建議更換</string>
+    <string name="leaf_new_record">新增量測紀錄</string>
+    <string name="leaf_label_km">里程(km)</string>
+    <string name="leaf_label_soh">SoH(%)</string>
+    <string name="leaf_label_ahr">AHr</string>
+    <string name="leaf_label_hx">Hx</string>
+    <string name="leaf_label_gids">GIDs</string>
+    <string name="leaf_label_note">備註（選填）</string>
+    <string name="leaf_trend_title">衰退趨勢</string>
+    <string name="leaf_decay_rate">每萬公里衰退：%1$s</string>
+    <string name="leaf_decay_none">紀錄不足，至少需兩筆不同里程的紀錄</string>
+    <string name="leaf_est_km">預估 SoH 降至 70%% 約在 %1$s km</string>
+    <string name="leaf_est_none">尚無法推估</string>
+    <string name="leaf_history_title">歷史紀錄</string>
+    <string name="leaf_history_item">%1$s　%2$s km　SoH %3$s%%　AHr %4$s</string>
+    <string name="leaf_delete">刪除</string>
+    <string name="leaf_confirm_delete">確定刪除這筆紀錄？</string>
+    <string name="leaf_invalid">請輸入有效的里程與 SoH</string>
+    <string name="leaf_saved">已儲存量測紀錄</string>
+    <string name="leaf_soh_placeholder">—</string>
 </resources>

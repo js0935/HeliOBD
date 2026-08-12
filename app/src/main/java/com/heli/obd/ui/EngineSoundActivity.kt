@@ -21,6 +21,7 @@ import com.heli.obd.elm.ObdManager
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
+import java.util.Locale
 
 /**
  * 引擎聲浪：以 OBD 真實轉速（或滑桿模擬）驅動即時合成引擎排氣聲浪。
@@ -182,7 +183,7 @@ class EngineSoundActivity : BaseActivity(), ObdManager.Listener {
 
     private fun updateRpmUi() {
         val rpm = targetRpm.toInt()
-        rpmValue.text = rpm.toString()
+        rpmValue.text = String.format(Locale.US, "%d", rpm)
         rpmSeekLabel.text = getString(R.string.engine_sound_rpm_value, rpm)
         if (!obdConnected) {
             rpmSeek.progress = (rpm - MIN_RPM).coerceIn(0, MAX_RPM - MIN_RPM)

@@ -24,6 +24,7 @@ import com.heli.obd.elm.ObdManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
  * 健康檢查：即時數據 → 子系統階梯評分 → 綠/黃/紅總覽 + 交叉診斷規則。
@@ -101,7 +102,7 @@ class HealthCheckActivity : BaseActivity(), ObdManager.Listener {
         val level = HealthCheckEngine.level(overall)
         val levelColor = levelColorRes(level)
 
-        totalScoreText.text = overall.toString()
+        totalScoreText.text = String.format(Locale.US, "%d", overall)
         totalScoreText.setTextColor(getColor(levelColor))
         totalLevelText.text = getString(level.labelRes)
         totalLevelText.setTextColor(getColor(levelColor))
@@ -137,7 +138,7 @@ class HealthCheckActivity : BaseActivity(), ObdManager.Listener {
             )
             row.addView(
                 TextView(this).apply {
-                    text = score.toString()
+                    text = String.format(Locale.US, "%d", score)
                     textSize = 14f
                     setTypeface(typeface, android.graphics.Typeface.BOLD)
                     setTextColor(getColor(scoreColorRes(score)))

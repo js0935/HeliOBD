@@ -15,6 +15,7 @@ import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.ObdManager
 import com.heli.obd.scoring.DrivingScoreEngine
+import java.util.Locale
 
 /**
  * 駕駛評分畫面：即時監聽 OBD 數據，以本機規則計算本次騎乘評分。
@@ -79,7 +80,7 @@ class DrivingScoreActivity : BaseActivity(), ObdManager.Listener {
             scoreHint.text = getString(R.string.score_insufficient)
             return
         }
-        scoreNumber.text = score.toString()
+        scoreNumber.text = String.format(Locale.US, "%d", score)
         scoreGrade.text = gradeText(engine.grade(score))
         scoreHint.text = getString(R.string.score_done)
         renderBreakdown()
@@ -102,7 +103,7 @@ class DrivingScoreActivity : BaseActivity(), ObdManager.Listener {
     private fun addBreakdownRow(label: String, value: String) {
         breakdownContainer.addView(
             TextView(this).apply {
-                text = "$label：$value"
+                text = String.format(Locale.US, "%s：%s", label, value)
                 setTextColor(getColor(R.color.text_secondary))
                 textSize = 14f
                 setPadding(0, dp(3), 0, dp(3))
@@ -129,7 +130,7 @@ class DrivingScoreActivity : BaseActivity(), ObdManager.Listener {
         val count = engine.sampleCount()
         if (count >= 6) {
             val score = engine.score()
-            scoreNumber.text = score.toString()
+            scoreNumber.text = String.format(Locale.US, "%d", score)
             scoreGrade.text = gradeText(engine.grade(score))
             scoreHint.text = getString(R.string.score_live, count)
             renderBreakdown()

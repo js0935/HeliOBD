@@ -26,6 +26,7 @@ data class ImReadiness(
 data class FreezeFrame(
     val triggerDtc: String?,
     val values: Map<Int, Int?>,
+    val floatValues: Map<Int, Float?> = emptyMap(),
 )
 
 /** Mode 06 車載監控單一測試結果 */
@@ -155,6 +156,41 @@ object ObdDecoder {
         return ((bytes[2] shl 8) or bytes[3]).toFloat()
     }
 
+    /** 進氣歧管絕對壓力（PID 0B）：A → kPa */
+    fun manifoldPressure(hexResponse: String): Int? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3) return null
+        return bytes[2]
+    }
+
+    /** 點火提前角（PID 0E）：A/2 - 64 → ° */
+    fun timingAdvance(hexResponse: String): Float? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3) return null
+        return bytes[2] / 2f - 64f
+    }
+
+    /** 節氣門位置（PID 11）：A*100/255 → % */
+    fun throttlePosition(hexResponse: String): Int? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3) return null
+        return bytes[2] * 100 / 255
+    }
+
+    /** 燃油油位（PID 2F）：A*100/255 → % */
+    fun fuelLevel(hexResponse: String): Int? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3) return null
+        return bytes[2] * 100 / 255
+    }
+
+    /** 控制模組電壓（PID 42）：(A*256+B)/1000 → V */
+    fun moduleVoltage(hexResponse: String): Float? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 4) return null
+        return ((bytes[2] shl 8) or bytes[3]) / 1000f
+    }
+
     /**
      * 馬力/扭力估算（P = T*RPM/9549）。
      * 以 PID 63 即時扭力與當前轉速計算輸出功率（kW）。
@@ -189,6 +225,18 @@ object ObdDecoder {
             dtcCount = bytes[2] and 0x7F,
             tests = tests,
         )
+    }
+
+    /**
+     * 支援 PID 清單（mode 01 PID 00/20/40）：`41 00 A B C D` → 32-bit 位元遮罩。
+     * 最高位（bit 31）= PID 01、最低位（bit 0）= PID 32（此位亦表示下一個區塊存在）。
+     * 格式不符回傳 null。
+     */
+    fun supportedPidMask(hexResponse: String): Long? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 6 || bytes[0] != 0x41) return null
+        return (bytes[2].toLong() shl 24) or (bytes[3].toLong() shl 16) or
+            (bytes[4].toLong() shl 8) or bytes[5].toLong()
     }
 
     /** 凍結框觸發碼（mode 01 PID 02）：`41 02 XX XX` → P/C/B/U 碼 */
@@ -270,11 +318,19 @@ object ObdDecoder {
     /**
      * 校正 ID（mode 09 PID 0A）：多幀 ASCII，解析方式同 VIN（剝離 ISO-TP 幀標頭與續幀索引）。
      */
-    fun calibrationId(hexResponse: String): String? {
+    fun calibrationId(hexResponse: String): String? =
+        decodeAsciiInfo(hexResponse, pidByte = 0x0A, maxLen = 16)
+
+    /** ECU 名稱（mode 09 PID 0D）：多幀 ASCII，解析方式同校正 ID。 */
+    fun ecuName(hexResponse: String): String? =
+        decodeAsciiInfo(hexResponse, pidByte = 0x0D, maxLen = 20)
+
+    /** mode 09 多幀 ASCII 共用解析：依 pidByte 定位前綴，剝離幀標頭後收集可列印字元 */
+    private fun decodeAsciiInfo(hexResponse: String, pidByte: Int, maxLen: Int): String? {
         val bytes = parseBytes(hexResponse) ?: return null
         var start = -1
         for (i in 0..bytes.lastIndex - 2) {
-            if (bytes[i] == 0x49 && bytes[i + 1] == 0x0A) {
+            if (bytes[i] == 0x49 && bytes[i + 1] == pidByte) {
                 start = i + 2
                 break
             }
@@ -287,7 +343,7 @@ object ObdDecoder {
             if (b in 0x10..0x2F) continue
             if (b !in 0x30..0x7E) continue
             sb.append(b.toChar())
-            if (sb.length >= 16) break
+            if (sb.length >= maxLen) break
         }
         return sb.toString().takeIf { it.isNotBlank() }
     }
@@ -360,6 +416,23 @@ object ObdDecoder {
         }
         val numeric = (b1 and 0x3F) shl 8 or b2
         return system + "%04X".format(numeric)
+    }
+
+    /**
+     * 多 PID 合併指令（如 `01 0C 0D 05`）的多行回應拆解。
+     * 每行格式 `<modeByte> <PID> <data...>`（mode 01 為 `41`、mode 02 凍結框為 `42`）。
+     * 回傳 PID（2 位大寫 hex）→ 該行完整回應；無法解析的行直接略過。
+     */
+    fun parseMode01Batch(hexResponse: String, modeByte: Int = 0x41): Map<String, String> {
+        val prefix = "%02X".format(modeByte)
+        val result = mutableMapOf<String, String>()
+        hexResponse.lines().forEach { line ->
+            val tokens = line.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+            if (tokens.size >= 2 && tokens[0].equals(prefix, ignoreCase = true)) {
+                result[tokens[1].uppercase()] = line.trim()
+            }
+        }
+        return result
     }
 
     /** 自訂 PID raw 位元組：跳過回應模式與 PID echo（前 2 位元組）後續即 A/B/C/D…；格式錯誤回傳 null */

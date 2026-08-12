@@ -20,6 +20,7 @@ import com.heli.obd.elm.ObdManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
  * 驗車準備：彙整 I/M 排放監測器就緒狀態與故障碼，
@@ -167,7 +168,7 @@ class SmogCheckActivity : BaseActivity() {
             val hintRes = if (idx in driveHints.indices) driveHints[idx] else R.string.smog_hint_misfire
             driveContainer.addView(
                 TextView(this).apply {
-                    text = "• ${getString(test.nameRes)}：${getString(hintRes)}"
+                    text = String.format(Locale.US, "• %s：%s", getString(test.nameRes), getString(hintRes))
                     setTextColor(getColor(R.color.text_primary))
                     textSize = 14f
                     setPadding(0, dp(6), 0, 0)

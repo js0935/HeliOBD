@@ -213,17 +213,18 @@ class TripActivity : BaseActivity() {
         }
         liveCard.visibility = View.VISIBLE
         liveDuration.text = formatDuration(live.durationSec)
-        liveDistance.text = "%.1f".format(live.distanceKm)
-        liveMaxSpeed.text = live.maxSpeed.toString()
-        liveAvgSpeed.text = "%.0f".format(live.avgSpeedKmh)
+        liveDistance.text = String.format(Locale.US, "%.1f", live.distanceKm)
+        liveMaxSpeed.text = String.format(Locale.US, "%d", live.maxSpeed)
+        liveAvgSpeed.text = String.format(Locale.US, "%.0f", live.avgSpeedKmh)
         liveFuelRate.text = getString(
-            R.string.trip_fuel_unit, "%.1f".format(fuelConsumption(live))
+            R.string.trip_fuel_unit, String.format(Locale.US, "%.1f", fuelConsumption(live))
         )
         liveFuelTotal.text = getString(
-            R.string.trip_fuel_liter, "%.2f".format(live.totalFuelL * FuelCalibration.factor(this))
+            R.string.trip_fuel_liter,
+            String.format(Locale.US, "%.2f", live.totalFuelL * FuelCalibration.factor(this)),
         )
-        liveFuelDynamic.text = "%.2f".format(live.litersDynamic)
-        liveFuelStatic.text = "%.2f".format(live.litersStatic)
+        liveFuelDynamic.text = String.format(Locale.US, "%.2f", live.litersDynamic)
+        liveFuelStatic.text = String.format(Locale.US, "%.2f", live.litersStatic)
         liveIdleTime.text = formatDuration(live.idleTimeSec)
         liveFuelCost.text = getString(
             R.string.trip_fuel_cost_value,

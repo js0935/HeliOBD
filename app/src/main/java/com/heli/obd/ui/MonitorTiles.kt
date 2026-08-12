@@ -38,6 +38,11 @@ object MonitorTiles {
         Tile("torqueNm", context.getString(R.string.obd_torque), 0xFFE8EDF2.toInt(), { it.torqueUnit() }, { s, d -> d.torqueNm?.let { v -> s.torque(v) } }),
         Tile("fuelTrim", context.getString(R.string.pid_name_fuel_trim), 0xFF95A5A6.toInt(), { "%" }, { _, d -> d.fuelTrim }),
         Tile("afr", context.getString(R.string.pid_name_afr), 0xFF00B4D8.toInt(), { "AFR" }, { _, d -> d.afr }),
+        Tile("map", context.getString(R.string.pid_name_map), 0xFF8E44AD.toInt(), { "kPa" }, { _, d -> d.map?.toFloat() }),
+        Tile("timingAdvance", context.getString(R.string.pid_name_timing_advance), 0xFF16A085.toInt(), { "°" }, { _, d -> d.timingAdvance }),
+        Tile("throttle", context.getString(R.string.pid_name_throttle), 0xFF2C3E50.toInt(), { "%" }, { _, d -> d.throttle?.toFloat() }),
+        Tile("fuelLevel", context.getString(R.string.pid_name_fuel_level), 0xFFF39C12.toInt(), { "%" }, { _, d -> d.fuelLevel?.toFloat() }),
+        Tile("moduleVoltage", context.getString(R.string.pid_name_module_voltage), 0xFF7F8C8D.toInt(), { "V" }, { _, d -> d.moduleVoltage }),
     )
 
     fun custom(pids: List<PidStore.CustomPid>): List<Tile> =

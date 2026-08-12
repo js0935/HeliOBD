@@ -29,6 +29,7 @@ import com.heli.obd.elm.FreezeFrame
 import com.heli.obd.elm.ImReadiness
 import com.heli.obd.elm.MonitorTest
 import com.heli.obd.elm.ObdConstants
+import com.heli.obd.elm.ObdDecoder
 import com.heli.obd.elm.ObdManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -231,7 +232,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         )
         content.addView(
             TextView(this).apply {
-                text = getString(R.string.dtc_severity_label) + "："
+                text = String.format(Locale.US, "%s：", getString(R.string.dtc_severity_label))
                 setTypeface(typeface, Typeface.BOLD)
                 setTextColor(getColor(R.color.text_secondary))
                 textSize = 14f
@@ -249,7 +250,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         )
         content.addView(
             TextView(this).apply {
-                text = getString(R.string.dtc_advice_label) + "："
+                text = String.format(Locale.US, "%s：", getString(R.string.dtc_advice_label))
                 setTypeface(typeface, Typeface.BOLD)
                 setTextColor(getColor(R.color.text_secondary))
                 textSize = 14f
@@ -379,6 +380,34 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_LONG).show()
             return
         }
+        // 引擎運轉中清除故障碼可能被 ECU 立即重新寫入；先讀取轉速判斷引擎狀態
+        if (obd.isDemoMode()) {
+            showClearConfirmDialog()
+            return
+        }
+        lifecycleScope.launch {
+            val rpm = withContext(Dispatchers.IO) {
+                obd.sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_RPM)
+                    ?.let { ObdDecoder.rpm(it) }
+            }
+            if (rpm != null && rpm > 0) {
+                showEngineRunningWarning(rpm)
+            } else {
+                showClearConfirmDialog()
+            }
+        }
+    }
+
+    private fun showEngineRunningWarning(rpm: Int) {
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.dtc_clear_engine_running_title)
+            .setMessage(getString(R.string.dtc_clear_engine_running, rpm))
+            .setPositiveButton(R.string.dtc_clear_anyway) { _, _ -> showClearConfirmDialog() }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    private fun showClearConfirmDialog() {
         AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
             .setMessage(R.string.dtc_clear_confirm)
             .setPositiveButton(R.string.common_ok) { _, _ ->
@@ -540,7 +569,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
             val prefix = test.cylinder?.let { getString(R.string.mon_test_cylinder, it) + " " } ?: ""
             container.addView(
                 TextView(this).apply {
-                    text = prefix + name + "：" + test.value
+                    text = String.format(Locale.US, "%s%s：%s", prefix, name, test.value)
                     setTextColor(getColor(R.color.text_secondary))
                     textSize = 13f
                     setPadding(dp(8), dp(1), 0, dp(1))

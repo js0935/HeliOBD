@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -17,14 +18,22 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.lifecycleScope
 import com.heli.obd.App
 import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
+import com.heli.obd.backup.BackupStore
 import com.heli.obd.elm.BtPermissions
 import com.heli.obd.elm.ObdManager
+import com.heli.obd.llm.LlmClient
+import com.heli.obd.llm.LlmStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * 連線設定：OBD 連線/斷開控制（仿車機 App 的連線管理），
@@ -40,6 +49,19 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
     private lateinit var connectBtn: Button
     private lateinit var disconnectBtn: Button
     private lateinit var appearanceValue: TextView
+    private lateinit var llmBaseUrlField: EditText
+    private lateinit var llmApiKeyField: EditText
+    private lateinit var llmModelField: EditText
+
+    private val exportBackupLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri != null) exportBackup(uri)
+        }
+
+    private val importBackupLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) importBackup(uri)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,9 +75,24 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
         findViewById<View>(R.id.btn_save).setOnClickListener { save() }
 
+        findViewById<Button>(R.id.btn_backup_export).setOnClickListener {
+            exportBackupLauncher.launch("HeliOBD_Backup.json")
+        }
+        findViewById<Button>(R.id.btn_backup_import).setOnClickListener {
+            importBackupLauncher.launch(arrayOf("application/json", "text/*"))
+        }
+
         appearanceValue = findViewById(R.id.settings_appearance_value)
         renderAppearance()
         findViewById<View>(R.id.settings_appearance_row).setOnClickListener { pickAppearance() }
+
+        llmBaseUrlField = findViewById(R.id.settings_llm_base_url)
+        llmApiKeyField = findViewById(R.id.settings_llm_api_key)
+        llmModelField = findViewById(R.id.settings_llm_model)
+        val llm = LlmStore.load(this)
+        llmBaseUrlField.setText(llm.baseUrl)
+        llmApiKeyField.setText(llm.apiKey)
+        llmModelField.setText(llm.model)
 
         connectBtn.setOnClickListener { ensurePermissionAndConnect() }
         disconnectBtn.setOnClickListener {
@@ -114,6 +151,7 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         pickDevice()
     }
 
+    @android.annotation.SuppressLint("MissingPermission") // 權限由本頁於 pickDevice 前申請
     private fun pickDevice() {
         obd.discover { devices ->
             if (devices.isEmpty()) {
@@ -134,12 +172,31 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
     private fun connectTo(device: BluetoothDevice) {
         obd.connect(device) { success, message ->
             if (!success) {
-                Toast.makeText(
-                    this,
-                    message?.let { getString(R.string.obd_connect_failed, it) }
-                        ?: getString(R.string.obd_init_failed),
-                    Toast.LENGTH_LONG,
-                ).show()
+                showConnectGuide(message)
+            } else {
+                checkSuspiciousAdapter()
+            }
+        }
+    }
+
+    /** 連線失敗引導：依序檢查插頭／點火／其他 App／通訊協定，避免新手卡關 */
+    private fun showConnectGuide(message: String?) {
+        val detail = message?.let { getString(R.string.obd_connect_failed, it) }
+            ?: getString(R.string.obd_init_failed)
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.obd_connect_guide_title)
+            .setMessage(getString(R.string.obd_connect_guide_body, detail))
+            .setPositiveButton(R.string.obd_connect_guide_retry) { _, _ -> pickDevice() }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    /** 連線成功後於背景偵測山寨晶片（ATI 讀取會阻塞，不可在主執行緒執行） */
+    private fun checkSuspiciousAdapter() {
+        lifecycleScope.launch {
+            val suspicious = withContext(Dispatchers.IO) { obd.isSuspiciousAdapter() }
+            if (suspicious) {
+                Toast.makeText(this@SettingsActivity, R.string.obd_adapter_suspicious, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -210,8 +267,58 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
             .edit()
             .putString(ObdManager.KEY_ELM_CMDS, cmds)
             .apply()
+        LlmStore.save(
+            this,
+            LlmClient.Config(
+                baseUrl = llmBaseUrlField.text.toString(),
+                apiKey = llmApiKeyField.text.toString(),
+                model = llmModelField.text.toString(),
+            ),
+        )
         Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
         finish()
+    }
+
+    private fun exportBackup(uri: Uri) {
+        lifecycleScope.launch {
+            val json = withContext(Dispatchers.IO) { BackupStore.export(this@SettingsActivity) }
+            runCatching {
+                contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(json.toByteArray(Charsets.UTF_8))
+                } ?: error("null stream")
+            }.onSuccess {
+                Toast.makeText(this@SettingsActivity, R.string.backup_exported, Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun importBackup(uri: Uri) {
+        lifecycleScope.launch {
+            val text = withContext(Dispatchers.IO) {
+                runCatching {
+                    contentResolver.openInputStream(uri)?.use { input ->
+                        input.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                    }
+                }.getOrNull()
+            }
+            if (text.isNullOrBlank()) {
+                Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val restored = withContext(Dispatchers.IO) { BackupStore.import(this@SettingsActivity, text) }
+            if (restored < 0) {
+                Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
+            } else {
+                renderState(obd.state)
+                Toast.makeText(
+                    this@SettingsActivity,
+                    getString(R.string.backup_imported, restored),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
     }
 
     private fun appearanceMode(): String =

@@ -52,7 +52,7 @@
             android:id="@+id/rpm_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="3000"
+            android:text="@string/engine_sound_rpm_initial"
             android:textColor="@color/primary"
             android:textSize="64sp"
             android:textStyle="bold" />
@@ -101,7 +101,7 @@
             android:id="@+id/rpm_seek_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="3000 RPM"
+            android:text="@string/engine_sound_rpm_label_initial"
             android:textColor="@color/text_secondary"
             android:textSize="13sp" />
     </LinearLayout>

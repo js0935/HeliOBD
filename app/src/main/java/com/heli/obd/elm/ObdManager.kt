@@ -7,7 +7,6 @@ package com.heli.obd.elm
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothSocket
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -26,10 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.io.DataInputStream
 import java.io.IOException
-import java.io.OutputStream
-import java.util.UUID
 
 /**
  * OBD 藍牙連線管理員（ELM327）。
@@ -45,7 +41,10 @@ import java.util.UUID
  * 藍牙權限（Android 8–11：BLUETOOTH/ADMIN + 定位；Android 12+：BLUETOOTH_SCAN/CONNECT）
  * 由 Activity 層於連線前請求。
  */
-class ObdManager(private val appContext: Context) {
+class ObdManager(
+    private val appContext: Context,
+    private val transportFactory: (BluetoothDevice) -> ObdTransport = { BluetoothTransport() },
+) {
 
     // ===== 狀態 =====
 
@@ -70,6 +69,11 @@ class ObdManager(private val appContext: Context) {
         val afr: Float? = null,
         val intake: Int? = null,
         val customValues: Map<Long, Float?> = emptyMap(),
+        val map: Int? = null,
+        val timingAdvance: Float? = null,
+        val throttle: Int? = null,
+        val fuelLevel: Int? = null,
+        val moduleVoltage: Float? = null,
     )
 
     interface Listener {
@@ -83,9 +87,7 @@ class ObdManager(private val appContext: Context) {
     private val prefs: SharedPreferences =
         appContext.getSharedPreferences("obd_prefs", Context.MODE_PRIVATE)
 
-    private var socket: BluetoothSocket? = null
-    private var input: DataInputStream? = null
-    private var output: OutputStream? = null
+    private var transport: ObdTransport? = null
     private var pollJob: Job? = null
     private val listeners = mutableListOf<Listener>()
 
@@ -98,6 +100,14 @@ class ObdManager(private val appContext: Context) {
 
     @Volatile
     private var customPids: List<PidStore.CustomPid> = emptyList()
+
+    /** 斷線旗標：偵測到 socket EOF/IOException 後設定，防止重複觸發斷線清理；連線成功時重置 */
+    @Volatile
+    private var disconnectPending = false
+
+    /** 支援的 PID 清單（mode 01 PID 00/20/40 bitmask）；null = 尚未建立（視為全部支援） */
+    @Volatile
+    private var supportedPids: Set<String>? = null
 
     // ===== 自動配對（PAIRING_REQUEST）：ELM327 常見 PIN 1234，自動回應省去手動輸入 =====
     private val pairingReceiver = object : BroadcastReceiver() {
@@ -139,6 +149,11 @@ class ObdManager(private val appContext: Context) {
     private var lastTorqueNm: Float? = null
     private var lastFuelTrim: Float? = null
     private var lastAfr: Float? = null
+    private var lastMap: Int? = null
+    private var lastTimingAdvance: Float? = null
+    private var lastThrottle: Int? = null
+    private var lastFuelLevel: Int? = null
+    private var lastModuleVoltage: Float? = null
     private var lastCustom: Map<Long, Float?> = emptyMap()
 
     // ===== 歷史數據 ring buffer（key 與 MonitorTiles 一致） =====
@@ -160,7 +175,7 @@ class ObdManager(private val appContext: Context) {
         synchronized(listeners) { listeners.remove(listener) }
     }
 
-    fun isConnected(): Boolean = demoMode || socket?.isConnected == true
+    fun isConnected(): Boolean = demoMode || transport?.isOpen == true
 
     fun isDemoMode(): Boolean = demoMode
 
@@ -184,7 +199,7 @@ class ObdManager(private val appContext: Context) {
         } else {
             pollJob?.cancel()
             pollJob = null
-            if (socket == null) {
+            if (transport == null) {
                 setState(State.Idle)
             }
         }
@@ -198,6 +213,7 @@ class ObdManager(private val appContext: Context) {
 
     /** 掃描 ELM327 裝置：已配對裝置（全部）先列入，再進行 10 秒搜尋合併回傳 */
     @Suppress("DEPRECATION")
+    @android.annotation.SuppressLint("MissingPermission") // 權限由 UI 層於呼叫前統一申請
     fun discover(callback: (List<BluetoothDevice>) -> Unit) {
         val bt = adapter
         if (bt == null || !bt.isEnabled) {
@@ -249,6 +265,7 @@ class ObdManager(private val appContext: Context) {
         }
     }
 
+    @android.annotation.SuppressLint("MissingPermission") // 權限由 UI 層於呼叫前統一申請
     private fun isElm327(device: BluetoothDevice): Boolean {
         val name = device.name?.trim().orEmpty()
         // 名稱空白（廉價 ELM327 常見）或包含 OBD/ELM 關鍵字都列入
@@ -260,13 +277,14 @@ class ObdManager(private val appContext: Context) {
     // ===== 連線 =====
 
     fun connect(device: BluetoothDevice, callback: (success: Boolean, message: String?) -> Unit) {
+        disconnectPending = false
+        supportedPids = null
         setState(State.Connecting)
         ioScope.launch {
             val (ok, msg) = try {
-                val sock = openSocket(device) ?: throw IOException("RFCOMM connect failed")
-                socket = sock
-                input = DataInputStream(sock.inputStream)
-                output = sock.outputStream
+                val t = transportFactory(device)
+                if (!t.open(device)) throw IOException("RFCOMM connect failed")
+                transport = t
                 // 連線成立後稍等，避免首批 AT 指令被剛建立的 socket 丟棄
                 Thread.sleep(500)
                 val initOk = initElm327()
@@ -274,6 +292,7 @@ class ObdManager(private val appContext: Context) {
                     closeQuietly()
                     false to appContext.getString(R.string.obd_init_failed)
                 } else {
+                    loadSupportedPids()
                     true to null
                 }
             } catch (e: Exception) {
@@ -291,42 +310,37 @@ class ObdManager(private val appContext: Context) {
         }
     }
 
-    /**
-     * 以多層 fallback 建立 RFCOMM socket（提高廉價 ELM327 相容性）：
-     * 已配對 → secure SPP → channel 1 reflection → insecure SPP；
-     * 未配對 → insecure SPP → channel 1 reflection → secure SPP。
-     */
-    @Suppress("DEPRECATION")
-    private fun openSocket(device: BluetoothDevice): BluetoothSocket? {
-        val spp = UUID.fromString(ObdConstants.SPP_UUID)
-        val bonded = device.bondState == BluetoothDevice.BOND_BONDED
-        // true = secure（需配對）、false = insecure（免配對）、null = reflection channel 1
-        val modes = if (bonded) listOf(true, null, false) else listOf(false, null, true)
-        for (mode in modes) {
-            val sock = try {
-                when (mode) {
-                    true -> device.createRfcommSocketToServiceRecord(spp)
-                    false -> device.createInsecureRfcommSocketToServiceRecord(spp)
-                    else -> DeviceReflection.channel1(device) ?: continue
-                }
-            } catch (_: Exception) {
-                continue
-            }
-            try {
-                sock.connect()
-                return sock
-            } catch (_: Exception) {
-                runCatching { sock.close() }
-            }
-        }
-        return null
-    }
-
     fun disconnect() {
+        disconnectPending = false
         pollJob?.cancel()
         pollJob = null
         closeQuietly()
         setState(State.Idle)
+    }
+
+    /**
+     * 自動重連上次成功連線的裝置（無記錄則回呼失敗）。
+     * demoMode 下視為成功（無需藍牙）。
+     */
+    fun connectLastDevice(callback: (success: Boolean, message: String?) -> Unit) {
+        if (demoMode) {
+            callback(true, null)
+            return
+        }
+        val address = lastDeviceAddress()
+        if (address == null) {
+            callback(false, appContext.getString(R.string.obd_connect_error))
+            return
+        }
+        val device = runCatching {
+            @Suppress("DEPRECATION")
+            BluetoothAdapter.getDefaultAdapter()?.getRemoteDevice(address)
+        }.getOrNull()
+        if (device == null) {
+            callback(false, appContext.getString(R.string.obd_connect_error))
+            return
+        }
+        connect(device, callback)
     }
 
     /** ELM327 初始化：ATZ 必成功，其餘設定指令失敗不立即放棄（部分山寨晶片回 '?'） */
@@ -357,62 +371,68 @@ class ObdManager(private val appContext: Context) {
 
     /**
      * 送出 ELM327 指令並等待回應（以 '>' 為終止符）。
-     * 回應取最後一行（ATE0/ATL0/ATH0 之後為單行）。失敗回傳 null。
+     * 回應清洗雜訊後取最後一行（ATE0/ATL0/ATH0 之後為單行）。失敗或斷線回傳 null。
      */
     fun sendCommand(cmd: String): String? = synchronized(lock) {
-        val out = output ?: return null
-        val inStream = input ?: return null
+        val t = transport ?: return null
+        if (!t.isOpen) return null
         try {
-            out.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
-            out.flush()
+            t.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
 
             val sb = StringBuilder()
             val deadline = System.currentTimeMillis() + ObdConstants.COMMAND_TIMEOUT_MS
             while (System.currentTimeMillis() < deadline) {
-                while (inStream.available() > 0) {
-                    val c = inStream.read()
-                    if (c == -1) return@synchronized null
+                while (t.available() > 0) {
+                    val c = t.read()
+                    if (c == -1) {
+                        markDisconnected()
+                        return@synchronized null
+                    }
                     if (c.toChar() == '>') {
-                        return@synchronized lastLine(sb.toString())
+                        return@synchronized lastLine(cleanResponse(sb.toString()))
                     }
                     sb.append(c.toChar())
                 }
                 Thread.sleep(15)
             }
-            lastLine(sb.toString()).takeIf { it.isNotBlank() }
+            lastLine(cleanResponse(sb.toString())).takeIf { it.isNotBlank() }
         } catch (_: Exception) {
+            markDisconnected()
             null
         }
     }
 
     /**
-     * 送出 ELM327 指令並回傳「完整」原始回應（保留所有行，不含 '>' prompt）。
+     * 送出 ELM327 指令並回傳「完整」原始回應（清洗雜訊行後保留所有資料行，不含 '>' prompt）。
      * 供 OBD 終端機顯示用；一般功能請使用 sendCommand()（只取最後一行）。
      * 模擬模式下回傳對應的假回應。
      */
     fun sendRawCommand(cmd: String): String? = synchronized(lock) {
         if (demoMode) return@synchronized demoTerminalResponse(cmd)
-        val out = output ?: return null
-        val inStream = input ?: return null
+        val t = transport ?: return null
+        if (!t.isOpen) return null
         try {
-            out.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
-            out.flush()
+            t.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
 
             val sb = StringBuilder()
             val deadline = System.currentTimeMillis() + ObdConstants.COMMAND_TIMEOUT_MS
             while (System.currentTimeMillis() < deadline) {
-                while (inStream.available() > 0) {
-                    val c = inStream.read()
-                    if (c == -1) return@synchronized null
+                while (t.available() > 0) {
+                    val c = t.read()
+                    if (c == -1) {
+                        markDisconnected()
+                        return@synchronized null
+                    }
                     if (c.toChar() == '>') {
-                        return@synchronized sb.toString().trim()
+                        return@synchronized cleanResponse(sb.toString())
                     }
                     sb.append(c.toChar())
                 }
                 Thread.sleep(15)
             }
-            sb.toString().trim().takeIf { it.isNotBlank() }
+            cleanResponse(sb.toString()).takeIf { it.isNotBlank() }
         } catch (_: Exception) {
+            markDisconnected()
             null
         }
     }
@@ -436,10 +456,69 @@ class ObdManager(private val appContext: Context) {
         }
     }
 
+    /**
+     * 清洗 ELM327 原始回應：移除 SEARCHING… / BUS INIT / STOPPED 等雜訊行與空白行，
+     * 保留純資料行。sendRawCommand 保留多行結構；sendCommand 再取最後一行。
+     */
+    private fun cleanResponse(raw: String): String {
+        val lines = raw.lines().mapNotNull { line ->
+            val cleaned = line.trim()
+            if (cleaned.isEmpty()) return@mapNotNull null
+            val upper = cleaned.uppercase()
+            if (upper.contains("SEARCHING") || upper.contains("BUS INIT") || upper.contains("STOPPED")) {
+                null
+            } else {
+                cleaned
+            }
+        }
+        return lines.joinToString("\n")
+    }
+
     private fun lastLine(raw: String): String =
         raw.trim().lines().lastOrNull { it.isNotBlank() } ?: ""
 
     // ===== 即時數據 =====
+
+    /**
+     * 建立支援 PID 清單：讀取 mode 01 PID 00/20/40 的 32-bit bitmask，
+     * 只對支援的 PID 輪詢，避免不支援的 PID 每次浪費一個 timeout 週期。
+     * 任一讀取失敗即保留 null（視為全部支援，維持原有行為），不阻斷連線。
+     */
+    private fun loadSupportedPids() {
+        try {
+            val mask00 = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SUPPORTED)
+                ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+            val pids = mutableSetOf<String>()
+            for (i in 0 until 32) {
+                if ((mask00 shr (31 - i)) and 1L != 0L) pids += (0x01 + i).pidHex()
+            }
+            if ((mask00 and 1L) != 0L) {
+                val mask20 = sendCommand(ObdConstants.MODE_CURRENT_DATA + "20")
+                    ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+                for (i in 0 until 32) {
+                    if ((mask20 shr (31 - i)) and 1L != 0L) pids += (0x21 + i).pidHex()
+                }
+                if ((mask20 and 1L) != 0L) {
+                    val mask40 = sendCommand(ObdConstants.MODE_CURRENT_DATA + "40")
+                        ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+                    for (i in 0 until 32) {
+                        if ((mask40 shr (31 - i)) and 1L != 0L) pids += (0x41 + i).pidHex()
+                    }
+                }
+            }
+            if (pids.isNotEmpty()) supportedPids = pids
+        } catch (_: Exception) {
+            // 讀取失敗時維持 null（全部支援），不阻斷連線
+        }
+    }
+
+    /** PID 是否受支援；清單尚未建立（null）時視為全部支援（保守行為） */
+    private fun isPidSupported(pid: String): Boolean =
+        supportedPids?.contains(pid) ?: true
+
+    /** Int → ELM PID 十六進位字串（0x0C → "0C"） */
+    private fun Int.pidHex(): String =
+        (this and 0xFF).toString(16).uppercase().padStart(2, '0')
 
     /** 設定要隨輪詢一起讀取的自訂 PID（車廠專用感測器）。 */
     fun setCustomPids(pids: List<PidStore.CustomPid>) {
@@ -449,14 +528,58 @@ class ObdManager(private val appContext: Context) {
     private fun startPolling() {
         pollJob?.cancel()
         pollJob = ioScope.launch {
+            var intervalMs = ObdConstants.POLL_INTERVAL_MS
+            var consecutiveFailures = 0
             while (isActive) {
                 if (!isConnected()) break
+                val started = System.currentTimeMillis()
                 val data = requestLiveData()
+                val elapsed = System.currentTimeMillis() - started
                 if (data != null) {
+                    val hasValue = listOf(data.rpm, data.speed, data.coolant, data.voltage)
+                        .any { it != null }
+                    if (hasValue) {
+                        consecutiveFailures = 0
+                        // 自適應間隔：單次輪詢耗時逼近目前間隔時放大，避免指令堆疊；
+                        // 餘裕充足時緩慢縮小，但不低於基準間隔。
+                        intervalMs = if (elapsed > intervalMs * 0.8) {
+                            (elapsed * 1.5).toLong().coerceAtMost(ObdConstants.POLL_INTERVAL_MS * 4)
+                        } else {
+                            (intervalMs * 0.9).toLong().coerceAtLeast(ObdConstants.POLL_INTERVAL_MS)
+                        }
+                    } else {
+                        // 整輪無任何數據 → 退避
+                        consecutiveFailures++
+                        intervalMs = (intervalMs * 2).toLong()
+                            .coerceAtMost(ObdConstants.POLL_INTERVAL_MS * 8)
+                    }
                     mainHandler.post { notifyLiveData(data) }
+                } else {
+                    consecutiveFailures++
+                    intervalMs = (intervalMs * 2).toLong()
+                        .coerceAtMost(ObdConstants.POLL_INTERVAL_MS * 8)
                 }
-                delay(ObdConstants.POLL_INTERVAL_MS)
+                delay(intervalMs)
             }
+        }
+    }
+
+    /**
+     * 批次讀取多個 PID（合併指令如 `01 0C 0D 05`，一次通訊取回多行）。
+     * 合併指令失敗或某 PID 缺漏時，缺漏者自動回退為個別 sendCommand。
+     * 回傳 PID（2 位大寫 hex）→ 該 PID 回應行；全部失敗回傳全 null。
+     * @param mode 服務模式（MODE_CURRENT_DATA="01" 或 MODE_FREEZE_FRAME="02"）
+     */
+    private fun sendBatchMode01(
+        pids: List<String>,
+        mode: String = ObdConstants.MODE_CURRENT_DATA,
+    ): Map<String, String?> {
+        if (pids.isEmpty()) return emptyMap()
+        val cmd = listOf(mode) + pids
+        val raw = sendRawCommand(cmd.joinToString(" "))
+        val parsed = raw?.let { ObdDecoder.parseMode01Batch(it, mode.toInt(16)) }.orEmpty()
+        return pids.associateWith { pid ->
+            parsed[pid] ?: sendCommand(mode + pid)
         }
     }
 
@@ -466,50 +589,91 @@ class ObdManager(private val appContext: Context) {
         val tick = ++pollTick
         val medium = tick % 2 == 1
         val slow = tick % 4 == 1
-        val rpm = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_RPM)
-            ?.let { ObdDecoder.rpm(it) }
-        val speed = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SPEED)
-            ?.let { ObdDecoder.speed(it) }
-        val coolant = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_COOLANT)
-            ?.let { ObdDecoder.coolantTemp(it) }
-        val load = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_LOAD)
-            ?.let { ObdDecoder.engineLoad(it) }
+        // 核心 PID（轉速/車速/水溫/負載）每 tick 批次取回
+        val core = sendBatchMode01(
+            buildList {
+                add(ObdConstants.PID_RPM)
+                add(ObdConstants.PID_SPEED)
+                add(ObdConstants.PID_COOLANT)
+                if (isPidSupported(ObdConstants.PID_LOAD)) add(ObdConstants.PID_LOAD)
+            }
+        )
+        val rpm = core[ObdConstants.PID_RPM]?.let { ObdDecoder.rpm(it) }
+        val speed = core[ObdConstants.PID_SPEED]?.let { ObdDecoder.speed(it) }
+        val coolant = core[ObdConstants.PID_COOLANT]?.let { ObdDecoder.coolantTemp(it) }
+        val load = core[ObdConstants.PID_LOAD]?.let { ObdDecoder.engineLoad(it) }
         val voltage = if (medium) {
             sendCommand(ObdConstants.CMD_VOLTAGE)
                 ?.let { ObdDecoder.voltage(it) }?.also { lastVoltage = it }
         } else lastVoltage
-        val intake = if (medium) {
-            sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_INTAKE)
-                ?.let { ObdDecoder.intakeTemp(it) }?.also { lastIntake = it }
-        } else lastIntake
-        val maf = if (medium) {
-            sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_MAF)
-                ?.let { ObdDecoder.maf(it) }?.also { lastMaf = it }
-        } else lastMaf
-        val fuelRate = if (medium) {
-            sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_FUEL_RATE)
-                ?.let { ObdDecoder.fuelRate(it) }?.also { lastFuelRate = it }
-        } else lastFuelRate
-        val torqueNm = if (medium) {
-            sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_TORQUE)
-                ?.let { ObdDecoder.torqueNm(it) }?.also { lastTorqueNm = it }
-        } else lastTorqueNm
-        val fuelTrim = if (slow) {
-            sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SHORT_FUEL_TRIM)
-                ?.let { ObdDecoder.fuelTrim(it) }?.also { lastFuelTrim = it }
-        } else lastFuelTrim
-        val afr = if (slow) {
-            sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_WIDEBAND_AFR)
-                ?.let { ObdDecoder.widebandAfr(it) }?.also { lastAfr = it }
-        } else lastAfr
+        // medium 層 PID 批次取回（以支援清單過濾）
+        val mediumResponses = if (medium) sendBatchMode01(
+            buildList {
+                if (isPidSupported(ObdConstants.PID_INTAKE)) add(ObdConstants.PID_INTAKE)
+                if (isPidSupported(ObdConstants.PID_MAF)) add(ObdConstants.PID_MAF)
+                if (isPidSupported(ObdConstants.PID_FUEL_RATE)) add(ObdConstants.PID_FUEL_RATE)
+                if (isPidSupported(ObdConstants.PID_TORQUE)) add(ObdConstants.PID_TORQUE)
+                if (isPidSupported(ObdConstants.PID_MAP)) add(ObdConstants.PID_MAP)
+                if (isPidSupported(ObdConstants.PID_TIMING_ADVANCE)) add(ObdConstants.PID_TIMING_ADVANCE)
+                if (isPidSupported(ObdConstants.PID_THROTTLE)) add(ObdConstants.PID_THROTTLE)
+                if (isPidSupported(ObdConstants.PID_MODULE_VOLTAGE)) add(ObdConstants.PID_MODULE_VOLTAGE)
+            }
+        ) else emptyMap()
+        val intake = mediumResponses[ObdConstants.PID_INTAKE]?.let { ObdDecoder.intakeTemp(it) }
+            ?.also { lastIntake = it } ?: lastIntake
+        val maf = mediumResponses[ObdConstants.PID_MAF]?.let { ObdDecoder.maf(it) }
+            ?.also { lastMaf = it } ?: lastMaf
+        val fuelRate = mediumResponses[ObdConstants.PID_FUEL_RATE]?.let { ObdDecoder.fuelRate(it) }
+            ?.also { lastFuelRate = it } ?: lastFuelRate
+        val torqueNm = mediumResponses[ObdConstants.PID_TORQUE]?.let { ObdDecoder.torqueNm(it) }
+            ?.also { lastTorqueNm = it } ?: lastTorqueNm
+        val map = mediumResponses[ObdConstants.PID_MAP]?.let { ObdDecoder.manifoldPressure(it) }
+            ?.also { lastMap = it } ?: lastMap
+        val timingAdvance = mediumResponses[ObdConstants.PID_TIMING_ADVANCE]?.let { ObdDecoder.timingAdvance(it) }
+            ?.also { lastTimingAdvance = it } ?: lastTimingAdvance
+        val throttle = mediumResponses[ObdConstants.PID_THROTTLE]?.let { ObdDecoder.throttlePosition(it) }
+            ?.also { lastThrottle = it } ?: lastThrottle
+        val moduleVoltage = mediumResponses[ObdConstants.PID_MODULE_VOLTAGE]?.let { ObdDecoder.moduleVoltage(it) }
+            ?.also { lastModuleVoltage = it } ?: lastModuleVoltage
+        // slow 層 PID（每 4 tick 一次）批次取回
+        val slowResponses = if (slow) sendBatchMode01(
+            buildList {
+                if (isPidSupported(ObdConstants.PID_SHORT_FUEL_TRIM)) add(ObdConstants.PID_SHORT_FUEL_TRIM)
+                if (isPidSupported(ObdConstants.PID_WIDEBAND_AFR)) add(ObdConstants.PID_WIDEBAND_AFR)
+                if (isPidSupported(ObdConstants.PID_FUEL_LEVEL)) add(ObdConstants.PID_FUEL_LEVEL)
+            }
+        ) else emptyMap()
+        val fuelTrim = slowResponses[ObdConstants.PID_SHORT_FUEL_TRIM]?.let { ObdDecoder.fuelTrim(it) }
+            ?.also { lastFuelTrim = it } ?: lastFuelTrim
+        val afr = slowResponses[ObdConstants.PID_WIDEBAND_AFR]?.let { ObdDecoder.widebandAfr(it) }
+            ?.also { lastAfr = it } ?: lastAfr
+        val fuelLevel = slowResponses[ObdConstants.PID_FUEL_LEVEL]?.let { ObdDecoder.fuelLevel(it) }
+            ?.also { lastFuelLevel = it } ?: lastFuelLevel
         val customValues = if (slow) {
             lastCustom = readCustomPids()
             lastCustom
         } else {
             lastCustom
         }
-        return LiveData(rpm, speed, coolant, voltage, load, maf, fuelRate, torqueNm, fuelTrim, afr, intake, customValues)
-            .also { recordHistory(it) }
+        return LiveData(
+            rpm = rpm,
+            speed = speed,
+            coolant = coolant,
+            voltage = voltage,
+            load = load,
+            maf = maf,
+            fuelRate = fuelRate,
+            torqueNm = torqueNm,
+            fuelTrim = fuelTrim,
+            afr = afr,
+            intake = intake,
+            customValues = customValues,
+            map = map,
+            timingAdvance = timingAdvance,
+            throttle = throttle,
+            fuelLevel = fuelLevel,
+            moduleVoltage = moduleVoltage,
+        ).also { recordHistory(it) }
     }
 
     private fun readCustomPids(): Map<Long, Float?> =
@@ -545,6 +709,11 @@ class ObdManager(private val appContext: Context) {
         push("torqueNm", data.torqueNm)
         push("fuelTrim", data.fuelTrim)
         push("afr", data.afr)
+        push("map", data.map?.toFloat())
+        push("timingAdvance", data.timingAdvance)
+        push("throttle", data.throttle?.toFloat())
+        push("fuelLevel", data.fuelLevel?.toFloat())
+        push("moduleVoltage", data.moduleVoltage)
         data.customValues.forEach { (id, v) -> push("custom:$id", v) }
     }
 
@@ -571,7 +740,17 @@ class ObdManager(private val appContext: Context) {
         )
     }
 
-    /** 凍結框：讀取觸發碼 + 水溫/轉速/車速/負載的凍結值（mode 02） */
+    /**
+     * 偵測疑似山寨 ELM327：官方版本僅 1.3/1.4/2.1/2.2/2.3，
+     * 回報 v1.5 為業界公認的仿冒晶片標記。無法讀取版本或 demoMode 時回傳 false。
+     */
+    fun isSuspiciousAdapter(): Boolean {
+        if (demoMode) return false
+        val version = readConnectionDiag()?.version ?: return false
+        return version.uppercase().contains("V1.5")
+    }
+
+    /** 凍結框：讀取觸發碼 + 關鍵數據的凍結值（mode 02，批次取回） */
     fun readFreezeFrame(): FreezeFrame? {
         if (demoMode) {
             return FreezeFrame(
@@ -579,23 +758,47 @@ class ObdManager(private val appContext: Context) {
                 values = mapOf(
                     R.string.pid_name_coolant to 88, R.string.pid_name_rpm to 3100,
                     R.string.pid_name_speed to 12, R.string.pid_name_load to 42,
+                    R.string.pid_name_intake to 45, R.string.pid_name_map to 55,
+                    R.string.pid_name_throttle to 30, R.string.pid_name_fuel_level to 60,
+                ),
+                floatValues = mapOf(
+                    R.string.pid_name_maf to 6.2f, R.string.pid_name_timing_advance to 8f,
+                    R.string.pid_name_module_voltage to 13.8f,
+                    R.string.pid_name_fuel_trim to -2.5f, R.string.pid_name_afr to 14.2f,
                 ),
             )
         }
         if (!isConnected()) return null
         val trigger = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_FREEZE_DTC)
             ?.let { ObdDecoder.freezeDtc(it) }
+        val intPids = ObdConstants.FREEZE_FRAME_PIDS.map { it.first }
+        val intResponses = sendBatchMode01(intPids, mode = ObdConstants.MODE_FREEZE_FRAME)
         val values = ObdConstants.FREEZE_FRAME_PIDS.associate { (pid, labelRes) ->
-            val resp = sendCommand(ObdConstants.MODE_FREEZE_FRAME + pid)
             labelRes to when (pid) {
-                ObdConstants.PID_COOLANT -> resp?.let { ObdDecoder.coolantTemp(it) }
-                ObdConstants.PID_RPM -> resp?.let { ObdDecoder.rpm(it) }
-                ObdConstants.PID_SPEED -> resp?.let { ObdDecoder.speed(it) }
-                ObdConstants.PID_LOAD -> resp?.let { ObdDecoder.engineLoad(it) }
+                ObdConstants.PID_COOLANT -> intResponses[pid]?.let { ObdDecoder.coolantTemp(it) }
+                ObdConstants.PID_RPM -> intResponses[pid]?.let { ObdDecoder.rpm(it) }
+                ObdConstants.PID_SPEED -> intResponses[pid]?.let { ObdDecoder.speed(it) }
+                ObdConstants.PID_LOAD -> intResponses[pid]?.let { ObdDecoder.engineLoad(it) }
+                ObdConstants.PID_INTAKE -> intResponses[pid]?.let { ObdDecoder.intakeTemp(it) }
+                ObdConstants.PID_MAP -> intResponses[pid]?.let { ObdDecoder.manifoldPressure(it) }
+                ObdConstants.PID_THROTTLE -> intResponses[pid]?.let { ObdDecoder.throttlePosition(it) }
+                ObdConstants.PID_FUEL_LEVEL -> intResponses[pid]?.let { ObdDecoder.fuelLevel(it) }
                 else -> null
             }
         }
-        return FreezeFrame(trigger, values)
+        val floatPids = ObdConstants.FREEZE_FRAME_FLOAT_PIDS.map { it.first }
+        val floatResponses = sendBatchMode01(floatPids, mode = ObdConstants.MODE_FREEZE_FRAME)
+        val floatValues = ObdConstants.FREEZE_FRAME_FLOAT_PIDS.associate { (pid, labelRes) ->
+            labelRes to when (pid) {
+                ObdConstants.PID_MAF -> floatResponses[pid]?.let { ObdDecoder.maf(it) }
+                ObdConstants.PID_TIMING_ADVANCE -> floatResponses[pid]?.let { ObdDecoder.timingAdvance(it) }
+                ObdConstants.PID_MODULE_VOLTAGE -> floatResponses[pid]?.let { ObdDecoder.moduleVoltage(it) }
+                ObdConstants.PID_SHORT_FUEL_TRIM -> floatResponses[pid]?.let { ObdDecoder.fuelTrim(it) }
+                ObdConstants.PID_WIDEBAND_AFR -> floatResponses[pid]?.let { ObdDecoder.widebandAfr(it) }
+                else -> null
+            }
+        }
+        return FreezeFrame(trigger, values, floatValues)
     }
 
     /** I/M 排放就緒狀態（mode 01 PID 01） */
@@ -630,6 +833,30 @@ class ObdManager(private val appContext: Context) {
         if (!isConnected()) return null
         val resp = sendCommand(ObdConstants.MODE_VEHICLE_INFO + "0B")
         return resp?.let { ObdDecoder.cvn(it) }
+    }
+
+    /** ECU 名稱（mode 09 PID 0D） */
+    fun readEcuName(): String? {
+        if (demoMode) return "HeliOBD-Demo-ECU"
+        if (!isConnected()) return null
+        val resp = sendCommand(ObdConstants.MODE_VEHICLE_INFO + "0D")
+        return resp?.let { ObdDecoder.ecuName(it) }
+    }
+
+    /**
+     * 偵測到通訊斷線（socket EOF / IOException）時呼叫。
+     * 冪等：以 disconnectPending 旗標防止重複清理；連線成功時重置。
+     * 清理動作移到背景執行緒，避免在 sendCommand 的 synchronized(lock) 區塊內長時間佔鎖。
+     */
+    private fun markDisconnected() {
+        if (disconnectPending) return
+        disconnectPending = true
+        ioScope.launch {
+            pollJob?.cancel()
+            pollJob = null
+            closeQuietly()
+            setState(State.Idle)
+        }
     }
 
     /** 車載監控測試結果（mode 06）：失火/燃油系統/綜合元件三組 TID */
@@ -772,7 +999,31 @@ class ObdManager(private val appContext: Context) {
         val torqueNm = (10.0 + load / 100.0 * 85.0 + (Math.random() - 0.5) * 4.0).toFloat()
         val fuelTrim = ((Math.random() - 0.5) * 8.0).toFloat()
         val afr = (14.0 + (Math.random() - 0.5) * 1.5).toFloat()
-        return LiveData(rpm, speed, coolant, voltage, load, maf, fuelRate, torqueNm, fuelTrim, afr, intake)
+        val map = (30.0 + load / 100.0 * 70.0 + (Math.random() - 0.5) * 4.0)
+            .coerceIn(20.0, 105.0).toInt()
+        val timingAdvance = (-5.0 + load / 100.0 * 30.0 + (Math.random() - 0.5) * 3.0)
+            .coerceIn(-10.0, 40.0).toFloat()
+        val throttle = (load + (Math.random() - 0.5) * 4.0).coerceIn(0.0, 100.0).toInt()
+        val fuelLevel = (65.0 + (Math.random() - 0.5) * 1.0).coerceIn(0.0, 100.0).toInt()
+        val moduleVoltage = (13.7 + (Math.random() - 0.5) * 0.4).toFloat()
+        return LiveData(
+            rpm = rpm,
+            speed = speed,
+            coolant = coolant,
+            voltage = voltage,
+            load = load,
+            maf = maf,
+            fuelRate = fuelRate,
+            torqueNm = torqueNm,
+            fuelTrim = fuelTrim,
+            afr = afr,
+            intake = intake,
+            map = map,
+            timingAdvance = timingAdvance,
+            throttle = throttle,
+            fuelLevel = fuelLevel,
+            moduleVoltage = moduleVoltage,
+        )
     }
 
     // ===== 內部 =====
@@ -792,11 +1043,8 @@ class ObdManager(private val appContext: Context) {
 
     private fun closeQuietly() {
         synchronized(lock) {
-            runCatching { output?.flush() }
-            runCatching { socket?.close() }
-            socket = null
-            input = null
-            output = null
+            runCatching { transport?.close() }
+            transport = null
         }
     }
 

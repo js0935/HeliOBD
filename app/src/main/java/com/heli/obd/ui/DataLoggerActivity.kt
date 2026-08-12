@@ -38,6 +38,11 @@ data class DatalogSample(
     val coolant: Int?,
     val voltage: Float?,
     val load: Int?,
+    val map: Int? = null,
+    val timingAdvance: Float? = null,
+    val throttle: Int? = null,
+    val fuelLevel: Int? = null,
+    val moduleVoltage: Float? = null,
 )
 
 /**
@@ -121,6 +126,11 @@ class DataLoggerActivity : BaseActivity(), ObdManager.Listener {
                 .append(",\"coolant\":").append(s.coolant)
                 .append(",\"voltage\":").append(s.voltage)
                 .append(",\"load\":").append(s.load)
+                .append(",\"map\":").append(s.map)
+                .append(",\"timingAdvance\":").append(s.timingAdvance)
+                .append(",\"throttle\":").append(s.throttle)
+                .append(",\"fuelLevel\":").append(s.fuelLevel)
+                .append(",\"moduleVoltage\":").append(s.moduleVoltage)
                 .append('}')
         }
         sb.append("]}")
@@ -140,6 +150,11 @@ class DataLoggerActivity : BaseActivity(), ObdManager.Listener {
             data.coolant,
             data.voltage,
             data.load,
+            data.map,
+            data.timingAdvance,
+            data.throttle,
+            data.fuelLevel,
+            data.moduleVoltage,
         )
         statusText.text = getString(R.string.logger_recording, samples.size)
     }
@@ -200,14 +215,19 @@ class DataLoggerActivity : BaseActivity(), ObdManager.Listener {
             Toast.makeText(this, R.string.logger_empty, Toast.LENGTH_SHORT).show()
             return
         }
-        val sb = StringBuilder("t,rpm,speed,coolant,voltage,load\n")
+        val sb = StringBuilder("t,rpm,speed,coolant,voltage,load,map,timingAdvance,throttle,fuelLevel,moduleVoltage\n")
         list.forEach { s ->
             sb.append(s.t).append(',')
                 .append(s.rpm ?: "").append(',')
                 .append(s.speed ?: "").append(',')
                 .append(s.coolant ?: "").append(',')
                 .append(s.voltage ?: "").append(',')
-                .append(s.load ?: "").append('\n')
+                .append(s.load ?: "").append(',')
+                .append(s.map ?: "").append(',')
+                .append(s.timingAdvance ?: "").append(',')
+                .append(s.throttle ?: "").append(',')
+                .append(s.fuelLevel ?: "").append(',')
+                .append(s.moduleVoltage ?: "").append('\n')
         }
         val dir = File(filesDir, "export").apply { mkdirs() }
         val out = File(dir, file.name.replace(".json", ".csv"))
@@ -255,6 +275,11 @@ class DataLoggerActivity : BaseActivity(), ObdManager.Listener {
                         if (o.isNull("coolant")) null else o.getInt("coolant"),
                         if (o.isNull("voltage")) null else o.getDouble("voltage").toFloat(),
                         if (o.isNull("load")) null else o.getInt("load"),
+                        if (o.isNull("map")) null else o.getInt("map"),
+                        if (o.isNull("timingAdvance")) null else o.getDouble("timingAdvance").toFloat(),
+                        if (o.isNull("throttle")) null else o.getInt("throttle"),
+                        if (o.isNull("fuelLevel")) null else o.getInt("fuelLevel"),
+                        if (o.isNull("moduleVoltage")) null else o.getDouble("moduleVoltage").toFloat(),
                     )
                 }
             } catch (e: Exception) {

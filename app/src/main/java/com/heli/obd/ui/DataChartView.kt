@@ -13,6 +13,7 @@ import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -106,14 +107,14 @@ class DataChartView @JvmOverloads constructor(
             val range = if (s.points.size > 1) {
                 val min = s.points.minOrNull() ?: 0f
                 val max = s.points.maxOrNull() ?: 0f
-                if (min == max) String.format("%.1f", min) else String.format("%.1f~%.1f", min, max)
+                if (min == max) String.format(Locale.US, "%.1f", min) else String.format(Locale.US, "%.1f~%.1f", min, max)
             } else {
                 "—"
             }
             val current = s.points.lastOrNull()
             val label = if (current != null) {
                 val avg = if (s.points.size > 1) s.points.average().toFloat() else current
-                String.format("%s %.1f  [%s]  AVG %.1f", s.name, current, range, avg)
+                String.format(Locale.US, "%s %.1f  [%s]  AVG %.1f", s.name, current, range, avg)
             } else {
                 s.name
             }
@@ -185,7 +186,7 @@ class DataChartView @JvmOverloads constructor(
             dotPaint.color = s.color
             canvas.drawCircle(cx, py, 4f * density, dotPaint)
             textPaint.color = s.color
-            val text = "${s.name} ${String.format("%.1f", v)}"
+            val text = "${s.name} ${String.format(Locale.US, "%.1f", v)}"
             val textW = textPaint.measureText(text)
             val tx = if (cx + 8f * density + textW > width.toFloat()) {
                 cx - 8f * density - textW
@@ -196,7 +197,7 @@ class DataChartView @JvmOverloads constructor(
         }
     }
 
-    private fun fmt(value: Float): String = String.format("%.0f", value)
+    private fun fmt(value: Float): String = String.format(Locale.US, "%.0f", value)
 
     companion object {
         const val GRID_COUNT = 4

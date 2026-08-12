@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
@@ -70,7 +70,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="—"
+                android:text="@string/common_dash"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
@@ -79,7 +79,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="—"
+                android:text="@string/common_dash"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
@@ -105,6 +105,7 @@
                     android:background="@drawable/bg_card"
                     android:digits="0123456789"
                     android:hint="0"
+                    tools:ignore="HardcodedText"
                     android:inputType="number"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
@@ -132,6 +133,7 @@
                     android:background="@drawable/bg_card"
                     android:digits="0123456789"
                     android:hint="20260101"
+                    tools:ignore="HardcodedText"
                     android:inputType="number"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
@@ -159,6 +161,7 @@
                     android:background="@drawable/bg_card"
                     android:digits="0123456789"
                     android:hint="3000"
+                    tools:ignore="HardcodedText"
                     android:inputType="number"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
@@ -186,6 +189,7 @@
                     android:background="@drawable/bg_card"
                     android:digits="0123456789"
                     android:hint="180"
+                    tools:ignore="HardcodedText"
                     android:inputType="number"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
@@ -223,7 +227,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="—"
+                android:text="@string/common_dash"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
