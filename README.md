@@ -13,6 +13,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 - [使用指南](#使用指南)
 - [技術架構](#技術架構)
 - [技術規格](#技術規格)
+- [程式品質與 Lint 治理](#程式品質與-lint-治理)
 - [授權系統](#授權系統)
 - [版本歷史](#版本歷史)
 - [常見問題](#常見問題)
@@ -58,7 +59,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 
 | 功能 | 說明 |
 |---|---|
-| 加速測試 | 0-100 / 0-60 / 1/4 英里計時，記錄最佳成績 |
+| 加速測試 | 0–100 / 0–60 / ¼ 英里計時，記錄最佳成績 |
 | 馬力 / 扭力 | 即時功率與加速性能推算（Dyno） |
 | 即時油耗 | 即時燃油率顯示 + 加油校準 |
 | 油耗統計 | 動 / 靜態油耗分離與油錢計算 |
@@ -97,7 +98,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 環境需求：
 
 - JDK 17+
-- Android SDK（compileSdk 35）
+- Android SDK（compileSdk 36）
 - Android Studio（建議）
 
 ```
@@ -105,6 +106,18 @@ gradlew.bat assembleDebug
 ```
 
 APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
+
+### 品質驗證
+
+每次改動後建議執行完整驗證（Lint 目標維持 **0 errors**）：
+
+```
+gradlew.bat lintDebug          # Android Lint 靜態分析（文字報告）
+gradlew.bat testDebugUnitTest  # 單元測試
+gradlew.bat assembleDebug      # 建置除錯 APK
+```
+
+lint 文字報告路徑：`app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt`。
 
 ### 需要的硬體
 
@@ -239,16 +252,53 @@ app/src/main/java/com/heli/obd/
 | 項目 | 值 |
 |---|---|
 | 最低 Android | 8.0（API 26） |
-| 目標 Android | 15（API 35，compileSdk 35） |
+| 目標 Android | 15（API 35）；編譯 SDK 16（API 36） |
 | 語言 | Kotlin（JVM 17） |
 | 藍牙 | ELM327 相容轉接器（SPP） |
 | 通訊 | 標準 OBD-II Mode 01/02/03/05/06/08/0A + AT 指令（OBD 終端機支援 UDS） |
 | 資料庫 | SQLite（assets 打包，28,000+ 筆 DTC 定義） |
-| 依賴 | androidx.core-ktx 1.15、appcompat 1.7、constraintlayout 2.2、lifecycle 2.8 |
+| 依賴 | core-ktx 1.17、appcompat 1.8、constraintlayout 2.2.2、lifecycle 2.11、core-splashscreen 1.2 |
+| Lint 狀態 | 0 errors / 28 warnings（詳見下節；剩餘皆為 Kotlin 慣用建議與刻意保留） |
 
 ---
 
-## 授權系統
+## 程式品質與 Lint 治理
+
+專案以「Lint 0 errors、逐步歸零警告」為品質目標。Android Lint 於每次變更後透過 `gradlew.bat lintDebug` 驗證，報告輸出至 `lint-results-debug.txt` 供程式化解析。目前狀態為 **0 errors、28 warnings**：原先 110+ 個警告已全數處理完畢（含一次性的 38 個實質警告批次清零），剩餘為依賴升級後浮現的 Kotlin 慣用語建議與刻意保留項目。
+
+### 已處理的 Lint 類別
+
+| Lint 檢查 | 數量 | 處理方式 |
+|---|---|---|
+| Autofill / MissingAutofillHint | 24 | 技術性輸入框（API 端點、警報數值、授權碼、OBD 指令、raw bytes、保養里程等）加 `android:importantForAutofill="no"`，避免誤觸自動填寫 |
+| Overdraw | 37 | 移除 36 個 layout 根元素重複背景（theme `windowBackground` 已繪製 `@color/bg`）；HUD 刻意黑底以 `tools:ignore` 保留 |
+| PluralsCandidate | 10 | 數量詞字串改為 `<plurals>` 資源（`trip_total_count`、`score_live`、`pid_exported` 等），Kotlin 引用改為 `resources.getQuantityString(...)` |
+| TypographyDashes / Fractions | 18 | 數字範圍改 en dash（`0-100` → `0–100`、`101-110` → `101–110`、`0-255` → `0–255`、`15-85` → `15–85`）；分數改 `¼`，含中英雙語系 |
+| HardcodedText / SetTextI18n / DefaultLocale | 全部 | 字串外移至資源；格式化指定 `Locale` |
+| UnusedResources | 32 | 清除未使用的 drawable / color / string / style |
+| DiscouragedApi / LockedOrientationActivity | 全部 | 移除 36 個 Activity 的固定直向鎖定，改用可偵測轉向的相容模式 |
+| DisableBaselineAlignment | 10 | 內嵌水平 `LinearLayout` 加 `android:baselineAligned="false"` |
+| UseSwitchCompatOrMaterial | 4 | `Switch` 改為 AppCompat `SwitchCompat`（Kotlin 型別 + layout 標籤） |
+| LabelFor | 4 | 各輸入框對應標籤加 `android:labelFor` |
+| ClickableViewAccessibility | 4 | 自訂繪圖 View 補 `performClick()`；翻頁手勢轉為呼叫 `performClick`；框架元件以 `@SuppressLint` 抑制誤判 |
+| ObsoleteSdkInt | 1 | 移除 minSdk 26 下必然成立的 `SDK_INT >= 26` 分支 |
+| UnusedAttribute | 1 | manifest 的 `neverForLocation` 旗標（API 31+）以 `tools:ignore` 保留 |
+| TextFields | 1 | `YYYYMMDD` 純數字日期欄位維持 `inputType="number"` 並註記 |
+| **ButtonStyle** | **19** | 按鈕列按鈕套用 `?android:attr/buttonBarButtonStyle`；因 `android:background` 直接屬性優先，自訂扁平按鈕視覺（bg_button / bg_card + 按壓回饋）完全保留 |
+| **DrawAllocation** | **5** | 繪圖 View 預先配置並重複使用：`GaugeView` 弧環 `RectF` + `SweepGradient`（`onSizeChanged` 建立）、`DataChartView` / `TripTrackView` 軌跡 `Path` 改為成員欄位 + `reset()` |
+| **GradleDependency** | **4/6** | 依賴升級：core-splashscreen 1.2.0、appcompat 1.8.0、constraintlayout 2.2.2、lifecycle 2.11.0；工具鏈同步升級 AGP 8.7.3→8.9.1、Gradle 8.10.2→8.11.1、compileSdk 35→36 |
+| **NestedWeights** | **4** | 巢狀權重容器改為 `ConstraintLayout` 水平 chain：obd_monitor 三小錶 / 馬力扭力 / 燃油空燃比、ai_diagnose 上輸入下結果，消除指數級測量 |
+| **StaticFieldLeak** | **2** | `AlertMonitor` 改為僅持有 `applicationContext`（MainActivity 以 application context 傳入），`@SuppressLint` + 註解說明無 Activity 洩漏風險 |
+| **CustomSplashScreen** | **1** | `SplashActivity` 使用 Jetpack SplashScreen API（無自訂啟動畫面繪製），`@SuppressLint` + 註解說明 |
+| **HardwareIds** | **1** | `DeviceId` 以 ANDROID_ID 產生授權設備碼，屬 Android 文件允許的「高價值防詐欺」授權用途，`@SuppressLint` + 註解說明 |
+
+### 剩餘警告（28，評估保留）
+
+| Lint 檢查 | 數量 | 說明 |
+|---|---|---|
+| UseKtx | 26 | AndroidX Kotlin 擴充慣用語建議（如 `viewModels()`、`lifecycleScope`），非錯誤；為依賴升級後新浮現之建議，逐版採用中 |
+| GradleDependency | 1 | `core-ktx 1.17.0` → `1.19.0` 需 AGP 9.1 + compileSdk 37（大版本工具鏈遷移），鎖定現行版本以保車機場域穩定 |
+| OldTargetApi | 1 | `targetSdk 35` 刻意維持（低於最新），避免車機場域無預期的運行行為變化；配合 `compileSdk 36` 使用新 API 但不上調運行目標 |
 
 App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選擇性套用：
 
@@ -262,6 +312,10 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
+| `050730b` | 清除剩餘 38 個 lint 警告：按鈕列套用 `buttonBarButtonStyle`、繪圖 View 預配置（DrawAllocation）、巢狀權重改 `ConstraintLayout` chain、`AlertMonitor` 僅持 application context、授權/啟動畫面註記；依賴與工具鏈升級（AGP 8.9.1、Gradle 8.11.1、compileSdk 36、core-ktx 1.17、appcompat 1.8、lifecycle 2.11） |
+| `c090370` | 清除 lint 警告：技術輸入框停用自動填寫、數量詞改複數資源、移除根層過度繪製背景、`labelFor` 與基準對齊、`SwitchCompat`、en dash 文字修正 |
+| `3c421b0` | 凍結畫面、Leaf SOH、車輛資訊、LLM 備份功能；完成 i18n 清理、移除固定方向與未用資源 |
+| `6f3458e` | 專業診斷畫面：VIN、就緒狀態、凍結畫面、Mode 06、三態 DTC 比較 |
 | `0e36fa6` | 主畫面升級：品牌 Hero 區、OBD 狀態膠囊、精緻入口網格 |
 | `d69165e` | 設計系統現代化：扁平化按鈕 + 按壓回饋、卡片 soft shadow、晝夜色票 |
 | `c835125` | 連線診斷畫面；DTC 資料庫擴充至 28,000+ 碼（含維修建議） |
