@@ -21,7 +21,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 
 ## 功能特色
 
-主畫面共 **30 個功能入口**，分六大類：
+主畫面共 **31 個功能入口**，分六大類：
 
 ### 即時診斷
 
@@ -40,6 +40,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 | 多階段測試 | 結構化診斷測試流程（RPM 階梯 / 燃油修正 / O2 響應） |
 | 驗車準備 | 排放監測器（I/M）狀態判決 + 驅動週期引導 |
 | 連線診斷 | Adapter 版本、供電電壓、通訊協定一鍵檢測 |
+| 專業診斷 | VIN / 校正 ID / CVN、排放就緒、凍結幀、Mode 06 監控測試、三態故障碼對照 |
 | 閾值警示 | 水溫、轉速、電壓超限即時提醒（音效 + 震動） |
 
 ### 數據分析
@@ -145,7 +146,7 @@ APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
 app/src/main/java/com/heli/obd/
 ├── App.kt                  Application：LicenseManager 全域單例（含公鑰）
 ├── BaseActivity.kt         共用基底（主題 / 返回 / 螢幕常亮）
-├── MainActivity.kt         主畫面：30 功能入口 + ObdManager 全域單例
+├── MainActivity.kt         主畫面：31 功能入口 + ObdManager 全域單例
 ├── diag/                   診斷引擎
 │   ├── DiagnosisEngine.kt  AI 診斷規則引擎
 │   └── HealthCheckEngine.kt 健康檢查評分引擎（綠 / 黃 / 紅）
@@ -191,6 +192,7 @@ app/src/main/java/com/heli/obd/
     ├── StageTestActivity.kt   多階段測試助理
     ├── SmogCheckActivity.kt   驗車準備（I/M 判決 + 驅動週期）
     ├── ConnectionDiagActivity.kt 連線診斷（Adapter 版本 / 電壓 / 協定）
+    ├── ProDiagActivity.kt   專業診斷（VIN / 排放就緒 / 凍結幀 / Mode 06 / 故障碼對照）
     ├── DataLoggerActivity.kt 數據錄製（JSON / CSV）
     ├── DataReplayActivity.kt 數據回放（曲線圖）
     ├── ChartActivity.kt      數據曲線

@@ -959,4 +959,32 @@
     <string name="conn_diag_protocol">通訊協定</string>
     <string name="conn_diag_protocol_number">協定編號</string>
     <string name="conn_diag_refresh">重新讀取</string>
+
+    <!-- 專業診斷 -->
+    <string name="pro_diag_vehicle">車身資訊</string>
+    <string name="pro_diag_readiness">排放就緒</string>
+    <string name="pro_diag_freeze">凍結幀</string>
+    <string name="pro_diag_monitor">Mode 06 監控測試</string>
+    <string name="pro_diag_dtc_compare">故障碼對照</string>
+    <string name="pro_diag_vin">VIN</string>
+    <string name="pro_diag_calibration">校正 ID</string>
+    <string name="pro_diag_cvn">CVN</string>
+    <string name="pro_diag_mil">MIL 指示燈</string>
+    <string name="pro_diag_mil_on">亮</string>
+    <string name="pro_diag_mil_off">熄</string>
+    <string name="pro_diag_dtc_count">DTC 計數</string>
+    <string name="pro_diag_ready_count">就緒進度</string>
+    <string name="pro_diag_ready_progress">%1$d/%2$d</string>
+    <string name="pro_diag_ready">就緒</string>
+    <string name="pro_diag_not_ready">未就緒</string>
+    <string name="pro_diag_not_supported">不支援</string>
+    <string name="pro_diag_trigger">觸發故障碼</string>
+    <string name="pro_diag_none">無</string>
+    <string name="pro_diag_tid">TID %1$02X</string>
+    <string name="pro_diag_cylinder">缸 %1$d</string>
+    <string name="pro_diag_confirmed">已確認</string>
+    <string name="pro_diag_pending">待確認</string>
+    <string name="pro_diag_permanent">永久</string>
+    <string name="pro_diag_empty">無故障碼</string>
+    <string name="pro_diag_refresh">重新讀取</string>
 </resources>

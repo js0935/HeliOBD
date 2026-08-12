@@ -21,6 +21,7 @@ import com.heli.obd.ui.AiDiagnoseActivity
 import com.heli.obd.ui.AlertsActivity
 import com.heli.obd.ui.CompareActivity
 import com.heli.obd.ui.ConnectionDiagActivity
+import com.heli.obd.ui.ProDiagActivity
 import com.heli.obd.ui.CustomPidActivity
 import com.heli.obd.ui.DataLoggerActivity
 import com.heli.obd.ui.DtcActivity
@@ -88,6 +89,7 @@ class MainActivity : BaseActivity() {
         Entry(R.drawable.ic_alert, R.string.feat_smog_check, R.string.feat_desc_smog_check),
         Entry(R.drawable.ic_trip, R.string.feat_report, R.string.feat_desc_report),
         Entry(R.drawable.ic_obd, R.string.conn_diag_title, R.string.conn_diag_desc),
+        Entry(R.drawable.ic_obd, R.string.feat_diag_pro, R.string.feat_desc_diag_pro),
         Entry(R.drawable.ic_demo, R.string.feat_demo, R.string.feat_desc_demo),
         Entry(R.drawable.ic_obd, R.string.feat_connection, R.string.feat_desc_connection),
         Entry(R.drawable.ic_pid, R.string.feat_terminal, R.string.feat_desc_terminal),
@@ -183,6 +185,7 @@ class MainActivity : BaseActivity() {
             R.string.feat_smog_check -> SmogCheckActivity::class.java
             R.string.feat_report -> VehicleReportActivity::class.java
             R.string.conn_diag_title -> ConnectionDiagActivity::class.java
+            R.string.feat_diag_pro -> ProDiagActivity::class.java
             R.string.feat_connection -> SettingsActivity::class.java
             R.string.feat_terminal -> TerminalActivity::class.java
             else -> FeaturePlaceholderActivity::class.java
