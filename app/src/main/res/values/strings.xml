@@ -371,7 +371,13 @@
     <string name="update_install_permission_body">為完成安裝，請在本機設定中允許 HeliOBD「安裝未知來源的應用程式」，再重新點擊下載。\n\n診斷資料全程僅儲存於本機，此允許僅供版本更新安裝使用。</string>
     <string name="update_install_permission_open">前往設定</string>
     <string name="update_channel_name">版本更新</string>
-    <string name="common_later">稍後</string>
+    <string name="update_ui_check">檢查更新</string>
+    <string name="update_ui_checking">正在檢查更新…</string>
+    <string name="update_ui_available">發現新版本 %1$s</string>
+    <string name="update_ui_latest">目前為最新版本</string>
+    <string name="update_ui_download">立即下載</string>
+    <string name="update_ui_version">目前 v%1$s</string>
+    <string name="update_ui_error">更新檢查失敗，請檢查網路</string>
 <string name="settings_appearance_title">選擇外觀模式</string>
 <string name="settings_appearance_system">跟隨系統</string>
 <string name="settings_appearance_light">淺色</string>

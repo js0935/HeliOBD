@@ -831,7 +831,13 @@
     <string name="update_install_permission_body">To finish the install, allow HeliOBD to install apps from unknown sources in your device settings, then tap download again.\n\nYour diagnostic data stays on this device; this permission is only used for app updates.</string>
     <string name="update_install_permission_open">Open settings</string>
     <string name="update_channel_name">Version updates</string>
-    <string name="common_later">Later</string>
+    <string name="update_ui_check">Check for updates</string>
+    <string name="update_ui_checking">Checking for updates…</string>
+    <string name="update_ui_available">New version %1$s available</string>
+    <string name="update_ui_latest">You are up to date</string>
+    <string name="update_ui_download">Download now</string>
+    <string name="update_ui_version">Current v%1$s</string>
+    <string name="update_ui_error">Update check failed. Check your network</string>
     <string name="settings_appearance_title">Choose appearance</string>
     <string name="settings_appearance_system">Follow system</string>
     <string name="settings_appearance_light">Light</string>

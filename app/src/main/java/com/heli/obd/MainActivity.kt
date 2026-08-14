@@ -357,33 +357,52 @@ class MainActivity : BaseActivity() {
 
     // ===== 自動更新 =====
 
+    private lateinit var updateStatus: TextView
+    private lateinit var updateVersion: TextView
+    private lateinit var updateBtn: TextView
+
     /** 啟動時檢查更新；由每日通知點擊進入時直接下載安裝 */
     private fun handleUpdateFlow() {
         if (intent?.getBooleanExtra(EXTRA_UPDATE_DOWNLOAD, false) == true) {
             downloadAndInstall()
             return
         }
-        if (!UpdateChecker.isAutoUpdateEnabled(this)) return
+        updateStatus = findViewById(R.id.update_status)
+        updateVersion = findViewById(R.id.update_version)
+        updateBtn = findViewById(R.id.update_btn)
+        checkUpdateNow()
+    }
+
+    /** 檢查 GitHub 最新版並更新主畫面更新卡片的顯示狀態 */
+    private fun checkUpdateNow() {
+        updateStatus.text = getString(R.string.update_ui_checking)
         lifecycleScope.launch {
             val release = withContext(Dispatchers.IO) { UpdateChecker.fetchLatest() }
-            if (release?.apkUrl != null && UpdateChecker.isNewer(localVersion(), release.version)) {
-                showUpdateDialog(release)
-            }
+            renderUpdateBar(release)
+        }
+    }
+
+    private fun renderUpdateBar(release: UpdateChecker.Release?) {
+        val local = localVersion()
+        updateVersion.text = getString(R.string.update_ui_version, local)
+        if (release?.apkUrl != null && UpdateChecker.isNewer(local, release.version)) {
+            updateStatus.text = getString(R.string.update_ui_available, release.version)
+            updateBtn.text = getString(R.string.update_ui_download)
+            updateBtn.setOnClickListener { downloadAndInstall() }
+        } else if (release != null) {
+            updateStatus.text = getString(R.string.update_ui_latest)
+            updateBtn.text = getString(R.string.update_ui_check)
+            updateBtn.setOnClickListener { checkUpdateNow() }
+        } else {
+            updateStatus.text = getString(R.string.update_ui_error)
+            updateBtn.text = getString(R.string.update_ui_check)
+            updateBtn.setOnClickListener { checkUpdateNow() }
         }
     }
 
     private fun localVersion(): String = runCatching {
         packageManager.getPackageInfo(packageName, 0).versionName ?: "0"
     }.getOrDefault("0")
-
-    private fun showUpdateDialog(release: UpdateChecker.Release) {
-        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
-            .setTitle(R.string.update_available_title)
-            .setMessage(getString(R.string.update_available_body, release.version))
-            .setPositiveButton(R.string.update_action_download) { _, _ -> downloadAndInstall() }
-            .setNegativeButton(R.string.common_later, null)
-            .show()
-    }
 
     private fun downloadAndInstall() {
         lifecycleScope.launch {
