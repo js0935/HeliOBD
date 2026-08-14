@@ -827,6 +827,9 @@
     <string name="update_downloading">Downloading update…</string>
     <string name="update_install">Download complete. Follow the on-screen instructions to finish installing</string>
     <string name="update_download_failed">Download failed. Check your network and try again</string>
+    <string name="update_install_permission_title">Install permission needed</string>
+    <string name="update_install_permission_body">To finish the install, allow HeliOBD to install apps from unknown sources in your device settings, then tap download again.\n\nYour diagnostic data stays on this device; this permission is only used for app updates.</string>
+    <string name="update_install_permission_open">Open settings</string>
     <string name="update_channel_name">Version updates</string>
     <string name="common_later">Later</string>
     <string name="settings_appearance_title">Choose appearance</string>

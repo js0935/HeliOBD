@@ -22,6 +22,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.App
 import com.heli.obd.BaseActivity
@@ -167,12 +168,37 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
             }
             Toast.makeText(this@SettingsActivity, R.string.update_downloading, Toast.LENGTH_SHORT).show()
             val ok = withContext(Dispatchers.IO) { UpdateChecker.download(this@SettingsActivity, url) }
-            if (ok && UpdateChecker.install(this@SettingsActivity)) {
+            if (!ok) {
+                Toast.makeText(this@SettingsActivity, R.string.update_download_failed, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            if (!UpdateChecker.canInstall(this@SettingsActivity)) {
+                promptEnableInstall()
+                return@launch
+            }
+            if (UpdateChecker.install(this@SettingsActivity)) {
                 Toast.makeText(this@SettingsActivity, R.string.update_install, Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this@SettingsActivity, R.string.update_download_failed, Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    /** Android 8+ 首次安裝需先允許「安裝未知來源」；引導前往本機設定 */
+    private fun promptEnableInstall() {
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.update_install_permission_title)
+            .setMessage(R.string.update_install_permission_body)
+            .setPositiveButton(R.string.update_install_permission_open) { _, _ ->
+                startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        "package:$packageName".toUri(),
+                    )
+                )
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
     }
 
     // ===== 連線 =====

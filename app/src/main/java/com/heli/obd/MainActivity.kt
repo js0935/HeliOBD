@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -56,6 +57,7 @@ import com.heli.obd.ui.TripActivity
 import com.heli.obd.ui.VehicleReportActivity
 import com.heli.obd.ui.VehiclesActivity
 import com.heli.obd.ui.VwtpSensorsActivity
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -393,12 +395,37 @@ class MainActivity : BaseActivity() {
             }
             Toast.makeText(this@MainActivity, R.string.update_downloading, Toast.LENGTH_SHORT).show()
             val ok = withContext(Dispatchers.IO) { UpdateChecker.download(this@MainActivity, url) }
-            if (ok && UpdateChecker.install(this@MainActivity)) {
+            if (!ok) {
+                Toast.makeText(this@MainActivity, R.string.update_download_failed, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            if (!UpdateChecker.canInstall(this@MainActivity)) {
+                promptEnableInstall()
+                return@launch
+            }
+            if (UpdateChecker.install(this@MainActivity)) {
                 Toast.makeText(this@MainActivity, R.string.update_install, Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this@MainActivity, R.string.update_download_failed, Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    /** Android 8+ 首次安裝需先允許「安裝未知來源」；引導前往本機設定 */
+    private fun promptEnableInstall() {
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.update_install_permission_title)
+            .setMessage(R.string.update_install_permission_body)
+            .setPositiveButton(R.string.update_install_permission_open) { _, _ ->
+                startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        "package:$packageName".toUri(),
+                    )
+                )
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
     }
 
     companion object {

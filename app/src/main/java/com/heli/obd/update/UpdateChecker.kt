@@ -112,6 +112,10 @@ object UpdateChecker {
         }
     }.getOrDefault(false)
 
+    /** 是否已允許本 App 安裝未知來源 APK（Android 8+ 才有此限制） */
+    fun canInstall(context: Context): Boolean =
+        context.packageManager.canRequestPackageInstalls()
+
     /** 以 FileProvider 轉交系統安裝器；檔案不存在回傳 false */
     fun install(context: Context): Boolean = runCatching {
         val file = apkFile(context)

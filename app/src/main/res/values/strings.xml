@@ -367,6 +367,9 @@
     <string name="update_downloading">正在下載更新…</string>
     <string name="update_install">下載完成，請依照系統指示完成安裝</string>
     <string name="update_download_failed">下載失敗，請檢查網路後重試</string>
+    <string name="update_install_permission_title">需要允許安裝</string>
+    <string name="update_install_permission_body">為完成安裝，請在本機設定中允許 HeliOBD「安裝未知來源的應用程式」，再重新點擊下載。\n\n診斷資料全程僅儲存於本機，此允許僅供版本更新安裝使用。</string>
+    <string name="update_install_permission_open">前往設定</string>
     <string name="update_channel_name">版本更新</string>
     <string name="common_later">稍後</string>
 <string name="settings_appearance_title">選擇外觀模式</string>
