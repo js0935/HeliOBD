@@ -22,6 +22,14 @@
     <string name="nav_dtc">DTC Codes</string>
     <string name="nav_license">License</string>
 
+    <!-- Main screen feature categories -->
+    <string name="cat_diagnosis">Diagnosis</string>
+    <string name="cat_vehicle_check">Vehicle Check</string>
+    <string name="cat_performance">Performance</string>
+    <string name="cat_trip_data">Trip Data</string>
+    <string name="cat_vehicle_mgmt">Vehicle Mgmt</string>
+    <string name="cat_system">System</string>
+
     <!-- Free feature descriptions -->
     <string name="obd_desc">Live RPM, speed &amp; coolant</string>
     <string name="dtc_desc">Read and clear trouble codes</string>
@@ -310,6 +318,9 @@
     <string name="pid_name_throttle">Throttle Position</string>
     <string name="pid_name_fuel_level">Fuel Level</string>
     <string name="pid_name_module_voltage">Module Voltage</string>
+    <string name="pid_name_fuel_trim_long">Long Fuel Trim</string>
+    <string name="pid_name_ambient_temp">Ambient Temp</string>
+    <string name="pid_name_oil_temp">Oil Temp</string>
 
     <!-- DTC descriptions -->
     <string name="dtc_unknown">Code %1$s (not in table, see service manual)</string>

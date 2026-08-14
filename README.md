@@ -22,13 +22,13 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 
 ## 功能特色
 
-主畫面共 **31 個功能入口**，分六大類：
+主畫面共 **34 個功能入口**，分六大類（區塊標題可點擊收合，狀態自動記憶）：
 
 ### 即時診斷
 
 | 功能 | 說明 |
 |---|---|
-| 即時數據 | 轉速、車速、水溫、電壓等 PID 即時顯示 |
+| 即時數據 | 轉速、車速、水溫、電壓、長期燃油修正、環境／機油溫度等 PID 即時顯示（KWP 慢協定自動相容） |
 | 故障碼 | 讀取與清除故障碼，28,000+ 筆資料庫查詢維修建議 |
 | ECU 掃描 | 以 11-bit CAN header 探測掃描車上所有 ECU 模組 |
 | 健康檢查 | 即時數據分析，各系統綠 / 黃 / 紅健康評分 |
@@ -143,6 +143,10 @@ lint 文字報告路徑：`app/build/intermediates/lint_intermediate_text_report
 - 模擬模式提供真實的 PID 響應與故障碼情境，適合學習 OBD-II 原理或展示功能
 - 每次啟動 App 時模擬模式自動重置為關閉
 
+### 慢協定（KWP / ISO）相容
+
+部分廉價山寨 ELM327（如 v1.5 韌體）無法以 `ATH0` 關閉回應 header，App 會自動剝離回應中的 3-byte KWP header（依長度欄位 `0x40–0x5F`、目標／源位址與 mode echo 判斷），確保 ISO 14230-4 車款即時數據正常。連線成功後以 `ATDPN` 偵測通訊協定，ISO / KWP 慢協定自動改為 1 秒基準輪詢並加長分層週期，避免串列匯流排壅塞。
+
 ### 日夜模式
 
 設定 → 外觀模式：**深色 / 淺色 / 跟隨系統**。深色模式為車機場景設計的高對比色票（深底青橘配色），淺色模式為日間戶外閱讀調整。
@@ -159,13 +163,13 @@ lint 文字報告路徑：`app/build/intermediates/lint_intermediate_text_report
 app/src/main/java/com/heli/obd/
 ├── App.kt                  Application：LicenseManager 全域單例（含公鑰）
 ├── BaseActivity.kt         共用基底（主題 / 返回 / 螢幕常亮）
-├── MainActivity.kt         主畫面：31 功能入口 + ObdManager 全域單例
+├── MainActivity.kt         主畫面：34 功能入口（六大類可收合）+ ObdManager 全域單例
 ├── diag/                   診斷引擎
 │   ├── DiagnosisEngine.kt  AI 診斷規則引擎
 │   └── HealthCheckEngine.kt 健康檢查評分引擎（綠 / 黃 / 紅）
 ├── elm/                    ELM327 藍牙通訊層
-│   ├── ObdManager.kt       掃描 / 連線 / AT 指令 / 輪詢 / 故障碼 / 模擬模式
-│   ├── ObdDecoder.kt       回應解碼（RPM / 車速 / 水溫 / 電壓 / DTC / O2 / EVAP）
+│   ├── ObdManager.kt       掃描 / 連線 / AT 指令 / 協定偵測 / 分層輪詢 / 故障碼 / 模擬模式
+│   ├── ObdDecoder.kt       回應解碼（RPM / 車速 / 水溫 / 電壓 / DTC / O2 / EVAP；KWP 3-byte header 剝離）
 │   ├── ObdConstants.kt     PID 與 DTC 描述表（含 ECU header / Mode 05 / Mode 08）
 │   ├── DtcDatabase.kt      DTC 描述資料庫查詢層（assets/dtc_codes.db）
 │   ├── DeviceReflection.kt 轉接器自我偵測
@@ -258,13 +262,13 @@ app/src/main/java/com/heli/obd/
 | 通訊 | 標準 OBD-II Mode 01/02/03/05/06/08/0A + AT 指令（OBD 終端機支援 UDS） |
 | 資料庫 | SQLite（assets 打包，28,000+ 筆 DTC 定義） |
 | 依賴 | core-ktx 1.17、appcompat 1.8、constraintlayout 2.2.2、lifecycle 2.11、core-splashscreen 1.2 |
-| Lint 狀態 | 0 errors / 28 warnings（詳見下節；剩餘皆為 Kotlin 慣用建議與刻意保留） |
+| 狀態 | 0 errors / 30 warnings（詳見下節；剩餘皆為 Kotlin 慣用建議與刻意保留） |
 
 ---
 
 ## 程式品質與 Lint 治理
 
-專案以「Lint 0 errors、逐步歸零警告」為品質目標。Android Lint 於每次變更後透過 `gradlew.bat lintDebug` 驗證，報告輸出至 `lint-results-debug.txt` 供程式化解析。目前狀態為 **0 errors、28 warnings**：原先 110+ 個警告已全數處理完畢（含一次性的 38 個實質警告批次清零），剩餘為依賴升級後浮現的 Kotlin 慣用語建議與刻意保留項目。
+專案以「Lint 0 errors、逐步歸零警告」為品質目標。Android Lint 於每次變更後透過 `gradlew.bat lintDebug` 驗證，報告輸出至 `lint-results-debug.txt` 供程式化解析。目前狀態為 **0 errors、30 warnings**：原先 110+ 個警告已全數處理完畢（含一次性的 38 個實質警告批次清零），剩餘為依賴升級後浮現的 Kotlin 慣用語建議與刻意保留項目。
 
 ### 已處理的 Lint 類別
 
@@ -296,7 +300,7 @@ app/src/main/java/com/heli/obd/
 
 | Lint 檢查 | 數量 | 說明 |
 |---|---|---|
-| UseKtx | 26 | AndroidX Kotlin 擴充慣用語建議（如 `viewModels()`、`lifecycleScope`），非錯誤；為依賴升級後新浮現之建議，逐版採用中 |
+| UseKtx | 28 | AndroidX Kotlin 擴充慣用語建議（如 `viewModels()`、`lifecycleScope`），非錯誤；為依賴升級後新浮現之建議，逐版採用中 |
 | GradleDependency | 1 | `core-ktx 1.17.0` → `1.19.0` 需 AGP 9.1 + compileSdk 37（大版本工具鏈遷移），鎖定現行版本以保車機場域穩定 |
 | OldTargetApi | 1 | `targetSdk 35` 刻意維持（低於最新），避免車機場域無預期的運行行為變化；配合 `compileSdk 36` 使用新 API 但不上調運行目標 |
 
@@ -312,6 +316,7 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
+| `7593ab7` | KWP 慢協定 ELM327 相容：自動剝離 3-byte header（山寨 v1.5 無法 `ATH0`）、`ATDPN` 協定偵測 + 慢協定降頻輪詢；新增長期燃油修正／環境溫度／機油溫度即時 PID；主畫面六大類區塊可收合；支援 PID 探測補齊 80/C0 區塊；離開即時數據畫面不再斷線；單元測試 18 例 |
 | `050730b` | 清除剩餘 38 個 lint 警告：按鈕列套用 `buttonBarButtonStyle`、繪圖 View 預配置（DrawAllocation）、巢狀權重改 `ConstraintLayout` chain、`AlertMonitor` 僅持 application context、授權/啟動畫面註記；依賴與工具鏈升級（AGP 8.9.1、Gradle 8.11.1、compileSdk 36、core-ktx 1.17、appcompat 1.8、lifecycle 2.11） |
 | `c090370` | 清除 lint 警告：技術輸入框停用自動填寫、數量詞改複數資源、移除根層過度繪製背景、`labelFor` 與基準對齊、`SwitchCompat`、en dash 文字修正 |
 | `3c421b0` | 凍結畫面、Leaf SOH、車輛資訊、LLM 備份功能；完成 i18n 清理、移除固定方向與未用資源 |
