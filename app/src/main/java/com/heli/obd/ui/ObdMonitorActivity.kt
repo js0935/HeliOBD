@@ -129,7 +129,6 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
 
     override fun onDestroy() {
         obd.removeListener(this)
-        obd.disconnect()
         super.onDestroy()
     }
 

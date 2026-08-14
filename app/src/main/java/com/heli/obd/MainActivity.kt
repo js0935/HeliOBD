@@ -5,8 +5,11 @@
  */
 package com.heli.obd
 
+import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
@@ -134,31 +137,110 @@ class MainActivity : BaseActivity() {
         refreshStatus()
     }
 
+    /** 功能分類（主畫面區塊標題） */
+    private enum class Category(val titleRes: Int) {
+        DIAGNOSIS(R.string.cat_diagnosis),
+        VEHICLE_CHECK(R.string.cat_vehicle_check),
+        PERFORMANCE(R.string.cat_performance),
+        TRIP_DATA(R.string.cat_trip_data),
+        VEHICLE_MGMT(R.string.cat_vehicle_mgmt),
+        SYSTEM(R.string.cat_system),
+    }
+
     private fun buildFeatureGrid() {
         val container = findViewById<LinearLayout>(R.id.feature_container)
         val inflater = LayoutInflater.from(this)
-        val rows = entries.chunked(3)
-
-        rows.forEachIndexed { rowIndex, rowEntries ->
-            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            rowEntries.forEachIndexed { index, entry ->
-                val item = inflater.inflate(R.layout.item_feature, row, false)
-                item.findViewById<ImageView>(R.id.feature_icon).setImageResource(entry.icon)
-                item.findViewById<TextView>(R.id.feature_title).setText(entry.titleRes)
-                item.findViewById<TextView>(R.id.feature_desc).setText(entry.descRes)
-                item.setOnClickListener { onEntryClick(entry) }
-
-                val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                if (index < rowEntries.lastIndex) lp.marginEnd = dp(12)
-                row.addView(item, lp)
+        // 依分類分組，每區塊前加標題；標題可點擊收合/展開，狀態記憶於 SharedPreferences
+        entries.groupBy { categoryOf(it.titleRes) }.forEach { (category, items) ->
+            val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            val arrow = TextView(this).apply {
+                setTextColor(getColor(R.color.text_secondary))
+                textSize = 13f
             }
-            val rowLp = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+            val collapsed = mainUiPrefs.getBoolean(catCollapseKey(category), false)
+            if (collapsed) {
+                grid.visibility = View.GONE
+                arrow.text = "▸"
+            } else {
+                arrow.text = "▾"
+            }
+            val titleRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                isClickable = true
+                isFocusable = true
+                setPadding(0, dp(12), 0, dp(4))
+                setOnClickListener {
+                    val willCollapse = grid.visibility == View.VISIBLE
+                    grid.visibility = if (willCollapse) View.GONE else View.VISIBLE
+                    arrow.text = if (willCollapse) "▸" else "▾"
+                    mainUiPrefs.edit().putBoolean(catCollapseKey(category), willCollapse).apply()
+                }
+            }
+            titleRow.addView(
+                TextView(this).apply {
+                    text = getString(category.titleRes)
+                    setTextColor(getColor(R.color.text_secondary))
+                    textSize = 13f
+                    typeface = Typeface.DEFAULT_BOLD
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                }
             )
-            if (rowIndex < rows.lastIndex) rowLp.bottomMargin = dp(12)
-            container.addView(row, rowLp)
+            titleRow.addView(arrow)
+            container.addView(titleRow)
+
+            val rows = items.chunked(3)
+            rows.forEachIndexed { rowIndex, rowEntries ->
+                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                rowEntries.forEachIndexed { index, entry ->
+                    val item = inflater.inflate(R.layout.item_feature, row, false)
+                    item.findViewById<ImageView>(R.id.feature_icon).setImageResource(entry.icon)
+                    item.findViewById<TextView>(R.id.feature_title).setText(entry.titleRes)
+                    item.findViewById<TextView>(R.id.feature_desc).setText(entry.descRes)
+                    item.setOnClickListener { onEntryClick(entry) }
+
+                    val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    if (index < rowEntries.lastIndex) lp.marginEnd = dp(12)
+                    row.addView(item, lp)
+                }
+                val rowLp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                if (rowIndex < rows.lastIndex) rowLp.bottomMargin = dp(12)
+                grid.addView(row, rowLp)
+            }
+            container.addView(grid)
         }
+    }
+
+    private val mainUiPrefs by lazy {
+        getSharedPreferences("main_ui", Context.MODE_PRIVATE)
+    }
+
+    private fun catCollapseKey(category: Category): String = "cat_collapsed_${category.name}"
+
+    /** 依入口標題回傳分類；未列出的功能（Demo/連線設定）歸入系統 */
+    private fun categoryOf(titleRes: Int): Category = when (titleRes) {
+        R.string.nav_obd, R.string.nav_dtc, R.string.feat_freeze_frame, R.string.feat_ecu_scan,
+        R.string.feat_o2_evap, R.string.feat_custom_pid, R.string.feat_diag_pro,
+        R.string.feat_terminal -> Category.DIAGNOSIS
+
+        R.string.feat_vehicle_info, R.string.feat_ai_diag, R.string.feat_vwtp,
+        R.string.feat_health_check, R.string.feat_smog_check, R.string.conn_diag_title ->
+        Category.VEHICLE_CHECK
+
+        R.string.feat_stage_test, R.string.feat_engine_sound, R.string.feat_hud,
+        R.string.feat_accel, R.string.feat_dyno, R.string.feat_live_fuel,
+        R.string.feat_skid_pad -> Category.PERFORMANCE
+
+        R.string.feat_trip_review, R.string.feat_data_compare, R.string.feat_data_logger,
+        R.string.feat_chart, R.string.feat_fuel, R.string.feat_score -> Category.TRIP_DATA
+
+        R.string.feat_multi_car, R.string.feat_alerts, R.string.feat_maintenance,
+        R.string.feat_leaf_soh, R.string.feat_report -> Category.VEHICLE_MGMT
+
+        else -> Category.SYSTEM
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()

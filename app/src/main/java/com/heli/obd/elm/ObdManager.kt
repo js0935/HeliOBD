@@ -74,6 +74,9 @@ class ObdManager(
         val throttle: Int? = null,
         val fuelLevel: Int? = null,
         val moduleVoltage: Float? = null,
+        val fuelTrimLong: Float? = null,
+        val ambientTemp: Int? = null,
+        val oilTemp: Int? = null,
     )
 
     interface Listener {
@@ -108,6 +111,14 @@ class ObdManager(
     /** 支援的 PID 清單（mode 01 PID 00/20/40 bitmask）；null = 尚未建立（視為全部支援） */
     @Volatile
     private var supportedPids: Set<String>? = null
+
+    /** 連線時的協定編號（ATDPN）；null = 未知/偵測失敗（視為快速協定） */
+    @Volatile
+    private var protocolNumber: Int? = null
+
+    /** 是否為慢速串列協定（ISO 9141-2 / ISO 14230-4 KWP）：需降低輪詢頻率避免指令堆疊 */
+    val isSlowProtocol: Boolean
+        get() = !demoMode && protocolNumber in ObdConstants.SLOW_PROTOCOL_NUMBERS
 
     // ===== 自動配對（PAIRING_REQUEST）：ELM327 常見 PIN 1234，自動回應省去手動輸入 =====
     private val pairingReceiver = object : BroadcastReceiver() {
@@ -154,6 +165,9 @@ class ObdManager(
     private var lastThrottle: Int? = null
     private var lastFuelLevel: Int? = null
     private var lastModuleVoltage: Float? = null
+    private var lastFuelTrimLong: Float? = null
+    private var lastAmbientTemp: Int? = null
+    private var lastOilTemp: Int? = null
     private var lastCustom: Map<Long, Float?> = emptyMap()
 
     // ===== 歷史數據 ring buffer（key 與 MonitorTiles 一致） =====
@@ -301,6 +315,7 @@ class ObdManager(
             }
             if (ok) {
                 prefs.edit().putString(KEY_LAST_DEVICE, device.address).apply()
+                protocolNumber = detectProtocolNumber()
                 setState(State.Ready)
                 startPolling()
             } else {
@@ -314,9 +329,21 @@ class ObdManager(
         disconnectPending = false
         pollJob?.cancel()
         pollJob = null
+        protocolNumber = null
         closeQuietly()
         setState(State.Idle)
     }
+
+    /**
+     * 偵測通訊協定編號（ATDPN，hex）。部分山寨晶片回 '?' 或空白 → 回 null（視為快速協定）。
+     */
+    private fun detectProtocolNumber(): Int? =
+        sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)
+            ?.let { lastLine(it) }
+            ?.trim()
+            ?.split(Regex("\\s+"))
+            ?.firstOrNull()
+            ?.toIntOrNull(16)
 
     /**
      * 自動重連上次成功連線的裝置（無記錄則回呼失敗）。
@@ -480,7 +507,7 @@ class ObdManager(
     // ===== 即時數據 =====
 
     /**
-     * 建立支援 PID 清單：讀取 mode 01 PID 00/20/40 的 32-bit bitmask，
+     * 建立支援 PID 清單：讀取 mode 01 PID 00/20/40/80/C0 的 32-bit bitmask，
      * 只對支援的 PID 輪詢，避免不支援的 PID 每次浪費一個 timeout 週期。
      * 任一讀取失敗即保留 null（視為全部支援，維持原有行為），不阻斷連線。
      */
@@ -503,6 +530,20 @@ class ObdManager(
                         ?.let { ObdDecoder.supportedPidMask(it) } ?: return
                     for (i in 0 until 32) {
                         if ((mask40 shr (31 - i)) and 1L != 0L) pids += (0x41 + i).pidHex()
+                    }
+                    if ((mask40 and 1L) != 0L) {
+                        val mask80 = sendCommand(ObdConstants.MODE_CURRENT_DATA + "80")
+                            ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+                        for (i in 0 until 32) {
+                            if ((mask80 shr (31 - i)) and 1L != 0L) pids += (0x81 + i).pidHex()
+                        }
+                        if ((mask80 and 1L) != 0L) {
+                            val maskC0 = sendCommand(ObdConstants.MODE_CURRENT_DATA + "C0")
+                                ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+                            for (i in 0 until 32) {
+                                if ((maskC0 shr (31 - i)) and 1L != 0L) pids += (0xC1 + i).pidHex()
+                            }
+                        }
                     }
                 }
             }
@@ -528,7 +569,8 @@ class ObdManager(
     private fun startPolling() {
         pollJob?.cancel()
         pollJob = ioScope.launch {
-            var intervalMs = ObdConstants.POLL_INTERVAL_MS
+            var intervalMs = if (isSlowProtocol) ObdConstants.POLL_INTERVAL_MS_SLOW
+            else ObdConstants.POLL_INTERVAL_MS
             var consecutiveFailures = 0
             while (isActive) {
                 if (!isConnected()) break
@@ -587,8 +629,10 @@ class ObdManager(
         if (demoMode) return simulateLiveData().also { recordHistory(it) }
         if (!isConnected()) return null
         val tick = ++pollTick
-        val medium = tick % 2 == 1
-        val slow = tick % 4 == 1
+        // 慢速協定（KWP/ISO9141）將 medium/slow 分層的週期加倍，降低單輪指令數避免堆疊
+        val cycle = if (isSlowProtocol) 2 else 1
+        val medium = tick % (2 * cycle) == 1
+        val slow = tick % (4 * cycle) == 1
         // 核心 PID（轉速/車速/水溫/負載）每 tick 批次取回
         val core = sendBatchMode01(
             buildList {
@@ -639,16 +683,25 @@ class ObdManager(
         val slowResponses = if (slow) sendBatchMode01(
             buildList {
                 if (isPidSupported(ObdConstants.PID_SHORT_FUEL_TRIM)) add(ObdConstants.PID_SHORT_FUEL_TRIM)
+                if (isPidSupported(ObdConstants.PID_LONG_FUEL_TRIM)) add(ObdConstants.PID_LONG_FUEL_TRIM)
                 if (isPidSupported(ObdConstants.PID_WIDEBAND_AFR)) add(ObdConstants.PID_WIDEBAND_AFR)
                 if (isPidSupported(ObdConstants.PID_FUEL_LEVEL)) add(ObdConstants.PID_FUEL_LEVEL)
+                if (isPidSupported(ObdConstants.PID_AMBIENT_TEMP)) add(ObdConstants.PID_AMBIENT_TEMP)
+                if (isPidSupported(ObdConstants.PID_OIL_TEMP)) add(ObdConstants.PID_OIL_TEMP)
             }
         ) else emptyMap()
         val fuelTrim = slowResponses[ObdConstants.PID_SHORT_FUEL_TRIM]?.let { ObdDecoder.fuelTrim(it) }
             ?.also { lastFuelTrim = it } ?: lastFuelTrim
+        val fuelTrimLong = slowResponses[ObdConstants.PID_LONG_FUEL_TRIM]?.let { ObdDecoder.fuelTrimLong(it) }
+            ?.also { lastFuelTrimLong = it } ?: lastFuelTrimLong
         val afr = slowResponses[ObdConstants.PID_WIDEBAND_AFR]?.let { ObdDecoder.widebandAfr(it) }
             ?.also { lastAfr = it } ?: lastAfr
         val fuelLevel = slowResponses[ObdConstants.PID_FUEL_LEVEL]?.let { ObdDecoder.fuelLevel(it) }
             ?.also { lastFuelLevel = it } ?: lastFuelLevel
+        val ambientTemp = slowResponses[ObdConstants.PID_AMBIENT_TEMP]?.let { ObdDecoder.ambientTemp(it) }
+            ?.also { lastAmbientTemp = it } ?: lastAmbientTemp
+        val oilTemp = slowResponses[ObdConstants.PID_OIL_TEMP]?.let { ObdDecoder.oilTemp(it) }
+            ?.also { lastOilTemp = it } ?: lastOilTemp
         val customValues = if (slow) {
             lastCustom = readCustomPids()
             lastCustom
@@ -673,6 +726,9 @@ class ObdManager(
             throttle = throttle,
             fuelLevel = fuelLevel,
             moduleVoltage = moduleVoltage,
+            fuelTrimLong = fuelTrimLong,
+            ambientTemp = ambientTemp,
+            oilTemp = oilTemp,
         ).also { recordHistory(it) }
     }
 
@@ -714,6 +770,9 @@ class ObdManager(
         push("throttle", data.throttle?.toFloat())
         push("fuelLevel", data.fuelLevel?.toFloat())
         push("moduleVoltage", data.moduleVoltage)
+        push("fuelTrimLong", data.fuelTrimLong)
+        push("ambientTemp", data.ambientTemp?.toFloat())
+        push("oilTemp", data.oilTemp?.toFloat())
         data.customValues.forEach { (id, v) -> push("custom:$id", v) }
     }
 
@@ -998,6 +1057,7 @@ class ObdManager(
         val fuelRate = (0.6 + load / 100.0 * 4.5 + (Math.random() - 0.5) * 0.3).toFloat()
         val torqueNm = (10.0 + load / 100.0 * 85.0 + (Math.random() - 0.5) * 4.0).toFloat()
         val fuelTrim = ((Math.random() - 0.5) * 8.0).toFloat()
+        val fuelTrimLong = (fuelTrim * 0.6).toFloat()
         val afr = (14.0 + (Math.random() - 0.5) * 1.5).toFloat()
         val map = (30.0 + load / 100.0 * 70.0 + (Math.random() - 0.5) * 4.0)
             .coerceIn(20.0, 105.0).toInt()
@@ -1006,6 +1066,8 @@ class ObdManager(
         val throttle = (load + (Math.random() - 0.5) * 4.0).coerceIn(0.0, 100.0).toInt()
         val fuelLevel = (65.0 + (Math.random() - 0.5) * 1.0).coerceIn(0.0, 100.0).toInt()
         val moduleVoltage = (13.7 + (Math.random() - 0.5) * 0.4).toFloat()
+        val ambientTemp = (18.0 + (Math.random() - 0.5) * 6.0).toInt()
+        val oilTemp = (88.0 + (Math.random() - 0.5) * 8.0).toInt()
         return LiveData(
             rpm = rpm,
             speed = speed,
@@ -1016,6 +1078,7 @@ class ObdManager(
             fuelRate = fuelRate,
             torqueNm = torqueNm,
             fuelTrim = fuelTrim,
+            fuelTrimLong = fuelTrimLong,
             afr = afr,
             intake = intake,
             map = map,
@@ -1023,6 +1086,8 @@ class ObdManager(
             throttle = throttle,
             fuelLevel = fuelLevel,
             moduleVoltage = moduleVoltage,
+            ambientTemp = ambientTemp,
+            oilTemp = oilTemp,
         )
     }
 

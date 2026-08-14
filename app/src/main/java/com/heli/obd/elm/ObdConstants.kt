@@ -130,6 +130,8 @@ object ObdConstants {
     const val PID_THROTTLE = "11"        // 節氣門位置
     const val PID_FUEL_LEVEL = "2F"      // 燃油油位
     const val PID_MODULE_VOLTAGE = "42"  // 控制模組電壓
+    const val PID_AMBIENT_TEMP = "46"    // 環境溫度
+    const val PID_OIL_TEMP = "5C"        // 引擎機油溫度
 
     /** 凍結框常用 PID（整數型，以即時數據相同格式解碼） */
     val FREEZE_FRAME_PIDS = listOf(
@@ -154,6 +156,12 @@ object ObdConstants {
 
     /** 即時數據輪詢間隔（毫秒） */
     const val POLL_INTERVAL_MS = 500L
+
+    /** 慢速協定（ISO 9141-2 / ISO 14230-4 KWP）的輪詢基準間隔（毫秒）：單次往返耗時長，間隔太密易堆疊指令 */
+    const val POLL_INTERVAL_MS_SLOW = 1000L
+
+    /** ATDPN 協定編號 → 慢速串列協定（逐指令往返耗時長，需降低輪詢頻率） */
+    val SLOW_PROTOCOL_NUMBERS = setOf(3, 4, 5) // 3=ISO 9141-2、4/5=ISO 14230-4 KWP
 
     /** ELM327 指令回應逾時（毫秒） */
     const val COMMAND_TIMEOUT_MS = 2000L

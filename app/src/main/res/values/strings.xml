@@ -22,6 +22,14 @@
     <string name="nav_dtc">故障碼</string>
     <string name="nav_license">授權管理</string>
 
+    <!-- 主畫面功能分類 -->
+    <string name="cat_diagnosis">診斷</string>
+    <string name="cat_vehicle_check">車況檢測</string>
+    <string name="cat_performance">性能測試</string>
+    <string name="cat_trip_data">行程與數據</string>
+    <string name="cat_vehicle_mgmt">車輛管理</string>
+    <string name="cat_system">系統</string>
+
     <!-- 免費功能描述 -->
     <string name="obd_desc">轉速、車速、水溫即時顯示</string>
     <string name="dtc_desc">讀取與清除故障碼</string>
@@ -454,6 +462,9 @@
     <string name="pid_name_throttle">節氣門位置</string>
     <string name="pid_name_fuel_level">燃油油位</string>
     <string name="pid_name_module_voltage">模組電壓</string>
+    <string name="pid_name_fuel_trim_long">長期燃油修正</string>
+    <string name="pid_name_ambient_temp">環境溫度</string>
+    <string name="pid_name_oil_temp">機油溫度</string>
 
     <!-- DTC 描述表 -->
     <string name="dtc_unknown">診斷碼 %1$s（未收錄，請參閱原廠手冊）</string>

@@ -142,6 +142,27 @@ object ObdDecoder {
         return (bytes[2] - 128) * 100f / 128f
     }
 
+    /** 長期燃油修正（PID 07）：與短期燃油修正相同公式（A-128）*100/128 → % */
+    fun fuelTrimLong(hexResponse: String): Float? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3) return null
+        return (bytes[2] - 128) * 100f / 128f
+    }
+
+    /** 環境溫度（PID 46）：A-40 → °C */
+    fun ambientTemp(hexResponse: String): Int? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3) return null
+        return bytes[2] - 40
+    }
+
+    /** 引擎機油溫度（PID 5C）：A-40 → °C */
+    fun oilTemp(hexResponse: String): Int? {
+        val bytes = parseBytes(hexResponse) ?: return null
+        if (bytes.size < 3) return null
+        return bytes[2] - 40
+    }
+
     /** 寬域空燃比（PID 34）：(A*256+B)/32768*14.7 → AFR */
     fun widebandAfr(hexResponse: String): Float? {
         val bytes = parseBytes(hexResponse) ?: return null
@@ -428,8 +449,12 @@ object ObdDecoder {
         val result = mutableMapOf<String, String>()
         hexResponse.lines().forEach { line ->
             val tokens = line.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
-            if (tokens.size >= 2 && tokens[0].equals(prefix, ignoreCase = true)) {
-                result[tokens[1].uppercase()] = line.trim()
+            if (tokens.size < 2) return@forEach
+            // ISO 9141-2 / ISO 14230-4（KWP）回應帶 3 位元組 header（如 `48 6B 10`），
+            // 山寨 ELM327 常無法以 ATH0 關閉，先剝除才能匹配 `<modeByte> <PID>`。
+            val data = if (isElmHeaderTokens(tokens)) tokens.drop(3) else tokens
+            if (data.size >= 2 && data[0].equals(prefix, ignoreCase = true)) {
+                result[data[1].uppercase()] = data.joinToString(" ")
             }
         }
         return result
@@ -446,10 +471,63 @@ object ObdDecoder {
     private fun parseBytes(hex: String): IntArray? {
         val tokens = hex.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
         if (tokens.isEmpty()) return null
-        return try {
+        val bytes = try {
             IntArray(tokens.size) { tokens[it].toInt(16) }
         } catch (_: NumberFormatException) {
-            null
+            return null
+        }
+        return stripElmHeader(bytes)
+    }
+
+    // ===== ISO 9141-2 / ISO 14230-4（KWP）回應 header 剝離 =====
+
+    /** KWP/ISO9141 回應 header 的目標位址（byte1），0x6B 最常見 */
+    private val ELM_HEADER_TARGETS = setOf(
+        0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F,
+        0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF,
+        0xF1,
+    )
+
+    /** KWP/ISO9141 回應 header 的源位址（byte2），0x10 最常見 */
+    private val ELM_HEADER_SOURCES = setOf(
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+        0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+        0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+        0xF1, 0x68, 0x6B,
+    )
+
+    /**
+     * 剝離 ELM327 在 ISO 9141-2 / ISO 14230-4（KWP）下回應的 3 位元組 header。
+     * 原始 frame 為 `<長度欄位> <目標位址> <源位址> <資料…>`，
+     * 例：`48 6B 10 41 0C 1A F8`（長度 0x48、目標 0x6B、源 0x10）。
+     * 山寨 ELM327（v1.5）常無法以 ATH0 關閉此 header，故於解析前剝除。
+     * 長度欄位依資料長度而異（0x40–0x5F），故以「長度欄位＋目標位址＋源位址」
+     * 組合判斷，並要求剝離後首 byte 為 OBD mode echo（0x40–0x5F），
+     * 避免誤剝離無 header 的 mode 05–0B 回應（其 bytes[1] 為 PID/TID，不會落在目標位址）。
+     */
+    private fun stripElmHeader(bytes: IntArray): IntArray {
+        if (bytes.size < 4) return bytes
+        if (bytes[0] !in 0x40..0x5F) return bytes
+        if (bytes[1] !in ELM_HEADER_TARGETS) return bytes
+        if (bytes[2] !in ELM_HEADER_SOURCES) return bytes
+        if (bytes[3] !in 0x40..0x5F) return bytes
+        return bytes.copyOfRange(3, bytes.size)
+    }
+
+    /** 判別字串 tokens 是否為 KWP/ISO9141 回應 header（供 parseMode01Batch 逐行剝離） */
+    private fun isElmHeaderTokens(tokens: List<String>): Boolean {
+        if (tokens.size < 4) return false
+        return try {
+            val b0 = tokens[0].toInt(16)
+            val b1 = tokens[1].toInt(16)
+            val b2 = tokens[2].toInt(16)
+            val b3 = tokens[3].toInt(16)
+            b0 in 0x40..0x5F &&
+                b1 in ELM_HEADER_TARGETS &&
+                b2 in ELM_HEADER_SOURCES &&
+                b3 in 0x40..0x5F
+        } catch (_: NumberFormatException) {
+            false
         }
     }
 }
