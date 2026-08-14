@@ -85,6 +85,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 | 連線設定 | 自訂 ELM327 初始化指令 |
 | OBD 終端機 | 手動輸入 AT / UDS 指令，即時查看回應 |
 | 模擬模式 | 無硬體也能體驗全部功能 |
+| 自動更新 | 啟動與每日背景檢查 GitHub 新版，一鍵下載安裝（設定頁可關閉） |
 
 ---
 
@@ -164,7 +165,7 @@ lint 文字報告路徑：`app/build/intermediates/lint_intermediate_text_report
 app/src/main/java/com/heli/obd/
 ├── App.kt                  Application：LicenseManager 全域單例（含公鑰）
 ├── BaseActivity.kt         共用基底（主題 / 返回 / 螢幕常亮）
-├── MainActivity.kt         主畫面：34 功能入口（六大類可收合）+ 即時概覽卡 + ObdManager 全域單例
+├── MainActivity.kt         主畫面：34 功能入口（六大類可收合）+ 即時概覽卡 + 自動更新啟動檢查 + ObdManager 全域單例
 ├── diag/                   診斷引擎
 │   ├── DiagnosisEngine.kt  AI 診斷規則引擎
 │   └── HealthCheckEngine.kt 健康檢查評分引擎（綠 / 黃 / 紅）
@@ -201,6 +202,9 @@ app/src/main/java/com/heli/obd/
 │   ├── VwtpFormulaEngine.kt 感測器公式引擎
 │   ├── VwtpFormulaStore.kt 公式表持久化
 │   └── VwtpUnitSymbols.kt  單位符號表
+├── update/                 自動更新
+│   ├── UpdateChecker.kt    GitHub 最新版查詢 / 版本比較 / APK 下載 / FileProvider 安裝
+│   └── UpdateCheckWorker.kt 每日背景檢查（WorkManager 週期任務 + 系統通知）
 └── ui/                     功能畫面
     ├── ObdMonitorActivity.kt  即時數據儀表
     ├── DtcActivity.kt         故障碼
@@ -232,7 +236,7 @@ app/src/main/java/com/heli/obd/
     ├── HudActivity.kt        抬頭顯示
     ├── EngineSoundActivity.kt 引擎聲浪
     ├── TerminalActivity.kt   OBD 終端機（AT / UDS）
-    ├── SettingsActivity.kt   設定（日夜模式 / 語音警示 / 連線）
+    ├── SettingsActivity.kt   設定（日夜模式 / 語音警示 / 連線 / 自動更新）
     ├── SplashActivity.kt     啟動畫面
     ├── FeaturePlaceholderActivity.kt  占位
     ├── UnitSystem.kt         單位制換算
@@ -262,14 +266,14 @@ app/src/main/java/com/heli/obd/
 | 藍牙 | ELM327 相容轉接器（SPP） |
 | 通訊 | 標準 OBD-II Mode 01/02/03/05/06/08/0A + AT 指令（OBD 終端機支援 UDS） |
 | 資料庫 | SQLite（assets 打包，28,000+ 筆 DTC 定義） |
-| 依賴 | core-ktx 1.17、appcompat 1.8、constraintlayout 2.2.2、lifecycle 2.11、core-splashscreen 1.2 |
-| 狀態 | 0 errors / 30 warnings（詳見下節；剩餘皆為 Kotlin 慣用建議與刻意保留） |
+| 依賴 | core-ktx 1.17、appcompat 1.8、constraintlayout 2.2.2、lifecycle 2.11、core-splashscreen 1.2、work-runtime-ktx 2.9.1 |
+| 狀態 | 0 errors / 32 warnings（詳見下節；剩餘皆為 Kotlin 慣用建議與刻意保留） |
 
 ---
 
 ## 程式品質與 Lint 治理
 
-專案以「Lint 0 errors、逐步歸零警告」為品質目標。Android Lint 於每次變更後透過 `gradlew.bat lintDebug` 驗證，報告輸出至 `lint-results-debug.txt` 供程式化解析。目前狀態為 **0 errors、30 warnings**：原先 110+ 個警告已全數處理完畢（含一次性的 38 個實質警告批次清零），剩餘為依賴升級後浮現的 Kotlin 慣用語建議與刻意保留項目。
+專案以「Lint 0 errors、逐步歸零警告」為品質目標。Android Lint 於每次變更後透過 `gradlew.bat lintDebug` 驗證，報告輸出至 `lint-results-debug.txt` 供程式化解析。目前狀態為 **0 errors、32 warnings**：原先 110+ 個警告已全數處理完畢（含一次性的 38 個實質警告批次清零），剩餘為依賴升級後浮現的 Kotlin 慣用語建議與刻意保留項目。
 
 ### 已處理的 Lint 類別
 
@@ -297,12 +301,12 @@ app/src/main/java/com/heli/obd/
 | **CustomSplashScreen** | **1** | `SplashActivity` 使用 Jetpack SplashScreen API（無自訂啟動畫面繪製），`@SuppressLint` + 註解說明 |
 | **HardwareIds** | **1** | `DeviceId` 以 ANDROID_ID 產生授權設備碼，屬 Android 文件允許的「高價值防詐欺」授權用途，`@SuppressLint` + 註解說明 |
 
-### 剩餘警告（28，評估保留）
+### 剩餘警告（29，評估保留）
 
 | Lint 檢查 | 數量 | 說明 |
 |---|---|---|
-| UseKtx | 28 | AndroidX Kotlin 擴充慣用語建議（如 `viewModels()`、`lifecycleScope`），非錯誤；為依賴升級後新浮現之建議，逐版採用中 |
-| GradleDependency | 1 | `core-ktx 1.17.0` → `1.19.0` 需 AGP 9.1 + compileSdk 37（大版本工具鏈遷移），鎖定現行版本以保車機場域穩定 |
+| UseKtx | 29 | AndroidX Kotlin 擴充慣用語建議（如 `viewModels()`、`lifecycleScope`），非錯誤；為依賴升級後新浮現之建議，逐版採用中 |
+| GradleDependency | 2 | `core-ktx 1.17.0` → `1.19.0` 需 AGP 9.1 + compileSdk 37（大版本工具鏈遷移）；`work-runtime-ktx 2.9.1` → `2.11.2` 連帶上調，皆鎖定現行版本以保車機場域穩定 |
 | OldTargetApi | 1 | `targetSdk 35` 刻意維持（低於最新），避免車機場域無預期的運行行為變化；配合 `compileSdk 36` 使用新 API 但不上調運行目標 |
 
 App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選擇性套用：

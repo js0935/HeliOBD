@@ -18,8 +18,8 @@ android {
         applicationId = "com.heli.obd"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "0.2.1"
     }
 
     signingConfigs {
@@ -63,6 +63,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")

@@ -16,9 +16,13 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import com.heli.obd.elm.AlertMonitor
 import com.heli.obd.elm.DemoConfig
 import com.heli.obd.elm.ObdManager
+import com.heli.obd.update.UpdateCheckWorker
+import com.heli.obd.update.UpdateChecker
 import com.heli.obd.ui.AccelerationActivity
 import com.heli.obd.ui.AiDiagnoseActivity
 import com.heli.obd.ui.AlertsActivity
@@ -52,6 +56,9 @@ import com.heli.obd.ui.TripActivity
 import com.heli.obd.ui.VehicleReportActivity
 import com.heli.obd.ui.VehiclesActivity
 import com.heli.obd.ui.VwtpSensorsActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
@@ -134,6 +141,8 @@ class MainActivity : BaseActivity() {
         buildDashboardCard()
         buildFeatureGrid()
         refreshStatus()
+        UpdateCheckWorker.scheduleDaily(this)
+        handleUpdateFlow()
     }
 
     override fun onPause() {
@@ -342,6 +351,59 @@ class MainActivity : BaseActivity() {
             this.text = text
             setTextColor(getColor(if (alarm) R.color.danger else R.color.text_primary))
         }
+    }
+
+    // ===== 自動更新 =====
+
+    /** 啟動時檢查更新；由每日通知點擊進入時直接下載安裝 */
+    private fun handleUpdateFlow() {
+        if (intent?.getBooleanExtra(EXTRA_UPDATE_DOWNLOAD, false) == true) {
+            downloadAndInstall()
+            return
+        }
+        if (!UpdateChecker.isAutoUpdateEnabled(this)) return
+        lifecycleScope.launch {
+            val release = withContext(Dispatchers.IO) { UpdateChecker.fetchLatest() }
+            if (release?.apkUrl != null && UpdateChecker.isNewer(localVersion(), release.version)) {
+                showUpdateDialog(release)
+            }
+        }
+    }
+
+    private fun localVersion(): String = runCatching {
+        packageManager.getPackageInfo(packageName, 0).versionName ?: "0"
+    }.getOrDefault("0")
+
+    private fun showUpdateDialog(release: UpdateChecker.Release) {
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.update_available_title)
+            .setMessage(getString(R.string.update_available_body, release.version))
+            .setPositiveButton(R.string.update_action_download) { _, _ -> downloadAndInstall() }
+            .setNegativeButton(R.string.common_later, null)
+            .show()
+    }
+
+    private fun downloadAndInstall() {
+        lifecycleScope.launch {
+            val release = withContext(Dispatchers.IO) { UpdateChecker.fetchLatest() }
+            val url = release?.apkUrl
+            if (url == null) {
+                Toast.makeText(this@MainActivity, R.string.update_download_failed, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            Toast.makeText(this@MainActivity, R.string.update_downloading, Toast.LENGTH_SHORT).show()
+            val ok = withContext(Dispatchers.IO) { UpdateChecker.download(this@MainActivity, url) }
+            if (ok && UpdateChecker.install(this@MainActivity)) {
+                Toast.makeText(this@MainActivity, R.string.update_install, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this@MainActivity, R.string.update_download_failed, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    companion object {
+        /** 由更新通知點擊帶入：直接執行下載並安裝 */
+        const val EXTRA_UPDATE_DOWNLOAD = "extra_update_download"
     }
 
     /** 依入口標題回傳分類；未列出的功能（Demo/連線設定）歸入系統 */

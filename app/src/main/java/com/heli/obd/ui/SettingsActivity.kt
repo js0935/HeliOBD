@@ -21,6 +21,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.App
 import com.heli.obd.BaseActivity
@@ -31,6 +32,7 @@ import com.heli.obd.elm.BtPermissions
 import com.heli.obd.elm.ObdManager
 import com.heli.obd.llm.LlmClient
 import com.heli.obd.llm.LlmStore
+import com.heli.obd.update.UpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,6 +108,13 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
                 .orEmpty()
         )
 
+        val autoUpdateSwitch = findViewById<SwitchCompat>(R.id.settings_auto_update)
+        autoUpdateSwitch.isChecked = UpdateChecker.isAutoUpdateEnabled(this)
+        autoUpdateSwitch.setOnClickListener {
+            UpdateChecker.setAutoUpdateEnabled(this, autoUpdateSwitch.isChecked)
+        }
+        findViewById<Button>(R.id.btn_check_update).setOnClickListener { checkUpdateNow() }
+
         obd.addListener(this)
         renderState(obd.state)
     }
@@ -123,6 +132,47 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
 
     override fun onLiveData(data: ObdManager.LiveData) {
         // 連線設定畫面不需即時數據
+    }
+
+    // ===== 自動更新 =====
+
+    /** 立即檢查 GitHub 最新版：有新版彈出下載確認，否則提示已是最新 */
+    private fun checkUpdateNow() {
+        lifecycleScope.launch {
+            val release = withContext(Dispatchers.IO) { UpdateChecker.fetchLatest() }
+            if (release?.apkUrl != null && UpdateChecker.isNewer(localVersion(), release.version)) {
+                AlertDialog.Builder(this@SettingsActivity, R.style.Theme_HeliOBD_Dialog)
+                    .setTitle(R.string.update_available_title)
+                    .setMessage(getString(R.string.update_available_body, release.version))
+                    .setPositiveButton(R.string.update_action_download) { _, _ -> downloadAndInstall() }
+                    .setNegativeButton(R.string.common_cancel, null)
+                    .show()
+            } else {
+                Toast.makeText(this@SettingsActivity, R.string.settings_update_none, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun localVersion(): String = runCatching {
+        packageManager.getPackageInfo(packageName, 0).versionName ?: "0"
+    }.getOrDefault("0")
+
+    private fun downloadAndInstall() {
+        lifecycleScope.launch {
+            val release = withContext(Dispatchers.IO) { UpdateChecker.fetchLatest() }
+            val url = release?.apkUrl
+            if (url == null) {
+                Toast.makeText(this@SettingsActivity, R.string.update_download_failed, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            Toast.makeText(this@SettingsActivity, R.string.update_downloading, Toast.LENGTH_SHORT).show()
+            val ok = withContext(Dispatchers.IO) { UpdateChecker.download(this@SettingsActivity, url) }
+            if (ok && UpdateChecker.install(this@SettingsActivity)) {
+                Toast.makeText(this@SettingsActivity, R.string.update_install, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this@SettingsActivity, R.string.update_download_failed, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     // ===== 連線 =====
