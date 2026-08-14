@@ -333,7 +333,7 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
-| 待發布 v0.2.5（versionCode 7） | 斷線自動重連（意外斷線自動重連上次裝置，最多 3 次；設定頁可關閉）；首度以正式簽名（release keystore）+ R8 建置發布（APK 6.61 MB → 2.64 MB）；lint 0/32 |
+| `7023e3b` | 斷線自動重連 + 正式簽名發版 v0.2.5（versionCode 7）：藍牙意外斷線自動重連上次裝置（最多 3 次，延遲 5 秒；使用者主動斷線不觸發；設定頁開關）；首度以 release keystore 正式簽名 + R8 建置發布（APK 6.61 → 2.64 MB）；lint 0/32 |
 | `48d8a8f` | 主畫面更新入口 v0.2.4（versionCode 6）：更新卡片常駐主畫面，顯示目前／最新版本；有新版可直接下載安裝，無新版可一鍵重新檢查 |
 | `6afa02d` | 安裝權限修正 v0.2.3（versionCode 5）：新增 `REQUEST_INSTALL_PACKAGES` 權限；下載完成後檢查「安裝未知來源」允許，未允許時引導前往本機設定（Android 8+ 缺少權限會無聲忽略安裝） |
 | `bbee300` | 外觀模式色彩修正 v0.2.2（versionCode 4）：自繪圖表（ChartView / TripChartView / DataChartView / SkidPadView）與監測 tile 的硬編碼色改為主題感知（text_secondary / accent / surface），修正淺色模式白底白字、深色模式深底深字 |
