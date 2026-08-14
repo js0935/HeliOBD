@@ -5,14 +5,23 @@
  */
 package com.heli.obd.elm
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.ToneGenerator
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.heli.obd.MainActivity
 import com.heli.obd.R
 import java.util.Locale
 
@@ -36,6 +45,9 @@ object AlertMonitor {
     private const val KEY_VOLTAGE_MIN = "voltageMin"
 
     private const val ALERT_COOLDOWN_MS = 5000L
+
+    private const val NOTIF_CHANNEL_ID = "heli_engine_alerts"
+    private const val NOTIF_ID = 0x4A31
 
     private var attached = false
     private var context: Context? = null
@@ -114,7 +126,48 @@ object AlertMonitor {
             }
         }
         Toast.makeText(ctx, message, Toast.LENGTH_LONG).show()
+        notifyAlert(ctx, message)
         speak(ctx, message)
+    }
+
+    /** 發送系統通知（音效/震動由 tone/vibrator 負責，通知本身不重複發出聲音） */
+    private fun notifyAlert(ctx: Context, message: String) {
+        runCatching {
+            createChannel(ctx)
+            val manager = NotificationManagerCompat.from(ctx)
+            if (!manager.areNotificationsEnabled()) return
+            // Android 13+ 通知權限屬 runtime，未授權時略過（音效/震動仍生效）
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+            val pi = PendingIntent.getActivity(
+                ctx, 0,
+                Intent(ctx, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            val notification = NotificationCompat.Builder(ctx, NOTIF_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_alert)
+                .setContentTitle(ctx.getString(R.string.app_name))
+                .setContentText(message)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .build()
+            manager.notify(NOTIF_ID, notification)
+        }
+    }
+
+    private fun createChannel(ctx: Context) {
+        val manager = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        manager.createNotificationChannel(
+            NotificationChannel(
+                NOTIF_CHANNEL_ID,
+                ctx.getString(R.string.alert_channel_name),
+                NotificationManager.IMPORTANCE_LOW,
+            )
+        )
     }
 
     private fun speak(ctx: Context, message: String) {

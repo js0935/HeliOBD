@@ -52,6 +52,7 @@ import com.heli.obd.ui.TripActivity
 import com.heli.obd.ui.VehicleReportActivity
 import com.heli.obd.ui.VehiclesActivity
 import com.heli.obd.ui.VwtpSensorsActivity
+import java.util.Locale
 
 /**
  * 主畫面：HeliOBD 功能入口。
@@ -63,6 +64,16 @@ class MainActivity : BaseActivity() {
     private lateinit var obdStatusText: TextView
     private lateinit var statusPill: LinearLayout
     private lateinit var statusDot: View
+    private lateinit var dashboardStatus: TextView
+    private lateinit var dashboardGrid: LinearLayout
+    private lateinit var dashboardHint: TextView
+
+    private val obd get() = ObdManagerHolder.obd(this)
+
+    /** 即時概覽卡的四個指標 */
+    private enum class DashMetric { RPM, COOLANT, VOLTAGE, LOAD }
+
+    private val dashboardValues = mutableMapOf<DashMetric, TextView>()
 
     /** 入口定義 */
     private data class Entry(val icon: Int, val titleRes: Int, val descRes: Int)
@@ -111,14 +122,30 @@ class MainActivity : BaseActivity() {
         obdStatusText = findViewById(R.id.obd_status)
         statusPill = findViewById(R.id.status_pill)
         statusDot = findViewById(R.id.status_dot)
+        dashboardStatus = findViewById(R.id.dashboard_status)
+        dashboardGrid = findViewById(R.id.dashboard_grid)
+        dashboardHint = findViewById(R.id.dashboard_hint)
 
         // 模擬模式預設關閉：每次啟動一律重置為關閉，不自動恢復上次的 Demo 狀態
         DemoConfig.setEnabled(this, false)
         ObdManagerHolder.obd(this).setDemoMode(false)
         AlertMonitor.attach(ObdManagerHolder.obd(this), applicationContext)
 
+        buildDashboardCard()
         buildFeatureGrid()
         refreshStatus()
+    }
+
+    override fun onPause() {
+        obd.removeListener(dashboardListener)
+        super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        obd.addListener(dashboardListener)
+        refreshStatus()
+        renderDashboard(obd.state, obd.latestLiveData)
     }
 
     override fun onDestroy() {
@@ -130,11 +157,6 @@ class MainActivity : BaseActivity() {
             Toast.makeText(applicationContext, R.string.obd_remember_unplug, Toast.LENGTH_LONG).show()
         }
         super.onDestroy()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        refreshStatus()
     }
 
     /** 功能分類（主畫面區塊標題） */
@@ -219,6 +241,108 @@ class MainActivity : BaseActivity() {
     }
 
     private fun catCollapseKey(category: Category): String = "cat_collapsed_${category.name}"
+
+    // ===== 即時概覽卡 =====
+
+    private val dashboardListener = object : ObdManager.Listener {
+        override fun onStateChanged(state: ObdManager.State) {
+            renderDashboard(state, obd.latestLiveData)
+        }
+
+        override fun onLiveData(data: ObdManager.LiveData) {
+            renderDashboard(obd.state, data)
+        }
+    }
+
+    private fun buildDashboardCard() {
+        val values = listOf(
+            DashMetric.RPM to R.string.pid_name_rpm,
+            DashMetric.COOLANT to R.string.pid_name_coolant,
+            DashMetric.VOLTAGE to R.string.pid_name_module_voltage,
+            DashMetric.LOAD to R.string.pid_name_load,
+        )
+        values.chunked(2).forEachIndexed { rowIndex, rowMetrics ->
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            rowMetrics.forEachIndexed { index, (metric, labelRes) ->
+                val cell = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f,
+                    ).apply { if (index == 0) marginEnd = dp(10) }
+                }
+                cell.addView(
+                    TextView(this).apply {
+                        text = getString(labelRes)
+                        setTextColor(getColor(R.color.text_secondary))
+                        textSize = 11f
+                    }
+                )
+                val value = TextView(this).apply {
+                    text = "—"
+                    setTextColor(getColor(R.color.text_primary))
+                    textSize = 22f
+                    typeface = Typeface.DEFAULT_BOLD
+                }
+                dashboardValues[metric] = value
+                cell.addView(value)
+                row.addView(cell)
+            }
+            val rowLp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            if (rowIndex == 0) rowLp.bottomMargin = dp(10)
+            dashboardGrid.addView(row, rowLp)
+        }
+        findViewById<View>(R.id.dashboard_card).setOnClickListener {
+            startActivity(Intent(this, ObdMonitorActivity::class.java))
+        }
+    }
+
+    private fun renderDashboard(state: ObdManager.State, data: ObdManager.LiveData?) {
+        val ready = state == ObdManager.State.Ready
+        dashboardStatus.setText(
+            when {
+                obd.isDemoMode() -> R.string.dashboard_status_demo
+                ready -> R.string.dashboard_status_ready
+                else -> R.string.dashboard_status_idle
+            }
+        )
+        dashboardStatus.setTextColor(
+            getColor(if (obd.isDemoMode() || ready) R.color.success else R.color.text_secondary)
+        )
+        dashboardHint.text = getString(
+            when {
+                obd.isDemoMode() -> R.string.dashboard_hint_demo
+                ready -> R.string.dashboard_hint_ready
+                else -> R.string.dashboard_hint_idle
+            }
+        )
+        val rpm = data?.rpm
+        setDashValue(DashMetric.RPM, if (rpm == null) "—" else "$rpm", rpm != null && rpm > 9000)
+        val coolant = data?.coolant
+        setDashValue(
+            DashMetric.COOLANT,
+            if (coolant == null) "—" else "$coolant°",
+            coolant != null && coolant > 110,
+        )
+        val voltage = data?.voltage
+        setDashValue(
+            DashMetric.VOLTAGE,
+            if (voltage == null) "—" else String.format(Locale.US, "%.1f", voltage),
+            voltage != null && voltage < 11.5f,
+        )
+        val load = data?.load
+        setDashValue(DashMetric.LOAD, if (load == null) "—" else "$load%", false)
+    }
+
+    /** 設定概覽值，超限時以紅色警示 */
+    private fun setDashValue(metric: DashMetric, text: String, alarm: Boolean) {
+        dashboardValues[metric]?.apply {
+            this.text = text
+            setTextColor(getColor(if (alarm) R.color.danger else R.color.text_primary))
+        }
+    }
 
     /** 依入口標題回傳分類；未列出的功能（Demo/連線設定）歸入系統 */
     private fun categoryOf(titleRes: Int): Category = when (titleRes) {

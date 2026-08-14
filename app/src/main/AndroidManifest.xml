@@ -20,6 +20,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- 引擎警報震動 -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 引擎警報系統通知（Android 13+ 需運行時授權） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- AI 診斷（LLM）需連線使用者設定的 API 端點 -->
     <uses-permission android:name="android.permission.INTERNET" />
 

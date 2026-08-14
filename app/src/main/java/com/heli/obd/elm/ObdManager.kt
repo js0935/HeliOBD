@@ -97,6 +97,10 @@ class ObdManager(
     @Volatile
     private var currentState: State = State.Idle
 
+    /** 最近一次即時數據快照（null = 尚未收到；供畫面進入時立即顯示） */
+    @Volatile
+    var latestLiveData: LiveData? = null
+
     /** Demo 模擬模式：啟用時不需藍牙硬體，輪詢改由模擬資料驅動 */
     @Volatile
     private var demoMode = false
@@ -1103,6 +1107,7 @@ class ObdManager(
     }
 
     private fun notifyLiveData(data: LiveData) {
+        latestLiveData = data
         synchronized(listeners) { listeners.toList() }.forEach { it.onLiveData(data) }
     }
 

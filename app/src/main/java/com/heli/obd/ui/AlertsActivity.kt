@@ -5,10 +5,14 @@
  */
 package com.heli.obd.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
 import com.heli.obd.BaseActivity
 import com.heli.obd.R
@@ -24,6 +28,11 @@ class AlertsActivity : BaseActivity() {
     private lateinit var coolantField: EditText
     private lateinit var rpmField: EditText
     private lateinit var voltageField: EditText
+
+    /** Android 13+ 通知權限請求（用於系統通知警報） */
+    private val notifPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +74,12 @@ class AlertsActivity : BaseActivity() {
             .putInt("rpmMax", rpm)
             .putFloat("voltageMin", voltage.toFloat())
             .apply()
+        // Android 13+：開啟警報時若無通知權限，請求以啟用系統通知
+        if (enabledSwitch.isChecked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         Toast.makeText(this, R.string.alerts_saved, Toast.LENGTH_SHORT).show()
         finish()
     }

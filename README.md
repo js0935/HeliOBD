@@ -29,6 +29,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 | 功能 | 說明 |
 |---|---|
 | 即時數據 | 轉速、車速、水溫、電壓、長期燃油修正、環境／機油溫度等 PID 即時顯示（KWP 慢協定自動相容） |
+| 主畫面概覽 | 首頁即時概覽卡：轉速／水溫／電壓／負載一目瞭然，超限紅字警示，點擊直達即時數據 |
 | 故障碼 | 讀取與清除故障碼，28,000+ 筆資料庫查詢維修建議 |
 | ECU 掃描 | 以 11-bit CAN header 探測掃描車上所有 ECU 模組 |
 | 健康檢查 | 即時數據分析，各系統綠 / 黃 / 紅健康評分 |
@@ -42,7 +43,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 | 驗車準備 | 排放監測器（I/M）狀態判決 + 驅動週期引導 |
 | 連線診斷 | Adapter 版本、供電電壓、通訊協定一鍵檢測 |
 | 專業診斷 | VIN / 校正 ID / CVN、排放就緒、凍結幀、Mode 06 監控測試、三態故障碼對照 |
-| 閾值警示 | 水溫、轉速、電壓超限即時提醒（音效 + 震動） |
+| 閾值警示 | 水溫、轉速、電壓超限即時提醒（音效 + 震動 + 系統通知） |
 
 ### 數據分析
 
@@ -163,7 +164,7 @@ lint 文字報告路徑：`app/build/intermediates/lint_intermediate_text_report
 app/src/main/java/com/heli/obd/
 ├── App.kt                  Application：LicenseManager 全域單例（含公鑰）
 ├── BaseActivity.kt         共用基底（主題 / 返回 / 螢幕常亮）
-├── MainActivity.kt         主畫面：34 功能入口（六大類可收合）+ ObdManager 全域單例
+├── MainActivity.kt         主畫面：34 功能入口（六大類可收合）+ 即時概覽卡 + ObdManager 全域單例
 ├── diag/                   診斷引擎
 │   ├── DiagnosisEngine.kt  AI 診斷規則引擎
 │   └── HealthCheckEngine.kt 健康檢查評分引擎（綠 / 黃 / 紅）
@@ -174,7 +175,7 @@ app/src/main/java/com/heli/obd/
 │   ├── DtcDatabase.kt      DTC 描述資料庫查詢層（assets/dtc_codes.db）
 │   ├── DeviceReflection.kt 轉接器自我偵測
 │   ├── BtPermissions.kt    藍牙權限（8–11 與 12+）
-│   ├── AlertMonitor.kt     閾值警示（水溫 / 轉速 / 電壓 + 音效 / 震動）
+│   ├── AlertMonitor.kt     閾值警示（水溫 / 轉速 / 電壓 + 音效 / 震動 / 系統通知）
 │   └── DemoConfig.kt       模擬模式全域開關（SharedPreferences）
 ├── license/                授權套件（AndroidLicenseKit 整合）
 │   ├── LicenseValidator.kt 金鑰解析 + RSA 簽章驗證（純 JVM 邏輯）
@@ -316,6 +317,7 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
+| `(本次)` | 主畫面即時概覽卡（轉速／水溫／電壓／負載，超限紅字，點擊直達即時數據）；閾值警示新增系統通知（Android 13+ 權限請求）；ObdManager 保留最近數據快照供畫面立即顯示 |
 | `7593ab7` | KWP 慢協定 ELM327 相容：自動剝離 3-byte header（山寨 v1.5 無法 `ATH0`）、`ATDPN` 協定偵測 + 慢協定降頻輪詢；新增長期燃油修正／環境溫度／機油溫度即時 PID；主畫面六大類區塊可收合；支援 PID 探測補齊 80/C0 區塊；離開即時數據畫面不再斷線；單元測試 18 例 |
 | `050730b` | 清除剩餘 38 個 lint 警告：按鈕列套用 `buttonBarButtonStyle`、繪圖 View 預配置（DrawAllocation）、巢狀權重改 `ConstraintLayout` chain、`AlertMonitor` 僅持 application context、授權/啟動畫面註記；依賴與工具鏈升級（AGP 8.9.1、Gradle 8.11.1、compileSdk 36、core-ktx 1.17、appcompat 1.8、lifecycle 2.11） |
 | `c090370` | 清除 lint 警告：技術輸入框停用自動填寫、數量詞改複數資源、移除根層過度繪製背景、`labelFor` 與基準對齊、`SwitchCompat`、en dash 文字修正 |

@@ -30,6 +30,15 @@
     <string name="cat_vehicle_mgmt">Vehicle Mgmt</string>
     <string name="cat_system">System</string>
 
+    <!-- Main screen live overview card -->
+    <string name="dashboard_title">Live Overview</string>
+    <string name="dashboard_status_idle">Idle</string>
+    <string name="dashboard_status_ready">Connected</string>
+    <string name="dashboard_status_demo">Demo</string>
+    <string name="dashboard_hint_idle">Not connected — tap to open live data</string>
+    <string name="dashboard_hint_ready">Waiting for data…</string>
+    <string name="dashboard_hint_demo">Simulation mode active</string>
+
     <!-- Free feature descriptions -->
     <string name="obd_desc">Live RPM, speed &amp; coolant</string>
     <string name="dtc_desc">Read and clear trouble codes</string>
@@ -599,6 +608,7 @@
     <string name="alerts_voltage_label">Voltage min (V)</string>
     <string name="alerts_invalid">Enter valid numbers</string>
     <string name="alerts_saved">Saved</string>
+    <string name="alert_channel_name">Engine alerts</string>
     <string name="alert_msg_coolant">Coolant too high! %1$d°C</string>
     <string name="alert_msg_rpm">RPM too high! %1$d</string>
     <string name="alert_msg_voltage">Voltage too low! %1$sV</string>
