@@ -6,6 +6,7 @@
 package com.heli.obd.ui
 
 import android.content.Context
+import androidx.core.content.ContextCompat
 import com.heli.obd.R
 import com.heli.obd.elm.ObdManager
 import com.heli.obd.pid.PidStore
@@ -35,7 +36,7 @@ object MonitorTiles {
         Tile("load", context.getString(R.string.pid_name_load), 0xFF9B59B6.toInt(), { "%" }, { _, d -> d.load?.toFloat() }),
         Tile("maf", context.getString(R.string.pid_name_maf), 0xFF1ABC9C.toInt(), { it.mafUnit() }, { s, d -> d.maf?.let { v -> s.maf(v) } }),
         Tile("fuelRate", context.getString(R.string.pid_name_fuel_rate), 0xFFE67E22.toInt(), { it.fuelRateUnit() }, { s, d -> d.fuelRate?.let { v -> s.fuelRate(v) } }),
-        Tile("torqueNm", context.getString(R.string.obd_torque), 0xFFE8EDF2.toInt(), { it.torqueUnit() }, { s, d -> d.torqueNm?.let { v -> s.torque(v) } }),
+        Tile("torqueNm", context.getString(R.string.obd_torque), ContextCompat.getColor(context, R.color.text_primary), { it.torqueUnit() }, { s, d -> d.torqueNm?.let { v -> s.torque(v) } }),
         Tile("fuelTrim", context.getString(R.string.pid_name_fuel_trim), 0xFF95A5A6.toInt(), { "%" }, { _, d -> d.fuelTrim }),
         Tile("fuelTrimLong", context.getString(R.string.pid_name_fuel_trim_long), 0xFF6C7A89.toInt(), { "%" }, { _, d -> d.fuelTrimLong }),
         Tile("afr", context.getString(R.string.pid_name_afr), 0xFF00B4D8.toInt(), { "AFR" }, { _, d -> d.afr }),

@@ -195,7 +195,7 @@ class TripActivity : BaseActivity() {
             if (recording) R.drawable.bg_button else R.drawable.bg_button_accent
         )
         recordBtn.setTextColor(
-            getColor(if (recording) R.color.primary else android.R.color.white)
+            getColor(android.R.color.white)
         )
         statusText.setText(
             if (recording) R.string.trip_recording else R.string.trip_idle

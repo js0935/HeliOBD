@@ -7,12 +7,13 @@ package com.heli.obd.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.heli.obd.R
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -50,7 +51,8 @@ class ChartView @JvmOverloads constructor(
     private var seriesMap = emptyMap<String, Series>()
 
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(45, 58, 74)
+        color = ContextCompat.getColor(context, R.color.text_secondary)
+        alpha = 0x5A
         style = Paint.Style.STROKE
         strokeWidth = 1f
     }
@@ -61,15 +63,15 @@ class ChartView @JvmOverloads constructor(
         strokeJoin = Paint.Join.ROUND
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(148, 163, 184)
+        color = ContextCompat.getColor(context, R.color.text_secondary)
         textSize = 22f
     }
     private val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(148, 163, 184)
+        color = ContextCompat.getColor(context, R.color.text_secondary)
         textSize = 18f
     }
     private val cursorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(255, 255, 255)
+        color = ContextCompat.getColor(context, R.color.accent)
         style = Paint.Style.STROKE
         strokeWidth = 1.5f
     }

@@ -7,11 +7,12 @@ package com.heli.obd.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.heli.obd.R
 
 /**
  * 歷史行程靜態多序列曲線圖：每序列可自訂數值範圍（支援負值，如 Fuel Trim），
@@ -28,7 +29,8 @@ class TripChartView @JvmOverloads constructor(
     private var samples: List<Map<String, Float>> = emptyList()
 
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(45, 58, 74)
+        color = ContextCompat.getColor(context, R.color.text_secondary)
+        alpha = 0x5A
         style = Paint.Style.STROKE
         strokeWidth = 1f
     }
@@ -39,11 +41,11 @@ class TripChartView @JvmOverloads constructor(
         strokeJoin = Paint.Join.ROUND
     }
     private val legendPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(148, 163, 184)
+        color = ContextCompat.getColor(context, R.color.text_secondary)
         textSize = 18f
     }
     private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(148, 163, 184)
+        color = ContextCompat.getColor(context, R.color.text_secondary)
         textSize = 12f
     }
 

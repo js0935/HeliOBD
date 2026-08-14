@@ -13,6 +13,8 @@ import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.heli.obd.R
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -30,7 +32,8 @@ class DataChartView @JvmOverloads constructor(
     private val density get() = resources.displayMetrics.density
 
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0x33E8EDF2
+        color = ContextCompat.getColor(context, R.color.text_secondary)
+        alpha = 0x33
         strokeWidth = 1f * resources.displayMetrics.density
     }
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -40,12 +43,13 @@ class DataChartView @JvmOverloads constructor(
         strokeJoin = Paint.Join.ROUND
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF8A99A8.toInt()
+        color = ContextCompat.getColor(context, R.color.text_secondary)
         textSize = 12f * resources.displayMetrics.density
     }
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val crosshairPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0x668A99A8
+        color = ContextCompat.getColor(context, R.color.text_secondary)
+        alpha = 0x66
         strokeWidth = 1f * resources.displayMetrics.density
         style = Paint.Style.STROKE
     }

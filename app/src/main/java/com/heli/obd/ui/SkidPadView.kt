@@ -7,10 +7,11 @@ package com.heli.obd.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.heli.obd.R
 import kotlin.math.min
 
 /**
@@ -28,20 +29,20 @@ class SkidPadView @JvmOverloads constructor(
         strokeWidth = 1.5f
     }
     private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(0x8A, 0x99, 0xA8)
+        color = ContextCompat.getColor(context, R.color.text_secondary)
         style = Paint.Style.STROKE
         strokeWidth = 1f
     }
     private val pointPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(0xFF, 0x6B, 0x35)
+        color = ContextCompat.getColor(context, R.color.accent)
         style = Paint.Style.FILL
     }
     private val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(0x00, 0xB4, 0xD8)
+        color = ContextCompat.getColor(context, R.color.primary)
         style = Paint.Style.FILL
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(0x8A, 0x99, 0xA8)
+        color = ContextCompat.getColor(context, R.color.text_secondary)
         textSize = 26f
     }
 
@@ -65,11 +66,11 @@ class SkidPadView @JvmOverloads constructor(
         if (pxPerG <= 0f) return
 
         gridPaint.style = Paint.Style.FILL
-        gridPaint.color = Color.rgb(0x1A, 0x22, 0x2B)
+        gridPaint.color = ContextCompat.getColor(context, R.color.surface)
         canvas.drawCircle(cx, cy, radius, gridPaint)
         gridPaint.style = Paint.Style.STROKE
 
-        gridPaint.color = Color.rgb(0x2E, 0x3B, 0x48)
+        gridPaint.color = ContextCompat.getColor(context, R.color.text_secondary)
         canvas.drawCircle(cx, cy, pxPerG, gridPaint)
         canvas.drawCircle(cx, cy, 2f * pxPerG, gridPaint)
 
