@@ -321,6 +321,7 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
+| `48d8a8f` | 主畫面更新入口 v0.2.4（versionCode 6）：更新卡片常駐主畫面，顯示目前／最新版本；有新版可直接下載安裝，無新版可一鍵重新檢查 |
 | `6afa02d` | 安裝權限修正 v0.2.3（versionCode 5）：新增 `REQUEST_INSTALL_PACKAGES` 權限；下載完成後檢查「安裝未知來源」允許，未允許時引導前往本機設定（Android 8+ 缺少權限會無聲忽略安裝） |
 | `bbee300` | 外觀模式色彩修正 v0.2.2（versionCode 4）：自繪圖表（ChartView / TripChartView / DataChartView / SkidPadView）與監測 tile 的硬編碼色改為主題感知（text_secondary / accent / surface），修正淺色模式白底白字、深色模式深底深字 |
 | `a437466` | 自動更新 v0.2.1（versionCode 3）：GitHub 最新版查詢、語意化版本比較、APK 下載 + FileProvider 安裝；啟動檢查彈窗、WorkManager 每日背景檢查通知、設定頁開關與立即檢查；版本比較單元測試 11 例；lint 0/32 |
