@@ -321,6 +321,7 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
+| `bbee300` | 外觀模式色彩修正 v0.2.2（versionCode 4）：自繪圖表（ChartView / TripChartView / DataChartView / SkidPadView）與監測 tile 的硬編碼色改為主題感知（text_secondary / accent / surface），修正淺色模式白底白字、深色模式深底深字 |
 | `a437466` | 自動更新 v0.2.1（versionCode 3）：GitHub 最新版查詢、語意化版本比較、APK 下載 + FileProvider 安裝；啟動檢查彈窗、WorkManager 每日背景檢查通知、設定頁開關與立即檢查；版本比較單元測試 11 例；lint 0/32 |
 | `fbd59dd` | 主畫面即時概覽卡（轉速／水溫／電壓／負載，超限紅字，點擊直達即時數據）；閾值警示新增系統通知（Android 13+ 權限請求）；ObdManager 保留最近數據快照供畫面立即顯示 |
 | `7593ab7` | KWP 慢協定 ELM327 相容：自動剝離 3-byte header（山寨 v1.5 無法 `ATH0`）、`ATDPN` 協定偵測 + 慢協定降頻輪詢；新增長期燃油修正／環境溫度／機油溫度即時 PID；主畫面六大類區塊可收合；支援 PID 探測補齊 80/C0 區塊；離開即時數據畫面不再斷線；單元測試 18 例 |
