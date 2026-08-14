@@ -12,6 +12,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
@@ -111,6 +112,17 @@ class ObdManager(
     /** 斷線旗標：偵測到 socket EOF/IOException 後設定，防止重複觸發斷線清理；連線成功時重置 */
     @Volatile
     private var disconnectPending = false
+
+    /** 斷線自動重連開關（obd_prefs）；使用者主動斷線不會觸發重連 */
+    @Volatile
+    private var reconnectEnabled = prefs.getBoolean(KEY_AUTO_RECONNECT, true)
+
+    /** 目前已嘗試的重連次數（達到上限後停止，等待使用者手動重連） */
+    @Volatile
+    private var reconnectAttempts = 0
+
+    /** 待執行的重連排程；disconnect() 或關閉重連時取消 */
+    private var reconnectJob: Job? = null
 
     /** 支援的 PID 清單（mode 01 PID 00/20/40 bitmask）；null = 尚未建立（視為全部支援） */
     @Volatile
@@ -318,6 +330,7 @@ class ObdManager(
                 false to (e.message ?: appContext.getString(R.string.obd_connect_error))
             }
             if (ok) {
+                reconnectAttempts = 0
                 prefs.edit().putString(KEY_LAST_DEVICE, device.address).apply()
                 protocolNumber = detectProtocolNumber()
                 setState(State.Ready)
@@ -330,6 +343,9 @@ class ObdManager(
     }
 
     fun disconnect() {
+        reconnectJob?.cancel()
+        reconnectJob = null
+        reconnectAttempts = 0
         disconnectPending = false
         pollJob?.cancel()
         pollJob = null
@@ -919,6 +935,38 @@ class ObdManager(
             pollJob = null
             closeQuietly()
             setState(State.Idle)
+            scheduleReconnect()
+        }
+    }
+
+    /**
+     * 意外斷線後自動重連上次成功連線的裝置。
+     * 延遲後嘗試，失敗時最多重試 MAX_RECONNECT_ATTEMPTS 次即停止（需使用者手動重連）。
+     * 使用者主動 disconnect()（取消 reconnectJob 且 disconnectPending=false）或重連成功時中止。
+     */
+    private fun scheduleReconnect() {
+        if (!reconnectEnabled || demoMode) return
+        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) return
+        reconnectJob = ioScope.launch {
+            delay(RECONNECT_DELAY_MS)
+            // 期間內使用者已主動斷線，或已有其他連線成立 → 取消重連
+            if (!disconnectPending || transport?.isOpen == true) return@launch
+            reconnectAttempts++
+            connectLastDevice { ok, _ -> if (!ok) scheduleReconnect() }
+        }
+    }
+
+    /** 斷線自動重連是否開啟（設定頁開關） */
+    fun isAutoReconnectEnabled(): Boolean = reconnectEnabled
+
+    /** 設定斷線自動重連開關；關閉時一併取消已排程的重連 */
+    fun setAutoReconnectEnabled(enabled: Boolean) {
+        reconnectEnabled = enabled
+        prefs.edit { putBoolean(KEY_AUTO_RECONNECT, enabled) }
+        if (!enabled) {
+            reconnectJob?.cancel()
+            reconnectJob = null
+            reconnectAttempts = 0
         }
     }
 
@@ -1130,6 +1178,9 @@ class ObdManager(
     companion object {
         private const val HISTORY_MAX = 300
         private const val KEY_LAST_DEVICE = "last_device_address"
+        private const val MAX_RECONNECT_ATTEMPTS = 3
+        private const val RECONNECT_DELAY_MS = 5_000L
+        const val KEY_AUTO_RECONNECT = "auto_reconnect"
         const val PREFS = "obd_prefs"
         const val KEY_ELM_CMDS = "custom_init_cmds"
     }

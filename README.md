@@ -86,6 +86,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 | OBD 終端機 | 手動輸入 AT / UDS 指令，即時查看回應 |
 | 模擬模式 | 無硬體也能體驗全部功能 |
 | 自動更新 | 主畫面更新卡片常駐顯示版本狀態；啟動與每日背景檢查 GitHub 新版，一鍵下載安裝（含「安裝未知來源」權限引導；設定頁可關閉自動檢查） |
+| 斷線自動重連 | 藍牙意外斷線時自動重新連線上次裝置（最多 3 次；設定頁可關閉） |
 
 ---
 
@@ -109,6 +110,16 @@ gradlew.bat assembleDebug
 
 APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
 
+正式版建置（正式簽名 + R8 混淆/資源瘦身，約縮小 60%）：
+
+```
+gradlew.bat assembleRelease
+```
+
+APK 輸出：`app/build/outputs/apk/release/app-release.apk`
+
+> 注意：正式版使用 release keystore 簽名（`app/release.keystore`，`keystore.properties` 已納入 `.gitignore`）。**與先前 debug 簽名版的簽名不同**，由 debug 版升級到正式版時需先解除安裝。
+
 ### 品質驗證
 
 每次改動後建議執行完整驗證（Lint 目標維持 **0 errors**）：
@@ -117,6 +128,7 @@ APK 輸出：`app/build/outputs/apk/debug/app-debug.apk`
 gradlew.bat lintDebug          # Android Lint 靜態分析（文字報告）
 gradlew.bat testDebugUnitTest  # 單元測試
 gradlew.bat assembleDebug      # 建置除錯 APK
+gradlew.bat assembleRelease    # 建置正式版 APK（正式簽名 + R8）
 ```
 
 lint 文字報告路徑：`app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt`。
@@ -170,7 +182,7 @@ app/src/main/java/com/heli/obd/
 │   ├── DiagnosisEngine.kt  AI 診斷規則引擎
 │   └── HealthCheckEngine.kt 健康檢查評分引擎（綠 / 黃 / 紅）
 ├── elm/                    ELM327 藍牙通訊層
-│   ├── ObdManager.kt       掃描 / 連線 / AT 指令 / 協定偵測 / 分層輪詢 / 故障碼 / 模擬模式
+│   ├── ObdManager.kt       掃描 / 連線 / AT 指令 / 協定偵測 / 分層輪詢 / 故障碼 / 模擬模式 / 斷線自動重連
 │   ├── ObdDecoder.kt       回應解碼（RPM / 車速 / 水溫 / 電壓 / DTC / O2 / EVAP；KWP 3-byte header 剝離）
 │   ├── ObdConstants.kt     PID 與 DTC 描述表（含 ECU header / Mode 05 / Mode 08）
 │   ├── DtcDatabase.kt      DTC 描述資料庫查詢層（assets/dtc_codes.db）
@@ -236,7 +248,7 @@ app/src/main/java/com/heli/obd/
     ├── HudActivity.kt        抬頭顯示
     ├── EngineSoundActivity.kt 引擎聲浪
     ├── TerminalActivity.kt   OBD 終端機（AT / UDS）
-    ├── SettingsActivity.kt   設定（日夜模式 / 語音警示 / 連線 / 自動更新）
+    ├── SettingsActivity.kt   設定（日夜模式 / 語音警示 / 連線 / 自動更新 / 斷線自動重連）
     ├── SplashActivity.kt     啟動畫面
     ├── FeaturePlaceholderActivity.kt  占位
     ├── UnitSystem.kt         單位制換算
@@ -249,7 +261,7 @@ app/src/main/java/com/heli/obd/
 |---|---|---|
 | **UI 層** | `ui/`、`MainActivity`、`BaseActivity` | 畫面呈現、使用者互動、測試流程引導 |
 | **診斷引擎層** | `diag/`、`scoring/` | AI 診斷規則、健康評分、駕駛評分邏輯 |
-| **通訊層** | `elm/ObdManager` | 藍牙掃描 / 連線 / AT 指令發送 / PID 輪詢 / 模擬模式資料流 |
+| **通訊層** | `elm/ObdManager` | 藍牙掃描 / 連線 / AT 指令發送 / PID 輪詢 / 模擬模式資料流 / 斷線自動重連 |
 | **解碼層** | `elm/ObdDecoder`、`ObdConstants` | ELM327 回應解析、PID 公式換算、ECU header 管理 |
 | **資料層** | `DtcDatabase`、`pid/`、`trip/`、`vehicles/`、`maintenance/`、`vwtp/` | 故障碼庫 / 自訂 PID / 行程 / 車輛 / 保養 / 感測器公式持久化 |
 | **授權層** | `license/` | RSA 離線授權驗證與功能閘門 |
@@ -321,6 +333,7 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
+| 待發布 v0.2.5（versionCode 7） | 斷線自動重連（意外斷線自動重連上次裝置，最多 3 次；設定頁可關閉）；首度以正式簽名（release keystore）+ R8 建置發布（APK 6.61 MB → 2.64 MB）；lint 0/32 |
 | `48d8a8f` | 主畫面更新入口 v0.2.4（versionCode 6）：更新卡片常駐主畫面，顯示目前／最新版本；有新版可直接下載安裝，無新版可一鍵重新檢查 |
 | `6afa02d` | 安裝權限修正 v0.2.3（versionCode 5）：新增 `REQUEST_INSTALL_PACKAGES` 權限；下載完成後檢查「安裝未知來源」允許，未允許時引導前往本機設定（Android 8+ 缺少權限會無聲忽略安裝） |
 | `bbee300` | 外觀模式色彩修正 v0.2.2（versionCode 4）：自繪圖表（ChartView / TripChartView / DataChartView / SkidPadView）與監測 tile 的硬編碼色改為主題感知（text_secondary / accent / surface），修正淺色模式白底白字、深色模式深底深字 |

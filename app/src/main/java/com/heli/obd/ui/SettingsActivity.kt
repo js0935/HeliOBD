@@ -109,6 +109,12 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
                 .orEmpty()
         )
 
+        val autoReconnectSwitch = findViewById<SwitchCompat>(R.id.settings_auto_reconnect)
+        autoReconnectSwitch.isChecked = obd.isAutoReconnectEnabled()
+        autoReconnectSwitch.setOnClickListener {
+            obd.setAutoReconnectEnabled(autoReconnectSwitch.isChecked)
+        }
+
         val autoUpdateSwitch = findViewById<SwitchCompat>(R.id.settings_auto_update)
         autoUpdateSwitch.isChecked = UpdateChecker.isAutoUpdateEnabled(this)
         autoUpdateSwitch.setOnClickListener {
