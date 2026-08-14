@@ -85,7 +85,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 | 連線設定 | 自訂 ELM327 初始化指令 |
 | OBD 終端機 | 手動輸入 AT / UDS 指令，即時查看回應 |
 | 模擬模式 | 無硬體也能體驗全部功能 |
-| 自動更新 | 啟動與每日背景檢查 GitHub 新版，一鍵下載安裝（設定頁可關閉） |
+| 自動更新 | 主畫面更新卡片常駐顯示版本狀態；啟動與每日背景檢查 GitHub 新版，一鍵下載安裝（含「安裝未知來源」權限引導；設定頁可關閉自動檢查） |
 
 ---
 
@@ -165,7 +165,7 @@ lint 文字報告路徑：`app/build/intermediates/lint_intermediate_text_report
 app/src/main/java/com/heli/obd/
 ├── App.kt                  Application：LicenseManager 全域單例（含公鑰）
 ├── BaseActivity.kt         共用基底（主題 / 返回 / 螢幕常亮）
-├── MainActivity.kt         主畫面：34 功能入口（六大類可收合）+ 即時概覽卡 + 自動更新啟動檢查 + ObdManager 全域單例
+├── MainActivity.kt         主畫面：34 功能入口（六大類可收合）+ 即時概覽卡 + 自動更新卡片（版本狀態／下載安裝）+ ObdManager 全域單例
 ├── diag/                   診斷引擎
 │   ├── DiagnosisEngine.kt  AI 診斷規則引擎
 │   └── HealthCheckEngine.kt 健康檢查評分引擎（綠 / 黃 / 紅）
