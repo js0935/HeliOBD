@@ -317,7 +317,7 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
-| `(本次)` | 主畫面即時概覽卡（轉速／水溫／電壓／負載，超限紅字，點擊直達即時數據）；閾值警示新增系統通知（Android 13+ 權限請求）；ObdManager 保留最近數據快照供畫面立即顯示 |
+| `fbd59dd` | 主畫面即時概覽卡（轉速／水溫／電壓／負載，超限紅字，點擊直達即時數據）；閾值警示新增系統通知（Android 13+ 權限請求）；ObdManager 保留最近數據快照供畫面立即顯示 |
 | `7593ab7` | KWP 慢協定 ELM327 相容：自動剝離 3-byte header（山寨 v1.5 無法 `ATH0`）、`ATDPN` 協定偵測 + 慢協定降頻輪詢；新增長期燃油修正／環境溫度／機油溫度即時 PID；主畫面六大類區塊可收合；支援 PID 探測補齊 80/C0 區塊；離開即時數據畫面不再斷線；單元測試 18 例 |
 | `050730b` | 清除剩餘 38 個 lint 警告：按鈕列套用 `buttonBarButtonStyle`、繪圖 View 預配置（DrawAllocation）、巢狀權重改 `ConstraintLayout` chain、`AlertMonitor` 僅持 application context、授權/啟動畫面註記；依賴與工具鏈升級（AGP 8.9.1、Gradle 8.11.1、compileSdk 36、core-ktx 1.17、appcompat 1.8、lifecycle 2.11） |
 | `c090370` | 清除 lint 警告：技術輸入框停用自動填寫、數量詞改複數資源、移除根層過度繪製背景、`labelFor` 與基準對齊、`SwitchCompat`、en dash 文字修正 |
