@@ -72,6 +72,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 | 功能 | 說明 |
 |---|---|
 | 多車管理 | 一台裝置管理多台愛車 |
+| 車廠/車型選擇 | 內建車廠/車型資料庫（數十品牌、數百款車型）快速帶入，支援手動輸入 |
 | 保養提醒 | 保養里程與電池健康監控 |
 | 自訂 PID | 公式引擎（A/B/C/D 變數 + 四則運算），新增車廠專用感測器 |
 | VW TP 2.0 | VAG 感測器公式表瀏覽與模擬計算 |
@@ -209,7 +210,8 @@ app/src/main/java/com/heli/obd/
 │   ├── TripRecorder.kt     JSON 儲存 + GPS 軌跡 + 油耗估算 + CSV 匯出
 │   └── FuelCalibration.kt  加油校準
 ├── vehicles/               多車管理
-│   └── VehicleStore.kt     車輛資料持久化
+│   ├── VehicleStore.kt     車輛資料持久化
+│   └── VehicleBrands.kt    內建車廠/車型資料庫載入（assets/vehicle_brands.json，品牌+車型對照）
 ├── vwtp/                   VW TP 2.0
 │   ├── VwtpProtocol.kt     感測器通訊協定封裝
 │   ├── VwtpSession.kt      感測器工作階段
@@ -279,7 +281,7 @@ app/src/main/java/com/heli/obd/
 | 語言 | Kotlin（JVM 17） |
 | 藍牙 | ELM327 相容轉接器（SPP） |
 | 通訊 | 標準 OBD-II Mode 01/02/03/05/06/08/0A + AT 指令（OBD 終端機支援 UDS） |
-| 資料庫 | SQLite（assets 打包，28,000+ 筆 DTC 定義） |
+| 資料庫 | SQLite（assets 打包，28,000+ 筆 DTC 定義）＋ JSON（車廠/車型對照表） |
 | 依賴 | core-ktx 1.17、appcompat 1.8、constraintlayout 2.2.2、lifecycle 2.11、core-splashscreen 1.2、work-runtime-ktx 2.9.1 |
 | 狀態 | 0 errors / 32 warnings（詳見下節；剩餘皆為 Kotlin 慣用建議與刻意保留） |
 
@@ -335,6 +337,7 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
+| `30233f6` | 車廠/車型資料庫整合 v0.2.7（versionCode 9）：多車管理新增內建車廠/車型選擇器（數十品牌、數百款車型，`assets/vehicle_brands.json`，整理自參考 APK 車廠資料）；新增車型欄位（既有車輛向後相容）；lint 0/32 |
 | `b2ec17f` | 修正即時數據僅顯示電壓 v0.2.6（versionCode 8）：移除關閉換行/空格的 ATL0/ATS0（會使多行 PID 回應無法解析）改為 ATL1/ATS1 明確開啟；新增 OBD 診斷記錄（連線期間指令與回應寫入 App 專屬外部儲存 HeliOBD 資料夾，最多 50 個 log 檔，超過刪最舊；設定頁顯示路徑）；lint 0/32 |
 | `7023e3b` | 斷線自動重連 + 正式簽名發版 v0.2.5（versionCode 7）：藍牙意外斷線自動重連上次裝置（最多 3 次，延遲 5 秒；使用者主動斷線不觸發；設定頁開關）；首度以 release keystore 正式簽名 + R8 建置發布（APK 6.61 → 2.64 MB）；lint 0/32 |
 | `48d8a8f` | 主畫面更新入口 v0.2.4（versionCode 6）：更新卡片常駐主畫面，顯示目前／最新版本；有新版可直接下載安裝，無新版可一鍵重新檢查 |
