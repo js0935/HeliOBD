@@ -5,6 +5,7 @@
  */
 package com.heli.obd.elm
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import java.io.DataInputStream
@@ -12,16 +13,46 @@ import java.io.OutputStream
 import java.util.UUID
 
 /**
+ * OBD 連線目標。
+ *
+ * 同一抽象涵蓋三種實體連線方式（由 [ObdTransport.open] 分派）：
+ * - [ClassicBt]：藍牙 RFCOMM（SPP），傳統 ELM327 藍牙晶片。
+ * - [BleBt]：藍牙低功耗（BLE），服務 UUID `FFF0`（寫入 `FFF1`、通知 `FFF2`），
+ *   常見於 BLE-only 的 ELM327 晶片（如 Veepeak、ELM327 v2.1 BLE）。
+ * - [Wifi]：WiFi ELM327（TCP socket，常見 `192.168.0.10:35000`）。
+ */
+sealed interface TransportTarget {
+
+    /** 用於 log / UI 顯示的目標描述 */
+    val displayName: String
+
+    @SuppressLint("MissingPermission") // 讀取 device.name 需 BLUETOOTH_CONNECT；權限由 UI 層連線前統一申請
+    data class ClassicBt(val device: BluetoothDevice) : TransportTarget {
+        override val displayName: String get() = device.name ?: device.address
+    }
+
+    @SuppressLint("MissingPermission") // 同上
+    data class BleBt(val device: BluetoothDevice) : TransportTarget {
+        override val displayName: String get() = device.name ?: device.address
+    }
+
+    data class Wifi(val host: String, val port: Int) : TransportTarget {
+        override val displayName: String get() = "$host:$port"
+    }
+}
+
+/**
  * OBD 實體通訊層抽象。
  *
- * 將「藍牙 socket 讀寫」與「ELM327 指令邏輯」分離：
- * - 真實連線使用 [BluetoothTransport]（RFCOMM SPP）。
+ * 將「連線 socket 讀寫」與「ELM327 指令邏輯」分離：
+ * - 真實連線使用 [BluetoothTransport]（RFCOMM SPP）、[BleTransport]（BLE GATT）、
+ *   [WifiTransport]（TCP socket）。
  * - 單元測試可注入 fake 實作（回放預錄回應），不需要真機硬體。
  */
 interface ObdTransport {
 
-    /** 建立連線（含多層 fallback）；成功回傳 true */
-    fun open(device: BluetoothDevice): Boolean
+    /** 建立連線（依 [target] 型別分派實作）；成功回傳 true */
+    fun open(target: TransportTarget): Boolean
 
     val isOpen: Boolean
 
@@ -53,7 +84,8 @@ class BluetoothTransport : ObdTransport {
     override val isOpen: Boolean
         get() = socket?.isConnected == true
 
-    override fun open(device: BluetoothDevice): Boolean {
+    override fun open(target: TransportTarget): Boolean {
+        val device = (target as? TransportTarget.ClassicBt)?.device ?: return false
         val sock = openSocket(device) ?: return false
         socket = sock
         input = DataInputStream(sock.inputStream)

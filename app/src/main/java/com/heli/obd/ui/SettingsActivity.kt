@@ -5,7 +5,6 @@
  */
 package com.heli.obd.ui
 
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.location.LocationManager
@@ -32,6 +31,7 @@ import com.heli.obd.backup.BackupStore
 import com.heli.obd.elm.BtPermissions
 import com.heli.obd.elm.ObdLog
 import com.heli.obd.elm.ObdManager
+import com.heli.obd.elm.TransportTarget
 import com.heli.obd.llm.LlmClient
 import com.heli.obd.llm.LlmStore
 import com.heli.obd.update.UpdateChecker
@@ -52,6 +52,9 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
     private lateinit var statusText: TextView
     private lateinit var connectBtn: Button
     private lateinit var disconnectBtn: Button
+    private lateinit var exportBtn: Button
+    private lateinit var importBtn: Button
+    private lateinit var checkBtn: Button
     private lateinit var appearanceValue: TextView
     private lateinit var llmBaseUrlField: EditText
     private lateinit var llmApiKeyField: EditText
@@ -79,10 +82,12 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
         findViewById<View>(R.id.btn_save).setOnClickListener { save() }
 
-        findViewById<Button>(R.id.btn_backup_export).setOnClickListener {
+        exportBtn = findViewById(R.id.btn_backup_export)
+        exportBtn.setOnClickListener {
             exportBackupLauncher.launch("HeliOBD_Backup.json")
         }
-        findViewById<Button>(R.id.btn_backup_import).setOnClickListener {
+        importBtn = findViewById(R.id.btn_backup_import)
+        importBtn.setOnClickListener {
             importBackupLauncher.launch(arrayOf("application/json", "text/*"))
         }
 
@@ -126,7 +131,8 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         autoUpdateSwitch.setOnClickListener {
             UpdateChecker.setAutoUpdateEnabled(this, autoUpdateSwitch.isChecked)
         }
-        findViewById<Button>(R.id.btn_check_update).setOnClickListener { checkUpdateNow() }
+        checkBtn = findViewById(R.id.btn_check_update)
+        checkBtn.setOnClickListener { checkUpdateNow() }
 
         obd.addListener(this)
         renderState(obd.state)
@@ -151,17 +157,22 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
 
     /** 立即檢查 GitHub 最新版：有新版彈出下載確認，否則提示已是最新 */
     private fun checkUpdateNow() {
+        val busy = BusyUi.mark(checkBtn, getString(R.string.busy_checking))
         lifecycleScope.launch {
-            val release = withContext(Dispatchers.IO) { UpdateChecker.fetchLatest() }
-            if (release?.apkUrl != null && UpdateChecker.isNewer(localVersion(), release.version)) {
-                AlertDialog.Builder(this@SettingsActivity, R.style.Theme_HeliOBD_Dialog)
-                    .setTitle(R.string.update_available_title)
-                    .setMessage(getString(R.string.update_available_body, release.version))
-                    .setPositiveButton(R.string.update_action_download) { _, _ -> downloadAndInstall() }
-                    .setNegativeButton(R.string.common_cancel, null)
-                    .show()
-            } else {
-                Toast.makeText(this@SettingsActivity, R.string.settings_update_none, Toast.LENGTH_SHORT).show()
+            try {
+                val release = withContext(Dispatchers.IO) { UpdateChecker.fetchLatest() }
+                if (release?.apkUrl != null && UpdateChecker.isNewer(localVersion(), release.version)) {
+                    AlertDialog.Builder(this@SettingsActivity, R.style.Theme_HeliOBD_Dialog)
+                        .setTitle(R.string.update_available_title)
+                        .setMessage(getString(R.string.update_available_body, release.version))
+                        .setPositiveButton(R.string.update_action_download) { _, _ -> downloadAndInstall() }
+                        .setNegativeButton(R.string.common_cancel, null)
+                        .show()
+                } else {
+                    Toast.makeText(this@SettingsActivity, R.string.settings_update_none, Toast.LENGTH_SHORT).show()
+                }
+            } finally {
+                busy.done()
             }
         }
     }
@@ -224,24 +235,52 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         }
     }
 
-    /** 有上次連線裝置就直接連線，否則掃描選擇 ELM327 裝置 */
+    /** 有上次連線目標就直接連線，否則掃描選擇 ELM327 裝置 */
     private fun connectFlow() {
-        val address = obd.lastDeviceAddress()
-        if (address != null) {
-            val device = runCatching {
-                BluetoothAdapter.getDefaultAdapter()?.getRemoteDevice(address)
-            }.getOrNull()
-            if (device != null) {
-                connectTo(device)
+        when (val t = obd.lastTarget()) {
+            is TransportTarget.Wifi -> {
+                connectToWifi(t.host, t.port)
                 return
             }
+            is TransportTarget.ClassicBt -> {
+                connectTo(t.device)
+                return
+            }
+            is TransportTarget.BleBt -> {
+                connectToBle(t.device)
+                return
+            }
+            null -> Unit
         }
         pickDevice()
     }
 
     @android.annotation.SuppressLint("MissingPermission") // 權限由本頁於 pickDevice 前申請
     private fun pickDevice() {
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.obd_connection_type_title)
+            .setItems(
+                arrayOf(
+                    getString(R.string.obd_connection_type_classic),
+                    getString(R.string.obd_connection_type_ble),
+                    getString(R.string.obd_connection_type_wifi),
+                )
+            ) { _, which ->
+                when (which) {
+                    0 -> pickClassicDevice()
+                    1 -> pickBleDevice()
+                    2 -> pickWifiDevice()
+                }
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    @android.annotation.SuppressLint("MissingPermission") // 權限由使用者於連線選擇前統一申請
+    private fun pickClassicDevice() {
+        val busy = BusyUi.mark(connectBtn, getString(R.string.busy_scanning))
         obd.discover { devices ->
+            busy.done()
             if (devices.isEmpty()) {
                 Toast.makeText(this, R.string.obd_no_device, Toast.LENGTH_LONG).show()
                 return@discover
@@ -257,6 +296,47 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         }
     }
 
+    @android.annotation.SuppressLint("MissingPermission") // 權限由使用者於連線選擇前統一申請
+    private fun pickBleDevice() {
+        val busy = BusyUi.mark(connectBtn, getString(R.string.busy_scanning))
+        obd.discoverBle { devices ->
+            busy.done()
+            if (devices.isEmpty()) {
+                Toast.makeText(this, R.string.obd_no_device, Toast.LENGTH_LONG).show()
+                return@discoverBle
+            }
+            val names = devices.map { it.name ?: it.address }
+            AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                .setTitle(R.string.obd_select_device)
+                .setItems(names.toTypedArray()) { _, which ->
+                    connectToBle(devices[which])
+                }
+                .setNegativeButton(R.string.common_cancel, null)
+                .show()
+        }
+    }
+
+    private fun pickWifiDevice() {
+        val saved = (obd.lastTarget() as? TransportTarget.Wifi)
+        val input = EditText(this).apply {
+            setText(saved?.let { "${it.host}:${it.port}" } ?: DEFAULT_WIFI_ADDRESS)
+            hint = DEFAULT_WIFI_ADDRESS
+        }
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.obd_wifi_title)
+            .setView(input)
+            .setPositiveButton(R.string.common_ok) { _, _ ->
+                val (host, port) = parseWifiAddress(input.text.toString())
+                if (host == null) {
+                    Toast.makeText(this, R.string.obd_wifi_invalid, Toast.LENGTH_LONG).show()
+                } else {
+                    connectToWifi(host, port)
+                }
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
     private fun connectTo(device: BluetoothDevice) {
         obd.connect(device) { success, message ->
             if (!success) {
@@ -265,6 +345,37 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
                 checkSuspiciousAdapter()
             }
         }
+    }
+
+    private fun connectToBle(device: BluetoothDevice) {
+        obd.connectBle(device) { success, message ->
+            if (!success) {
+                showConnectGuide(message)
+            } else {
+                checkSuspiciousAdapter()
+            }
+        }
+    }
+
+    private fun connectToWifi(host: String, port: Int) {
+        obd.connectWifi(host, port) { success, message ->
+            if (!success) {
+                showConnectGuide(message)
+            } else {
+                checkSuspiciousAdapter()
+            }
+        }
+    }
+
+    /** 解析使用者輸入的 `IP:port`；空白 port 或格式錯誤回傳 (null, 0) */
+    private fun parseWifiAddress(text: String): Pair<String?, Int> {
+        val t = text.trim()
+        val host = t.substringBefore(':', missingDelimiterValue = "")
+        if (host.isEmpty()) return null to 0
+        val portStr = t.substringAfter(':', missingDelimiterValue = DEFAULT_WIFI_PORT.toString())
+        val port = portStr.toIntOrNull() ?: return null to 0
+        if (port !in 1..65535) return null to 0
+        return host to port
     }
 
     /** 連線失敗引導：依序檢查插頭／點火／其他 App／通訊協定，避免新手卡關 */
@@ -368,43 +479,53 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
     }
 
     private fun exportBackup(uri: Uri) {
+        val busy = BusyUi.mark(exportBtn, getString(R.string.busy_exporting))
         lifecycleScope.launch {
-            val json = withContext(Dispatchers.IO) { BackupStore.export(this@SettingsActivity) }
-            runCatching {
-                contentResolver.openOutputStream(uri)?.use { out ->
-                    out.write(json.toByteArray(Charsets.UTF_8))
-                } ?: error("null stream")
-            }.onSuccess {
-                Toast.makeText(this@SettingsActivity, R.string.backup_exported, Toast.LENGTH_SHORT).show()
-            }.onFailure {
-                Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
+            try {
+                val json = withContext(Dispatchers.IO) { BackupStore.export(this@SettingsActivity) }
+                runCatching {
+                    contentResolver.openOutputStream(uri)?.use { out ->
+                        out.write(json.toByteArray(Charsets.UTF_8))
+                    } ?: error("null stream")
+                }.onSuccess {
+                    Toast.makeText(this@SettingsActivity, R.string.backup_exported, Toast.LENGTH_SHORT).show()
+                }.onFailure {
+                    Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
+                }
+            } finally {
+                busy.done()
             }
         }
     }
 
     private fun importBackup(uri: Uri) {
+        val busy = BusyUi.mark(importBtn, getString(R.string.busy_importing))
         lifecycleScope.launch {
-            val text = withContext(Dispatchers.IO) {
-                runCatching {
-                    contentResolver.openInputStream(uri)?.use { input ->
-                        input.bufferedReader(Charsets.UTF_8).use { it.readText() }
-                    }
-                }.getOrNull()
-            }
-            if (text.isNullOrBlank()) {
-                Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-            val restored = withContext(Dispatchers.IO) { BackupStore.import(this@SettingsActivity, text) }
-            if (restored < 0) {
-                Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
-            } else {
-                renderState(obd.state)
-                Toast.makeText(
-                    this@SettingsActivity,
-                    resources.getQuantityString(R.plurals.backup_imported, restored, restored),
-                    Toast.LENGTH_LONG,
-                ).show()
+            try {
+                val text = withContext(Dispatchers.IO) {
+                    runCatching {
+                        contentResolver.openInputStream(uri)?.use { input ->
+                            input.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                        }
+                    }.getOrNull()
+                }
+                if (text.isNullOrBlank()) {
+                    Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                val restored = withContext(Dispatchers.IO) { BackupStore.import(this@SettingsActivity, text) }
+                if (restored < 0) {
+                    Toast.makeText(this@SettingsActivity, R.string.backup_import_failed, Toast.LENGTH_SHORT).show()
+                } else {
+                    renderState(obd.state)
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        resources.getQuantityString(R.plurals.backup_imported, restored, restored),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            } finally {
+                busy.done()
             }
         }
     }
@@ -457,5 +578,7 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
 
     companion object {
         private const val REQ_BT_PERMISSION = 100
+        private const val DEFAULT_WIFI_ADDRESS = "192.168.0.10:35000"
+        private const val DEFAULT_WIFI_PORT = 35000
     }
 }

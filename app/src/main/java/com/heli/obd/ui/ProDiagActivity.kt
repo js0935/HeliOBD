@@ -20,6 +20,7 @@ import com.heli.obd.R
 import com.heli.obd.elm.FreezeFrame
 import com.heli.obd.elm.ImReadiness
 import com.heli.obd.elm.MonitorTest
+import com.heli.obd.elm.ObdDecoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -158,9 +159,13 @@ class ProDiagActivity : BaseActivity() {
     private fun renderMonitors(tests: List<MonitorTest>) {
         monitorList.removeAllViews()
         tests.forEach { test ->
-            val name = test.nameRes?.let { getString(it) } ?: getString(R.string.pro_diag_tid, test.tid)
-            val suffix = test.cylinder?.let { getString(R.string.pro_diag_cylinder, it) } ?: ""
-            addRow(monitorList, name, "${test.value}$suffix")
+            val name = test.tidNameRes?.let { getString(it) + " " + (test.nameRes?.let { res -> getString(res) } ?: getString(R.string.pro_diag_tid, test.testId)) }
+                ?: (test.nameRes?.let { getString(it) } ?: getString(R.string.pro_diag_tid, test.testId))
+            val valueText = test.scaledValue?.let { ObdDecoder.formatScaled(it) } ?: test.value.toString()
+            val unitText = test.unit.takeIf { it.isNotEmpty() }?.let { " $it" } ?: ""
+            val passText = test.passed?.let { if (it) getString(R.string.diag_monitor_pass) else getString(R.string.diag_monitor_fail) } ?: ""
+            val suffix = test.cylinder?.let { getString(R.string.pro_diag_cylinder, it) + " " } ?: ""
+            addRow(monitorList, name, "$suffix$valueText$unitText $passText".trim())
         }
     }
 

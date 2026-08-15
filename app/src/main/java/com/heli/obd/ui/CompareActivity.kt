@@ -12,10 +12,14 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.ObdManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,6 +45,8 @@ class CompareActivity : BaseActivity() {
     private lateinit var snapAText: TextView
     private lateinit var snapBText: TextView
     private lateinit var compareTable: LinearLayout
+    private lateinit var captureABtn: Button
+    private lateinit var captureBBtn: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,32 +57,44 @@ class CompareActivity : BaseActivity() {
         compareTable = findViewById(R.id.compare_table)
 
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
-        findViewById<Button>(R.id.btn_capture_a).setOnClickListener { captureA() }
-        findViewById<Button>(R.id.btn_capture_b).setOnClickListener { captureB() }
+        captureABtn = findViewById(R.id.btn_capture_a)
+        captureBBtn = findViewById(R.id.btn_capture_b)
+        captureABtn.setOnClickListener { captureA() }
+        captureBBtn.setOnClickListener { captureB() }
         findViewById<Button>(R.id.btn_clear).setOnClickListener { clearAll() }
     }
 
-    private fun captureA() = capture().also { snapA = it }
-    private fun captureB() = capture().also { snapB = it }
+    private fun captureA() = captureAsync(captureABtn) { snapA = it }
 
-    private fun capture(): Snapshot? {
+    private fun captureB() = captureAsync(captureBBtn) { snapB = it }
+
+    private fun captureAsync(btn: Button, apply: (Snapshot) -> Unit) {
         if (!obd.isConnected()) {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_LONG).show()
-            return null
+            return
         }
-        val data = obd.requestLiveData() ?: run {
-            Toast.makeText(this, R.string.compare_failed, Toast.LENGTH_SHORT).show()
-            return null
+        val busy = BusyUi.mark(btn, getString(R.string.busy_reading))
+        lifecycleScope.launch {
+            try {
+                val data = withContext(Dispatchers.IO) { obd.requestLiveData() }
+                if (data == null) {
+                    Toast.makeText(this@CompareActivity, R.string.compare_failed, Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                apply(
+                    Snapshot(
+                        time = System.currentTimeMillis(),
+                        rpm = data.rpm,
+                        speed = data.speed,
+                        coolant = data.coolant,
+                        voltage = data.voltage,
+                    )
+                )
+                render()
+            } finally {
+                busy.done()
+            }
         }
-        val snap = Snapshot(
-            time = System.currentTimeMillis(),
-            rpm = data.rpm,
-            speed = data.speed,
-            coolant = data.coolant,
-            voltage = data.voltage,
-        )
-        render()
-        return snap
     }
 
     private fun clearAll() {

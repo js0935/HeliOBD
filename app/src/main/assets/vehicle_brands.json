@@ -1,0 +1,1161 @@
+[
+    {
+        "brand": "[Other brands]",
+        "icon": "https://",
+        "models": []
+    },
+    {
+        "brand": "GMC",
+        "icon": "https://www.carlogos.org/car-logos/gmc-logo.png",
+        "models": [
+            "Acadia",
+            "Canyon Crew Cab",
+            "Canyon Extended Cab",
+            "Hummer EV Pickup",
+            "Hummer EV SUV",
+            "Savana 2500 Cargo",
+            "Savana 2500 Passenger",
+            "Savana 3500 Cargo",
+            "Savana 3500 Passenger",
+            "Sierra 1500 Crew Cab",
+            "Sierra 1500 Double Cab",
+            "Sierra 1500 Limited Crew Cab",
+            "Sierra 1500 Limited Double Cab",
+            "Sierra 1500 Limited Regular Cab",
+            "Sierra 1500 Regular Cab",
+            "Sierra 2500 HD Crew Cab",
+            "Sierra 2500 HD Double Cab",
+            "Sierra 2500 HD Regular Cab",
+            "Sierra 3500 HD Crew Cab",
+            "Sierra 3500 HD Double Cab",
+            "Sierra 3500 HD Regular Cab",
+            "Sierra EV",
+            "Terrain",
+            "Yukon",
+            "Yukon XL"
+        ]
+    },
+    {
+        "brand": "Ronart",
+        "icon": "https://www.carlogos.org/car-logos/ronart-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Ford",
+        "icon": "https://www.carlogos.org/car-logos/ford-logo.png",
+        "models": [
+            "Bronco",
+            "Bronco Sport",
+            "E-Transit 350 Cargo Van",
+            "EcoSport",
+            "Edge",
+            "Escape",
+            "Escape Plug-in Hybrid",
+            "Expedition",
+            "Expedition MAX",
+            "Explorer",
+            "F150 Lightning",
+            "F150 Regular Cab",
+            "F150 Super Cab",
+            "F150 SuperCrew Cab",
+            "F250 Super Duty Crew Cab",
+            "F250 Super Duty Regular Cab",
+            "F250 Super Duty Super Cab",
+            "F350 Super Duty Crew Cab",
+            "F350 Super Duty Regular Cab",
+            "F350 Super Duty Super Cab",
+            "F450 Super Duty Crew Cab",
+            "F450 Super Duty Regular Cab",
+            "Maverick",
+            "Mustang",
+            "Mustang MACH-E",
+            "Ranger SuperCab",
+            "Ranger SuperCrew",
+            "Transit 150 Cargo Van",
+            "Transit 150 Crew Van",
+            "Transit 150 Passenger Van",
+            "Transit 250 Cargo Van",
+            "Transit 250 Crew Van",
+            "Transit 350 Cargo Van",
+            "Transit 350 Crew Van",
+            "Transit 350 HD Cargo Van",
+            "Transit 350 HD Crew Van",
+            "Transit 350 Passenger Van",
+            "Transit Connect Cargo Van",
+            "Transit Connect Passenger Wagon"
+        ]
+    },
+    {
+        "brand": "Jaguar",
+        "icon": "https://www.carlogos.org/car-logos/jaguar-logo.png",
+        "models": [
+            "E-PACE",
+            "F-PACE",
+            "F-TYPE",
+            "I-PACE",
+            "XF"
+        ]
+    },
+    {
+        "brand": "Tesla",
+        "icon": "https://www.carlogos.org/car-logos/tesla-logo.png",
+        "models": [
+            "Cybertruck",
+            "Model 3",
+            "Model S",
+            "Model X",
+            "Model Y"
+        ]
+    },
+    {
+        "brand": "McLaren",
+        "icon": "https://www.carlogos.org/car-logos/mclaren-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Zastava",
+        "icon": "https://www.carlogos.org/car-logos/zastava-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Wartburg",
+        "icon": "https://www.carlogos.org/car-logos/wartburg-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Subaru",
+        "icon": "https://www.carlogos.org/car-logos/subaru-logo.png",
+        "models": [
+            "Ascent",
+            "BRZ",
+            "Crosstrek",
+            "Forester",
+            "Impreza",
+            "Legacy",
+            "Outback",
+            "Solterra",
+            "WRX"
+        ]
+    },
+    {
+        "brand": "Freightliner",
+        "icon": "https://",
+        "models": [
+            "Sprinter 1500 Cargo",
+            "Sprinter 1500 Passenger",
+            "Sprinter 2500 Cargo",
+            "Sprinter 2500 Crew",
+            "Sprinter 2500 Passenger",
+            "Sprinter 3500 Cargo",
+            "Sprinter 3500 Crew",
+            "Sprinter 3500 XD Crew",
+            "Sprinter 3500XD Cargo",
+            "Sprinter 4500 Cargo",
+            "Sprinter 4500 Crew"
+        ]
+    },
+    {
+        "brand": "Rinspeed",
+        "icon": "https://www.carlogos.org/car-logos/rinspeed-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Rivian",
+        "icon": "https://",
+        "models": [
+            "R1S",
+            "R1T"
+        ]
+    },
+    {
+        "brand": "Triumph",
+        "icon": "https://www.carlogos.org/car-logos/triumph-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Acura",
+        "icon": "https://www.carlogos.org/car-logos/acura-logo.png",
+        "models": [
+            "ILX",
+            "Integra",
+            "MDX",
+            "NSX",
+            "RDX",
+            "TLX",
+            "ZDX"
+        ]
+    },
+    {
+        "brand": "Chrysler",
+        "icon": "https://www.carlogos.org/car-logos/chrysler-logo.png",
+        "models": [
+            "300",
+            "Pacifica",
+            "Pacifica Hybrid"
+        ]
+    },
+    {
+        "brand": "MK",
+        "icon": "https://www.carlogos.org/car-logos/mk-sportscars-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Alfa Romeo",
+        "icon": "https://www.carlogos.org/car-logos/alfa-romeo-logo.png",
+        "models": [
+            "Giulia",
+            "Stelvio",
+            "Tonale"
+        ]
+    },
+    {
+        "brand": "Saab",
+        "icon": "https://www.carlogos.org/car-logos/saab-logo.png",
+        "models": []
+    },
+    {
+        "brand": "BMW",
+        "icon": "https://www.carlogos.org/car-logos/bmw-logo.png",
+        "models": [
+            "2 Series",
+            "3 Series",
+            "4 Series",
+            "5 Series",
+            "7 Series",
+            "8 Series",
+            "i3",
+            "i4",
+            "i7",
+            "iX",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M8",
+            "X1",
+            "X2",
+            "X3",
+            "X3 M",
+            "X4",
+            "X4 M",
+            "X5",
+            "X5 M",
+            "X6",
+            "X6 M",
+            "X7",
+            "XM",
+            "Z4"
+        ]
+    },
+    {
+        "brand": "Kia",
+        "icon": "https://www.carlogos.org/car-logos/kia-logo.png",
+        "models": [
+            "Carnival",
+            "EV6",
+            "EV9",
+            "Forte",
+            "K5",
+            "Niro",
+            "Niro EV",
+            "Niro Plug-in Hybrid",
+            "Rio",
+            "Sedona",
+            "Seltos",
+            "Sorento",
+            "Sorento Hybrid",
+            "Sorento Plug-in Hybrid",
+            "Soul",
+            "Sportage",
+            "Sportage Hybrid",
+            "Sportage Plug-in Hybrid",
+            "Stinger",
+            "Telluride"
+        ]
+    },
+    {
+        "brand": "Jeep",
+        "icon": "https://www.carlogos.org/car-logos/jeep-logo.png",
+        "models": [
+            "Cherokee",
+            "Compass",
+            "Gladiator",
+            "Grand Cherokee",
+            "Grand Cherokee 4xe",
+            "Grand Cherokee L",
+            "Grand Wagoneer",
+            "Grand Wagoneer L",
+            "Recon",
+            "Renegade",
+            "Wagoneer",
+            "Wagoneer L",
+            "Wrangler",
+            "Wrangler 4xe",
+            "Wrangler Unlimited",
+            "Wrangler Unlimited 4xe"
+        ]
+    },
+    {
+        "brand": "Merkur",
+        "icon": "https://www.carlogos.org/car-logos/merkur-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Hispano-Suiza",
+        "icon": "https://www.carlogos.org/car-logos/hispano-suiza-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Rolls-Royce",
+        "icon": "https://www.carlogos.org/car-logos/rolls-royce-logo.png",
+        "models": [
+            "Cullinan",
+            "Dawn",
+            "Ghost",
+            "Phantom",
+            "Wraith"
+        ]
+    },
+    {
+        "brand": "Ultima",
+        "icon": "https://www.carlogos.org/car-logos/ultima-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Ferrari",
+        "icon": "https://www.carlogos.org/car-logos/ferrari-logo.png",
+        "models": [
+            "296 GTB",
+            "488 Pista",
+            "812 Competizione",
+            "812 Competizione A",
+            "812 GTS",
+            "812 Superfast",
+            "F8",
+            "Portofino",
+            "Roma",
+            "SF90"
+        ]
+    },
+    {
+        "brand": "Saipa",
+        "icon": "https://www.carlogos.org/car-logos/saipa-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Fiat",
+        "icon": "https://www.carlogos.org/car-logos/fiat-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Mercedes-Benz",
+        "icon": "https://www.carlogos.org/car-logos/mercedes-benz-logo.png",
+        "models": [
+            "A-Class",
+            "C-Class",
+            "CLA",
+            "CLS",
+            "E-Class",
+            "G-Class",
+            "GLA",
+            "GLB",
+            "GLC",
+            "GLC Coupe",
+            "GLE",
+            "GLS",
+            "Mercedes-AMG A-Class",
+            "Mercedes-AMG C-Class",
+            "Mercedes-AMG CLA",
+            "Mercedes-AMG CLS",
+            "Mercedes-AMG E-Class",
+            "Mercedes-AMG EQE",
+            "Mercedes-AMG EQS",
+            "Mercedes-AMG G-Class",
+            "Mercedes-AMG GLA",
+            "Mercedes-AMG GLB",
+            "Mercedes-AMG GLC",
+            "Mercedes-AMG GLC Coupe",
+            "Mercedes-AMG GLE",
+            "Mercedes-AMG GLE Coupe",
+            "Mercedes-AMG GLS",
+            "Mercedes-AMG GT",
+            "Mercedes-AMG S-Class",
+            "Mercedes-AMG SL",
+            "Mercedes-EQ EQB",
+            "Mercedes-EQ EQE",
+            "Mercedes-EQ EQE SUV",
+            "Mercedes-EQ EQS",
+            "Mercedes-EQ EQS SUV",
+            "Mercedes-Maybach GLS",
+            "Mercedes-Maybach S-Class",
+            "Metris Cargo",
+            "Metris Passenger",
+            "S-Class",
+            "Sprinter 1500 Cargo",
+            "Sprinter 1500 Passenger",
+            "Sprinter 2500 Cargo",
+            "Sprinter 2500 Crew",
+            "Sprinter 2500 Passenger",
+            "Sprinter 3500 Cargo",
+            "Sprinter 3500 Crew",
+            "Sprinter 3500 XD Cargo",
+            "Sprinter 3500 XD Crew",
+            "Sprinter 4500 Cargo",
+            "Sprinter 4500 Crew"
+        ]
+    },
+    {
+        "brand": "ZAZ",
+        "icon": "https://www.carlogos.org/car-logos/zaz-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Hyundai",
+        "icon": "https://www.carlogos.org/car-logos/hyundai-logo.png",
+        "models": [
+            "Accent",
+            "Elantra",
+            "Elantra Hybrid",
+            "Elantra N",
+            "IONIQ 5",
+            "IONIQ 6",
+            "IONIQ 7",
+            "Ioniq Electric",
+            "Ioniq Hybrid",
+            "Ioniq Plug-in Hybrid",
+            "Kona",
+            "Kona Electric",
+            "Kona N",
+            "NEXO",
+            "Palisade",
+            "Santa Cruz",
+            "Santa Fe",
+            "Santa Fe Hybrid",
+            "Santa Fe Plug-in Hybrid",
+            "Sonata",
+            "Sonata Hybrid",
+            "Tucson",
+            "Tucson Hybrid",
+            "Tucson Plug-in Hybrid",
+            "Veloster",
+            "Venue"
+        ]
+    },
+    {
+        "brand": "Lotus",
+        "icon": "https://www.carlogos.org/car-logos/lotus-logo.png",
+        "models": [
+            "Evora GT"
+        ]
+    },
+    {
+        "brand": "Make",
+        "icon": "https://",
+        "models": [
+            "Model"
+        ]
+    },
+    {
+        "brand": "Talbot",
+        "icon": "https://www.carlogos.org/car-logos/talbot-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Dodge",
+        "icon": "https://www.carlogos.org/car-logos/dodge-logo.png",
+        "models": [
+            "Challenger",
+            "Charger",
+            "Durango",
+            "Hornet"
+        ]
+    },
+    {
+        "brand": "Pontiac",
+        "icon": "https://www.carlogos.org/car-logos/pontiac-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Isdera",
+        "icon": "https://www.carlogos.org/car-logos/isdera-logo.png",
+        "models": []
+    },
+    {
+        "brand": "MAZDA",
+        "icon": "https://",
+        "models": [
+            "CX-3",
+            "CX-30",
+            "CX-5",
+            "CX-50",
+            "CX-70",
+            "CX-9",
+            "CX-90",
+            "MAZDA3",
+            "MAZDA6",
+            "MX-30",
+            "MX-5 Miata",
+            "MX-5 Miata RF"
+        ]
+    },
+    {
+        "brand": "Maserati",
+        "icon": "https://www.carlogos.org/car-logos/maserati-logo.png",
+        "models": [
+            "Ghibli",
+            "Grecale",
+            "Levante",
+            "MC20",
+            "Quattroporte"
+        ]
+    },
+    {
+        "brand": "Honda",
+        "icon": "https://www.carlogos.org/car-logos/honda-logo.png",
+        "models": [
+            "Accord",
+            "Accord Hybrid",
+            "Civic",
+            "Civic Type R",
+            "Clarity Fuel Cell",
+            "Clarity Plug-in Hybrid",
+            "CR-V",
+            "CR-V Hybrid",
+            "HR-V",
+            "Insight",
+            "Odyssey",
+            "Passport",
+            "Pilot",
+            "Prologue",
+            "Ridgeline"
+        ]
+    },
+    {
+        "brand": "Hudson",
+        "icon": "https://www.carlogos.org/car-logos/hudson-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Mazda",
+        "icon": "https://www.carlogos.org/car-logos/mazda-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Lexus",
+        "icon": "https://www.carlogos.org/car-logos/lexus-logo.png",
+        "models": [
+            "ES",
+            "GX",
+            "IS",
+            "LC",
+            "LS",
+            "LX",
+            "NX",
+            "RC",
+            "RX",
+            "RZ",
+            "TX",
+            "UX"
+        ]
+    },
+    {
+        "brand": "Pegaso",
+        "icon": "https://www.carlogos.org/car-logos/pegaso-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Marcos",
+        "icon": "https://www.carlogos.org/car-logos/marcos-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Nissan",
+        "icon": "https://www.carlogos.org/car-logos/nissan-logo.png",
+        "models": [
+            "Altima",
+            "Ariya",
+            "Armada",
+            "Frontier Crew Cab",
+            "Frontier King Cab",
+            "GT-R",
+            "Kicks",
+            "LEAF",
+            "Maxima",
+            "Murano",
+            "NV1500 Cargo",
+            "NV200",
+            "NV2500 HD Cargo",
+            "NV3500 HD Cargo",
+            "NV3500 HD Passenger",
+            "Pathfinder",
+            "Rogue",
+            "Rogue Sport",
+            "Sentra",
+            "Titan Crew Cab",
+            "Titan King Cab",
+            "TITAN XD Crew Cab",
+            "Versa",
+            "Z"
+        ]
+    },
+    {
+        "brand": "Riley",
+        "icon": "https://www.carlogos.org/car-logos/riley-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Morris",
+        "icon": "https://www.carlogos.org/car-logos/morris-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Lucid",
+        "icon": "https://",
+        "models": [
+            "Air"
+        ]
+    },
+    {
+        "brand": "Audi",
+        "icon": "https://www.carlogos.org/car-logos/audi-logo.png",
+        "models": [
+            "A3",
+            "A4",
+            "A4 allroad",
+            "A5",
+            "A6",
+            "A6 allroad",
+            "A7",
+            "A8",
+            "e-tron",
+            "e-tron GT",
+            "e-tron S",
+            "e-tron S Sportback",
+            "e-tron Sportback",
+            "Q3",
+            "Q4 e-tron",
+            "Q4 Sportback e-tron",
+            "Q5",
+            "Q5 Sportback",
+            "Q7",
+            "Q8",
+            "Q8 e-tron",
+            "R8",
+            "RS 3",
+            "RS 5",
+            "RS 6",
+            "RS 7",
+            "RS e-tron GT",
+            "RS Q8",
+            "S3",
+            "S4",
+            "S5",
+            "S6",
+            "S7",
+            "S8",
+            "SQ5",
+            "SQ5 Sportback",
+            "SQ7",
+            "SQ8",
+            "TT"
+        ]
+    },
+    {
+        "brand": "Ranz",
+        "icon": "https://www.carlogos.org/car-logos/ranz-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Intermeccanica",
+        "icon": "https://www.carlogos.org/car-logos/intermeccanica-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Cadillac",
+        "icon": "https://www.carlogos.org/car-logos/cadillac-logo.png",
+        "models": [
+            "Celestiq",
+            "CT4",
+            "CT5",
+            "Escalade",
+            "Escalade ESV",
+            "LYRIQ",
+            "XT4",
+            "XT5",
+            "XT6"
+        ]
+    },
+    {
+        "brand": "Marlin",
+        "icon": "https://www.carlogos.org/car-logos/marlin-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Hommell",
+        "icon": "https://www.carlogos.org/car-logos/hommell-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Genesis",
+        "icon": "https://www.carlogos.org/car-logos/genesis-logo.png",
+        "models": [
+            "Electrified G80",
+            "Electrified GV70",
+            "G70",
+            "G80",
+            "G90",
+            "GV60",
+            "GV70",
+            "GV80"
+        ]
+    },
+    {
+        "brand": "Lincoln",
+        "icon": "https://www.carlogos.org/car-logos/lincoln-logo.png",
+        "models": [
+            "Aviator",
+            "Corsair",
+            "Nautilus",
+            "Navigator",
+            "Navigator L"
+        ]
+    },
+    {
+        "brand": "Venturi",
+        "icon": "https://www.carlogos.org/car-logos/venturi-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Wanderer",
+        "icon": "https://www.carlogos.org/car-logos/wanderer-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Mitsubishi",
+        "icon": "https://www.carlogos.org/car-logos/mitsubishi-logo.png",
+        "models": [
+            "Eclipse Cross",
+            "Mirage",
+            "Mirage G4",
+            "Outlander",
+            "Outlander PHEV",
+            "Outlander Sport"
+        ]
+    },
+    {
+        "brand": "Fisker",
+        "icon": "https://",
+        "models": [
+            "Ocean"
+        ]
+    },
+    {
+        "brand": "Panhard",
+        "icon": "https://www.carlogos.org/car-logos/panhard-logo.png",
+        "models": []
+    },
+    {
+        "brand": "PGO",
+        "icon": "https://www.carlogos.org/car-logos/pgo-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Soueast",
+        "icon": "https://www.carlogos.org/car-logos/soueast-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Polestar",
+        "icon": "https://",
+        "models": [
+            "1",
+            "2",
+            "3",
+            "5"
+        ]
+    },
+    {
+        "brand": "Suzuki",
+        "icon": "https://www.carlogos.org/car-logos/suzuki-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Chevrolet",
+        "icon": "https://www.carlogos.org/car-logos/chevrolet-logo.png",
+        "models": [
+            "Blazer",
+            "Blazer EV",
+            "Bolt EUV",
+            "Bolt EV",
+            "Camaro",
+            "Colorado Crew Cab",
+            "Colorado Extended Cab",
+            "Corvette",
+            "Equinox",
+            "Equinox EV",
+            "Express 2500 Cargo",
+            "Express 2500 Passenger",
+            "Express 3500 Cargo",
+            "Express 3500 Passenger",
+            "Malibu",
+            "Silverado 1500 Crew Cab",
+            "Silverado 1500 Double Cab",
+            "Silverado 1500 Limited Crew Cab",
+            "Silverado 1500 Limited Double Cab",
+            "Silverado 1500 Limited Regular Cab",
+            "Silverado 1500 Regular Cab",
+            "Silverado 2500 HD Crew Cab",
+            "Silverado 2500 HD Double Cab",
+            "Silverado 2500 HD Regular Cab",
+            "Silverado 3500 HD Crew Cab",
+            "Silverado 3500 HD Double Cab",
+            "Silverado 3500 HD Regular Cab",
+            "Silverado EV",
+            "Spark",
+            "Suburban",
+            "Tahoe",
+            "Trailblazer",
+            "Traverse",
+            "Trax"
+        ]
+    },
+    {
+        "brand": "Citroën",
+        "icon": "https://www.carlogos.org/car-logos/citroen-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Jensen",
+        "icon": "https://www.carlogos.org/car-logos/jensen-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Pierce-Arrow",
+        "icon": "https://www.carlogos.org/car-logos/pierce-arrow-logo.png",
+        "models": []
+    },
+    {
+        "brand": "MEV",
+        "icon": "https://www.carlogos.org/car-logos/mev-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Plymouth",
+        "icon": "https://www.carlogos.org/car-logos/plymouth-logo.png",
+        "models": []
+    },
+    {
+        "brand": "FIAT",
+        "icon": "https://",
+        "models": [
+            "500X"
+        ]
+    },
+    {
+        "brand": "Premier",
+        "icon": "https://www.carlogos.org/car-logos/premier-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Innocenti",
+        "icon": "https://www.carlogos.org/car-logos/innocenti-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Horch",
+        "icon": "https://www.carlogos.org/car-logos/horch-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Willys-Overland",
+        "icon": "https://www.carlogos.org/car-logos/willys-overland-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Buick",
+        "icon": "https://www.carlogos.org/car-logos/buick-logo.png",
+        "models": [
+            "Enclave",
+            "Encore",
+            "Encore GX",
+            "Envision"
+        ]
+    },
+    {
+        "brand": "VinFast",
+        "icon": "https://",
+        "models": [
+            "VF 6",
+            "VF 7",
+            "VF 8",
+            "VF 9"
+        ]
+    },
+    {
+        "brand": "Chevrolet Corvette",
+        "icon": "https://www.carlogos.org/car-logos/corvette-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Rambler",
+        "icon": "https://www.carlogos.org/car-logos/rambler-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Volkswagen",
+        "icon": "https://www.carlogos.org/car-logos/volkswagen-logo.png",
+        "models": [
+            "Arteon",
+            "Atlas",
+            "Atlas Cross Sport",
+            "Golf GTI",
+            "Golf R",
+            "ID.4",
+            "ID.Buzz",
+            "Jetta",
+            "Jetta GLI",
+            "Passat",
+            "Taos",
+            "Tiguan"
+        ]
+    },
+    {
+        "brand": "Ford Mustang",
+        "icon": "https://www.carlogos.org/car-logos/ford-mustang-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Hupmobile",
+        "icon": "https://www.carlogos.org/car-logos/hupmobile-logo.png",
+        "models": []
+    },
+    {
+        "brand": "INFINITI",
+        "icon": "https://",
+        "models": [
+            "Q50",
+            "Q60",
+            "QX50",
+            "QX55",
+            "QX60",
+            "QX80"
+        ]
+    },
+    {
+        "brand": "Bugatti",
+        "icon": "https://www.carlogos.org/car-logos/bugatti-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Land Rover",
+        "icon": "https://",
+        "models": [
+            "Defender 110",
+            "Defender 130",
+            "Defender 90",
+            "Discovery",
+            "Discovery Sport",
+            "Range Rover",
+            "Range Rover Evoque",
+            "Range Rover Sport",
+            "Range Rover Velar"
+        ]
+    },
+    {
+        "brand": "Ram",
+        "icon": "https://",
+        "models": [
+            "1500 Classic Crew Cab",
+            "1500 Classic Quad Cab",
+            "1500 Classic Regular Cab",
+            "1500 Crew Cab",
+            "1500 Quad Cab",
+            "2500 Crew Cab",
+            "2500 Mega Cab",
+            "2500 Regular Cab",
+            "3500 Crew Cab",
+            "3500 Mega Cab",
+            "3500 Regular Cab",
+            "ProMaster Cargo Van",
+            "ProMaster City",
+            "ProMaster Window Van"
+        ]
+    },
+    {
+        "brand": "Singer",
+        "icon": "https://www.carlogos.org/car-logos/singer-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Hafei",
+        "icon": "https://www.carlogos.org/car-logos/hafei-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Simca",
+        "icon": "https://www.carlogos.org/car-logos/simca-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Infiniti",
+        "icon": "https://www.carlogos.org/car-logos/infiniti-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Mini",
+        "icon": "https://www.carlogos.org/car-logos/mini-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Toyota",
+        "icon": "https://www.carlogos.org/car-logos/toyota-logo.png",
+        "models": [
+            "4Runner",
+            "Avalon",
+            "Avalon Hybrid",
+            "bZ4X",
+            "C-HR",
+            "Camry",
+            "Camry Hybrid",
+            "Corolla",
+            "Corolla Cross",
+            "Corolla Cross Hybrid",
+            "Corolla Hatchback",
+            "Corolla Hybrid",
+            "Crown",
+            "GR Corolla",
+            "GR Supra",
+            "GR86",
+            "Grand Highlander",
+            "Highlander",
+            "Highlander Hybrid",
+            "Land Cruiser",
+            "Mirai",
+            "Prius",
+            "Prius Prime",
+            "RAV4",
+            "RAV4 Hybrid",
+            "RAV4 Prime",
+            "Sequoia",
+            "Sienna",
+            "Tacoma Access Cab",
+            "Tacoma Double Cab",
+            "Tundra CrewMax",
+            "Tundra Double Cab",
+            "Tundra Hybrid CrewMax",
+            "Venza"
+        ]
+    },
+    {
+        "brand": "Iso",
+        "icon": "https://www.carlogos.org/car-logos/iso-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Mastretta",
+        "icon": "https://www.carlogos.org/car-logos/mastretta-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Hillman",
+        "icon": "https://www.carlogos.org/car-logos/hillman-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Kaiser",
+        "icon": "https://www.carlogos.org/car-logos/kaiser-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Vandenbrink",
+        "icon": "https://www.carlogos.org/car-logos/vandenbrink-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Zotye",
+        "icon": "https://www.carlogos.org/car-logos/zotye-logo.png",
+        "models": []
+    },
+    {
+        "brand": "MINI",
+        "icon": "https://",
+        "models": [
+            "Clubman",
+            "Convertible",
+            "Countryman",
+            "Hardtop 2 Door",
+            "Hardtop 4 Door"
+        ]
+    },
+    {
+        "brand": "Volvo",
+        "icon": "https://www.carlogos.org/car-logos/volvo-logo.png",
+        "models": [
+            "C40 Recharge",
+            "EX90",
+            "S60",
+            "S90",
+            "V60",
+            "V90",
+            "XC40",
+            "XC40 Recharge",
+            "XC60",
+            "XC90"
+        ]
+    },
+    {
+        "brand": "Bentley",
+        "icon": "https://www.carlogos.org/car-logos/bentley-logo.png",
+        "models": [
+            "Bentayga",
+            "Continental GT",
+            "Flying Spur"
+        ]
+    },
+    {
+        "brand": "Peugeot",
+        "icon": "https://www.carlogos.org/car-logos/peugeot-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Leyland",
+        "icon": "https://www.carlogos.org/car-logos/leyland-logo.png",
+        "models": []
+    },
+    {
+        "brand": "Lamborghini",
+        "icon": "https://www.carlogos.org/car-logos/lamborghini-logo.png",
+        "models": [
+            "Aventador",
+            "Huracan",
+            "Urus"
+        ]
+    },
+    {
+        "brand": "Porsche",
+        "icon": "https://www.carlogos.org/car-logos/porsche-logo.png",
+        "models": [
+            "718 Boxster",
+            "718 Cayman",
+            "718 Spyder",
+            "911",
+            "Cayenne",
+            "Cayenne Coupe",
+            "Macan",
+            "Panamera",
+            "Taycan",
+            "Taycan Cross Turismo"
+        ]
+    },
+    {
+        "brand": "Aston Martin",
+        "icon": "https://www.carlogos.org/car-logos/aston-martin-logo.png",
+        "models": [
+            "DB11",
+            "DBS",
+            "DBX",
+            "Vantage"
+        ]
+    }
+]
+

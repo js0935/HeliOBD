@@ -38,6 +38,7 @@ class HealthCheckActivity : BaseActivity(), ObdManager.Listener {
     private lateinit var totalLevelText: TextView
     private lateinit var subsystemContainer: LinearLayout
     private lateinit var rulesContainer: LinearLayout
+    private lateinit var refreshBtn: Button
 
     private var latestData: ObdManager.LiveData? = null
     private var dtcCodes: List<String> = emptyList()
@@ -54,7 +55,8 @@ class HealthCheckActivity : BaseActivity(), ObdManager.Listener {
         rulesContainer = findViewById(R.id.hc_rules)
 
         findViewById<Button>(R.id.btn_back).setOnClickListener { finish() }
-        findViewById<Button>(R.id.btn_refresh).setOnClickListener { refreshAll() }
+        refreshBtn = findViewById(R.id.btn_refresh)
+        refreshBtn.setOnClickListener { refreshAll() }
 
         obd.addListener(this)
         refreshAll()
@@ -79,18 +81,23 @@ class HealthCheckActivity : BaseActivity(), ObdManager.Listener {
     private fun refreshAll() {
         if (loading) return
         loading = true
+        val busy = BusyUi.mark(refreshBtn, getString(R.string.busy_reading))
         lifecycleScope.launch {
-            val (data, codes) = withContext(Dispatchers.IO) {
-                val d = obd.requestLiveData()
-                val c = if (obd.isConnected()) obd.readDtc() else emptyList()
-                d to c
-            }
-            loading = false
-            latestData = data
-            dtcCodes = codes
-            render()
-            if (data == null) {
-                Toast.makeText(this@HealthCheckActivity, R.string.hc_no_data, Toast.LENGTH_LONG).show()
+            try {
+                val (data, codes) = withContext(Dispatchers.IO) {
+                    val d = obd.requestLiveData()
+                    val c = if (obd.isConnected()) obd.readDtc() else emptyList()
+                    d to c
+                }
+                latestData = data
+                dtcCodes = codes
+                render()
+                if (data == null) {
+                    Toast.makeText(this@HealthCheckActivity, R.string.hc_no_data, Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                loading = false
+                busy.done()
             }
         }
     }

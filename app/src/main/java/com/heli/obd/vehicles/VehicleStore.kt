@@ -21,6 +21,7 @@ class VehicleStore(private val context: Context) {
         val id: Long,
         val name: String,
         val brand: String,
+        val model: String = "",
         val engineCc: String,
         val note: String,
         val type: String = TYPE_MOTORCYCLE,
@@ -40,6 +41,7 @@ class VehicleStore(private val context: Context) {
                     id = j.getLong("id"),
                     name = j.getString("name"),
                     brand = j.optString("brand"),
+                    model = j.optString("model"),
                     engineCc = j.optString("engineCc"),
                     note = j.optString("note"),
                     type = j.optString("type", TYPE_MOTORCYCLE),
@@ -75,6 +77,7 @@ class VehicleStore(private val context: Context) {
                     put("id", v.id)
                     put("name", v.name)
                     put("brand", v.brand)
+                    put("model", v.model)
                     put("engineCc", v.engineCc)
                     put("note", v.note)
                     put("type", v.type)

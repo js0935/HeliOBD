@@ -92,6 +92,12 @@
     <string name="monitor_chart">圖表</string>
     <string name="obd_select_device">選擇 ELM327 裝置</string>
     <string name="obd_no_device">未找到 ELM327 裝置</string>
+    <string name="obd_connection_type_title">選擇連線方式</string>
+    <string name="obd_connection_type_classic">藍牙（RFCOMM）</string>
+    <string name="obd_connection_type_ble">BLE 藍牙（低功耗）</string>
+    <string name="obd_connection_type_wifi">WiFi ELM327</string>
+    <string name="obd_wifi_title">WiFi ELM327 連線</string>
+    <string name="obd_wifi_invalid">IP:連接埠格式錯誤</string>
     <string name="obd_rpm">轉速</string>
     <string name="obd_speed">車速</string>
     <string name="obd_temp">水溫</string>
@@ -119,6 +125,7 @@
     <string name="dtc_clear_anyway">仍要清除</string>
     <string name="dtc_empty">無故障碼，車輛一切正常</string>
     <string name="dtc_read_error">故障碼讀取失敗</string>
+    <string name="dtc_clear_failed">清除失敗：%1$s</string>
     <string name="dtc_tab_current">正式故障碼</string>
     <string name="dtc_tab_pending">待處理</string>
     <string name="dtc_tab_permanent">永久</string>
@@ -238,6 +245,12 @@
     <string name="vehicles_cc_hint">排氣量（cc）</string>
     <string name="vehicles_note_hint">備註</string>
     <string name="vehicles_name_required">請輸入車輛名稱</string>
+    <string name="vehicles_model_hint">車型（可選）</string>
+    <string name="vehicles_select_brand">選擇品牌</string>
+    <string name="vehicles_select_model">選擇車型</string>
+    <string name="vehicles_manual_input">手動輸入</string>
+    <string name="vehicles_no_builtin_models">此品牌無內建車型，可手動輸入</string>
+    <string name="vehicles_select_brand_first">請先選擇品牌</string>
     <string name="common_edit">編輯</string>
     <string name="common_save">儲存</string>
 
@@ -344,6 +357,13 @@
     <string name="terminal_not_connected">尚未連線 OBD｜可於主畫面開啟模擬模式體驗</string>
     <string name="terminal_no_response">（無回應）</string>
     <string name="terminal_clear">清除</string>
+    <string name="busy_reading">讀取中…</string>
+    <string name="busy_scanning">掃描中…</string>
+    <string name="busy_sending">發送中…</string>
+    <string name="busy_checking">檢查中…</string>
+    <string name="busy_exporting">匯出中…</string>
+    <string name="busy_importing">匯入中…</string>
+    <string name="busy_clearing">清除中…</string>
     <string name="terminal_welcome">HeliOBD OBD 終端機\n輸入 AT 指令（如 ATZ、ATRV）或 OBD 模式指令（如 010C）\n回應將即時顯示於此</string>
     <string name="settings_title">連線設定</string>
     <string name="settings_connection_label">連線狀態</string>
@@ -435,12 +455,26 @@
     <string name="diag_tid_misfire">失火監測</string>
     <string name="diag_tid_fuel">燃油系統</string>
     <string name="diag_tid_components">綜合元件</string>
+    <string name="diag_tid_catalyst">觸媒監測</string>
+    <string name="diag_tid_heated_catalyst">加熱觸媒監測</string>
+    <string name="diag_tid_evap">蒸發排放系統監測</string>
+    <string name="diag_tid_secondary_air">二次空氣系統監測</string>
+    <string name="diag_tid_o2">氧感測器監測</string>
+    <string name="diag_tid_o2_heater">氧感測器加熱器監測</string>
+    <string name="diag_tid_egr">EGR 系統監測</string>
+    <string name="diag_tid_nmhc">NMHC 觸媒監測</string>
+    <string name="diag_tid_nox">NOx 觸媒監測</string>
+    <string name="diag_tid_boost">增壓壓力監測</string>
+    <string name="diag_tid_exhaust_gas">廢氣感測器監測</string>
+    <string name="diag_tid_unknown">TID %1$02X</string>
     <string name="mon_test_misfire_count">失火計數</string>
     <string name="mon_test_misfire_cycles">失火循環數</string>
     <string name="mon_test_misfire_in_cycle">循環內失火數</string>
     <string name="mon_test_total_misfire_cycles">總失火循環</string>
     <string name="mon_test_unknown">測試 %1$d</string>
     <string name="mon_test_cylinder">缸 %1$d</string>
+    <string name="diag_monitor_pass">已通過</string>
+    <string name="diag_monitor_fail">未通過</string>
 
     <!-- 車輛資訊 -->
     <string name="diag_calid_label">校正 ID</string>
@@ -855,7 +889,7 @@
     <string name="pid_confirm_delete">確定刪除「%1$s」？</string>
     <string name="pid_name_hint">名稱（如 進氣歧管壓力）</string>
     <string name="pid_mode_hint">模式（hex，如 01）</string>
-    <string name="pid_pid_hint">PID（hex，如 0B）</string>
+    <string name="pid_pid_hint">PID/DID（hex，如 0B 或 UDS 22 模式 4 碼如 F40C）</string>
     <string name="pid_unit_hint">單位（如 kPa）</string>
     <string name="pid_formula_hint">公式（如 (A*256+B)/4）</string>
     <string name="pid_preview_hint">公式預覽：輸入 raw 值驗算</string>

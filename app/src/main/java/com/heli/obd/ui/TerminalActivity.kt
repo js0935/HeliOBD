@@ -30,6 +30,7 @@ class TerminalActivity : BaseActivity() {
     private lateinit var input: EditText
     private lateinit var status: TextView
     private lateinit var scroll: ScrollView
+    private lateinit var sendBtn: View
     private val history = ArrayList<String>()
     private var historyIndex = -1
     private var sending = false
@@ -50,8 +51,8 @@ class TerminalActivity : BaseActivity() {
             output.text = ""
             appendLine(getString(R.string.terminal_welcome), secondary = true)
         }
-        findViewById<View>(R.id.terminal_send).setOnClickListener { send() }
-
+        sendBtn = findViewById(R.id.terminal_send)
+        sendBtn.setOnClickListener { send() }
         input.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_SEND ||
                 (event != null && event.keyCode == KeyEvent.KEYCODE_ENTER)
@@ -123,10 +124,12 @@ class TerminalActivity : BaseActivity() {
         historyIndex = history.size
         appendLine("> $cmd")
         sending = true
+        val busy = BusyUi.mark(sendBtn, getString(R.string.busy_sending))
         Thread {
             val response = obd.sendRawCommand(cmd)
             runOnUiThread {
                 sending = false
+                busy.done()
                 if (response == null) {
                     if (!obd.isDemoMode() && !obd.isConnected()) {
                         appendLine(getString(R.string.terminal_not_connected), secondary = true)

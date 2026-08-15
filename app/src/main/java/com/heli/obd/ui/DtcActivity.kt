@@ -51,6 +51,8 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
     private lateinit var tabStored: TextView
     private lateinit var tabPending: TextView
     private lateinit var tabPermanent: TextView
+    private lateinit var clearBtn: Button
+    private lateinit var exportBtn: Button
 
     private var storedCodes: List<String> = emptyList()
     private var pendingCodes: List<String> = emptyList()
@@ -75,8 +77,10 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         container = findViewById(R.id.dtc_container)
 
         findViewById<Button>(R.id.btn_read_dtc).setOnClickListener { readAll() }
-        findViewById<Button>(R.id.btn_clear_dtc).setOnClickListener { confirmClearDtc() }
-        findViewById<Button>(R.id.btn_export_dtc).setOnClickListener { exportDiagnosticReport() }
+        clearBtn = findViewById(R.id.btn_clear_dtc)
+        clearBtn.setOnClickListener { confirmClearDtc() }
+        exportBtn = findViewById(R.id.btn_export_dtc)
+        exportBtn.setOnClickListener { exportDiagnosticReport() }
 
         tabStored = findViewById(R.id.tab_stored)
         tabPending = findViewById(R.id.tab_pending)
@@ -273,6 +277,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
     }
 
     private fun exportDiagnosticReport() {
+        val busy = BusyUi.mark(exportBtn, getString(R.string.busy_exporting))
         val sb = StringBuilder()
         sb.append("""<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><title>HeliOBD 診斷報告</title>""")
         sb.append("""<style>body{font-family:sans-serif;color:#1a1a1a;margin:16px}h1{font-size:20px}h2{font-size:15px;color:#0a5fd0;border-bottom:1px solid #d0d0d0;padding-bottom:4px}table{width:100%%;border-collapse:collapse;margin:4px 0 12px}td,th{border:1px solid #ddd;padding:6px;font-size:13px;text-align:left}th{background:#f2f6fb}.none{color:#2e8b57;font-size:13px}small{color:#888}</style></head><body>""")
@@ -316,25 +321,20 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         if (monitorTests.isEmpty()) {
             sb.append("<p class=\"none\">").append(escapeHtml(getString(R.string.diag_mode6_none))).append("</p>")
         } else {
-            var currentTid = -1
-            monitorTests.forEach { test ->
-                if (test.tid != currentTid) {
-                    currentTid = test.tid
-                    val titleRes = when (currentTid) {
-                        ObdConstants.TID_MISFIRE.toInt(16) -> R.string.diag_tid_misfire
-                        ObdConstants.TID_FUEL_SYSTEM.toInt(16) -> R.string.diag_tid_fuel
-                        ObdConstants.TID_COMPONENTS.toInt(16) -> R.string.diag_tid_components
-                        else -> null
-                    }
-                    sb.append("<h2 style=\"font-size:13px\">")
-                        .append(escapeHtml(if (titleRes != null) getString(titleRes) else getString(R.string.mon_test_unknown, currentTid)))
-                        .append("</h2>")
-                }
-                val name = test.nameRes?.let { getString(it) }
-                    ?: getString(R.string.mon_test_unknown, test.testId)
-                val prefix = test.cylinder?.let { getString(R.string.mon_test_cylinder, it) + " " } ?: ""
-                sb.append("<p style=\"font-size:13px;margin:2px 0\">").append(escapeHtml(prefix + name)).append("：").append(test.value).append("</p>")
+        var currentTid = -1
+        monitorTests.forEach { test ->
+            if (test.tid != currentTid) {
+                currentTid = test.tid
+                val titleRes = test.tidNameRes
+                sb.append("<h2 style=\"font-size:13px\">")
+                    .append(escapeHtml(if (titleRes != null) getString(titleRes) else getString(R.string.diag_tid_unknown, currentTid)))
+                    .append("</h2>")
             }
+            val name = test.nameRes?.let { getString(it) }
+                ?: getString(R.string.mon_test_unknown, test.testId)
+            val prefix = test.cylinder?.let { getString(R.string.mon_test_cylinder, it) + " " } ?: ""
+            sb.append("<p style=\"font-size:13px;margin:2px 0\">").append(escapeHtml(prefix + name)).append("：").append(escapeHtml(monitorValueText(test))).append("</p>")
+        }
         }
 
         sb.append("<h2>").append(escapeHtml(getString(R.string.nav_dtc))).append("</h2>")
@@ -364,7 +364,9 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             startActivity(Intent.createChooser(share, getString(R.string.diag_report_share)))
+            busy.done()
         } catch (e: Exception) {
+            busy.done()
             Toast.makeText(this, R.string.diag_report_failed, Toast.LENGTH_LONG).show()
         }
     }
@@ -411,14 +413,25 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
             .setMessage(R.string.dtc_clear_confirm)
             .setPositiveButton(R.string.common_ok) { _, _ ->
+                val busy = BusyUi.mark(clearBtn, getString(R.string.busy_clearing))
                 lifecycleScope.launch {
-                    val ok = withContext(Dispatchers.IO) { obd.clearDtc() }
-                    if (ok) {
-                        container.removeAllViews()
-                        statusText.text = getString(R.string.dtc_cleared)
-                        Toast.makeText(this@DtcActivity, R.string.dtc_cleared, Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this@DtcActivity, R.string.dtc_read_error, Toast.LENGTH_LONG).show()
+                    try {
+                        val ok = withContext(Dispatchers.IO) { obd.clearDtc() }
+                        if (ok) {
+                            container.removeAllViews()
+                            statusText.text = getString(R.string.dtc_cleared)
+                            Toast.makeText(this@DtcActivity, R.string.dtc_cleared, Toast.LENGTH_SHORT).show()
+                        } else {
+                            val reason = obd.lastClearError()
+                            val msg = if (reason.isNullOrBlank()) {
+                                getString(R.string.dtc_read_error)
+                            } else {
+                                getString(R.string.dtc_clear_failed, reason)
+                            }
+                            Toast.makeText(this@DtcActivity, msg, Toast.LENGTH_LONG).show()
+                        }
+                    } finally {
+                        busy.done()
                     }
                 }
             }
@@ -547,16 +560,11 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         tests.forEach { test ->
             if (test.tid != currentTid) {
                 currentTid = test.tid
-                val titleRes = when (currentTid) {
-                    ObdConstants.TID_MISFIRE.toInt(16) -> R.string.diag_tid_misfire
-                    ObdConstants.TID_FUEL_SYSTEM.toInt(16) -> R.string.diag_tid_fuel
-                    ObdConstants.TID_COMPONENTS.toInt(16) -> R.string.diag_tid_components
-                    else -> null
-                }
+                val titleRes = test.tidNameRes
                 container.addView(
                     TextView(this).apply {
                         text = if (titleRes != null) getString(titleRes)
-                        else getString(R.string.mon_test_unknown, currentTid)
+                        else getString(R.string.diag_tid_unknown, currentTid)
                         setTextColor(getColor(R.color.text_primary))
                         setTypeface(typeface, Typeface.BOLD)
                         textSize = 14f
@@ -569,13 +577,21 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
             val prefix = test.cylinder?.let { getString(R.string.mon_test_cylinder, it) + " " } ?: ""
             container.addView(
                 TextView(this).apply {
-                    text = String.format(Locale.US, "%s%s：%s", prefix, name, test.value)
+                    text = String.format(Locale.US, "%s%s：%s", prefix, name, monitorValueText(test))
                     setTextColor(getColor(R.color.text_secondary))
                     textSize = 13f
                     setPadding(dp(8), dp(1), 0, dp(1))
                 }
             )
         }
+    }
+
+    /** Mode 06 測試值顯示：縮放值（若有）+ 單位 + 通過/未通過 */
+    private fun monitorValueText(test: MonitorTest): String {
+        val valueText = test.scaledValue?.let { ObdDecoder.formatScaled(it) } ?: test.value.toString()
+        val unitText = test.unit.takeIf { it.isNotEmpty() }?.let { " $it" } ?: ""
+        val passText = test.passed?.let { if (it) getString(R.string.diag_monitor_pass) else getString(R.string.diag_monitor_fail) } ?: ""
+        return "$valueText$unitText $passText".trim()
     }
 
     // ===== ObdManager.Listener =====

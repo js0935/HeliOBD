@@ -7,6 +7,8 @@ package com.heli.obd.elm
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -44,7 +46,13 @@ import java.io.IOException
  */
 class ObdManager(
     private val appContext: Context,
-    private val transportFactory: (BluetoothDevice) -> ObdTransport = { BluetoothTransport() },
+    private val transportFactory: (TransportTarget) -> ObdTransport = { target ->
+        when (target) {
+            is TransportTarget.ClassicBt -> BluetoothTransport()
+            is TransportTarget.BleBt -> BleTransport()
+            is TransportTarget.Wifi -> WifiTransport()
+        }
+    },
 ) {
 
     // ===== 狀態 =====
@@ -132,6 +140,21 @@ class ObdManager(
     @Volatile
     private var protocolNumber: Int? = null
 
+    /** 是否為 UDS 車款（ISO 14229）：以 22F400 探測成功後啟用 22F4/22F8 DID 讀取 */
+    @Volatile
+    private var udsMode = false
+
+    /** 最近一次清碼失敗原因（null = 最近成功或尚未清碼） */
+    @Volatile
+    private var lastClearErrorMsg: String? = null
+
+    /** 目前 UDS 診斷工作階段（ISO 14229 service 10）；連線時重置為預設 */
+    @Volatile
+    private var currentSession: Int = ObdConstants.SESSION_DEFAULT
+
+    /** ELM327 AT 指令狀態追蹤（供指令去重） */
+    private val elmState = ElmState()
+
     /** 是否為慢速串列協定（ISO 9141-2 / ISO 14230-4 KWP）：需降低輪詢頻率避免指令堆疊 */
     val isSlowProtocol: Boolean
         get() = !demoMode && protocolNumber in ObdConstants.SLOW_PROTOCOL_NUMBERS
@@ -211,7 +234,33 @@ class ObdManager(
 
     /** 上次成功連線的裝置位址（供自動重連） */
     fun lastDeviceAddress(): String? =
-        if (prefs.contains(KEY_LAST_DEVICE)) prefs.getString(KEY_LAST_DEVICE, null) else null
+        when (val t = lastTarget()) {
+            is TransportTarget.ClassicBt -> t.device.address
+            is TransportTarget.BleBt -> t.device.address
+            else -> null
+        }
+
+    /**
+     * 上次成功連線的目標（含連線方式）。無記錄回傳 null。
+     * 舊版本僅存 MAC 位址，解析時視為經典藍牙，向後相容。
+     */
+    fun lastTarget(): TransportTarget? {
+        val raw = prefs.getString(KEY_LAST_DEVICE, null) ?: return null
+        val prefix = raw.substringBefore('|', missingDelimiterValue = "")
+        return when (prefix) {
+            "classic" -> raw.substringAfter('|').let { remoteDeviceOrNull(it)?.let { d -> TransportTarget.ClassicBt(d) } }
+            "ble" -> raw.substringAfter('|').let { remoteDeviceOrNull(it)?.let { d -> TransportTarget.BleBt(d) } }
+            "wifi" -> raw.substringAfter('|').split(':', limit = 2).let { parts ->
+                if (parts.size == 2) {
+                    val port = parts[1].toIntOrNull() ?: return null
+                    TransportTarget.Wifi(parts[0], port)
+                } else {
+                    null
+                }
+            }
+            else -> remoteDeviceOrNull(raw)?.let { d -> TransportTarget.ClassicBt(d) }
+        }
+    }
 
     /**
      * 切換 Demo 模擬模式。開啟時不需藍牙連線，立即以模擬資料輪詢；
@@ -295,6 +344,46 @@ class ObdManager(
         }
     }
 
+    /** 掃描 BLE ELM327 裝置：10 秒掃描後合併回傳（BLE 裝置不需先配對） */
+    @android.annotation.SuppressLint("MissingPermission") // 權限由 UI 層於呼叫前統一申請
+    fun discoverBle(callback: (List<BluetoothDevice>) -> Unit) {
+        val bt = adapter
+        if (bt == null || !bt.isEnabled) {
+            callback(emptyList())
+            return
+        }
+        val scanner = bt.bluetoothLeScanner
+        if (scanner == null) {
+            callback(emptyList())
+            return
+        }
+        val results = linkedMapOf<String, BluetoothDevice>()
+        var reported = false
+        val scanCallback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                val device = result.device ?: return
+                if (isElm327(device)) results[device.address] = device
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                if (reported) return
+                reported = true
+                runCatching { scanner.stopScan(this) }
+                mainHandler.post { callback(results.values.toList()) }
+            }
+        }
+
+        scanner.startScan(scanCallback)
+        ioScope.launch {
+            delay(10000)
+            if (!reported) {
+                reported = true
+                runCatching { scanner.stopScan(scanCallback) }
+                mainHandler.post { callback(results.values.toList()) }
+            }
+        }
+    }
+
     @android.annotation.SuppressLint("MissingPermission") // 權限由 UI 層於呼叫前統一申請
     private fun isElm327(device: BluetoothDevice): Boolean {
         val name = device.name?.trim().orEmpty()
@@ -306,15 +395,33 @@ class ObdManager(
 
     // ===== 連線 =====
 
+    /** 經典藍牙（RFCOMM）連線 */
     fun connect(device: BluetoothDevice, callback: (success: Boolean, message: String?) -> Unit) {
+        connectTarget(TransportTarget.ClassicBt(device), callback)
+    }
+
+    /** BLE ELM327 連線 */
+    fun connectBle(device: BluetoothDevice, callback: (success: Boolean, message: String?) -> Unit) {
+        connectTarget(TransportTarget.BleBt(device), callback)
+    }
+
+    /** WiFi ELM327 連線（TCP） */
+    fun connectWifi(host: String, port: Int, callback: (success: Boolean, message: String?) -> Unit) {
+        connectTarget(TransportTarget.Wifi(host, port), callback)
+    }
+
+    /** 依連線目標建立連線（含 ELM327 初始化、協定偵測、開始輪詢） */
+    fun connectTarget(target: TransportTarget, callback: (success: Boolean, message: String?) -> Unit) {
         disconnectPending = false
         supportedPids = null
+        udsMode = false
+        currentSession = ObdConstants.SESSION_DEFAULT
         setState(State.Connecting)
-        ObdLog.start(appContext, device.address)
+        ObdLog.start(appContext, target.displayName)
         ioScope.launch {
             val (ok, msg) = try {
-                val t = transportFactory(device)
-                if (!t.open(device)) throw IOException("RFCOMM connect failed")
+                val t = transportFactory(target)
+                if (!t.open(target)) throw IOException("connect failed (${target.displayName})")
                 transport = t
                 // 連線成立後稍等，避免首批 AT 指令被剛建立的 socket 丟棄
                 Thread.sleep(500)
@@ -323,7 +430,14 @@ class ObdManager(
                     closeQuietly()
                     false to appContext.getString(R.string.obd_init_failed)
                 } else {
+                    detectUdsMode()
                     loadSupportedPids()
+                    if (supportedPids == null && !demoMode) {
+                        // 自動協定讀不到支援清單：主動搜尋協定（標準協定 → KWP 特殊配方）
+                        if (tryProtocolSearch()) {
+                            loadSupportedPids()
+                        }
+                    }
                     true to null
                 }
             } catch (e: Exception) {
@@ -334,7 +448,7 @@ class ObdManager(
             }
             if (ok) {
                 reconnectAttempts = 0
-                prefs.edit().putString(KEY_LAST_DEVICE, device.address).apply()
+                prefs.edit().putString(KEY_LAST_DEVICE, encodeTarget(target)).apply()
                 protocolNumber = detectProtocolNumber()
                 setState(State.Ready)
                 startPolling()
@@ -361,14 +475,37 @@ class ObdManager(
 
     /**
      * 偵測通訊協定編號（ATDPN，hex）。部分山寨晶片回 '?' 或空白 → 回 null（視為快速協定）。
+     * ATDPN 失敗時以 `01 00` 探測回應的格式兜底推斷（KWP 帶 3-byte header、CAN 回 `41 00 …`）。
      */
-    private fun detectProtocolNumber(): Int? =
-        sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)
+    private fun detectProtocolNumber(): Int? {
+        val dpn = sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)
             ?.let { lastLine(it) }
             ?.trim()
             ?.split(Regex("\\s+"))
             ?.firstOrNull()
             ?.toIntOrNull(16)
+        if (dpn != null) return dpn
+        val probe = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SUPPORTED)
+            ?: return null
+        return ObdDecoder.inferProtocolFromProbe(probe).takeIf { it != 0 }
+    }
+
+    /**
+     * 偵測是否為 UDS 車款（ISO 14229 ReadDataByIdentifier）。
+     * 送 `22 F4 00`（DID 0xF400 = mode 01 PID 00 對應）；正向回應 `62 F4 00 …` 代表支援。
+     * 不支援的車款回 NO DATA / ?，維持 udsMode = false。
+     */
+    private fun detectUdsMode() {
+        if (demoMode) {
+            udsMode = false
+            return
+        }
+        val resp = sendCommand(ObdConstants.UDS_PROBE_CMD, timeoutMs = ObdConstants.UDS_PROBE_TIMEOUT_MS)
+        val tokens = resp?.trim()?.split(Regex("\\s+"))?.filter { it.isNotEmpty() }.orEmpty()
+        udsMode = tokens.size >= 3 &&
+            tokens[0].equals(ObdConstants.UDS_RESPONSE_MARKER, ignoreCase = true) &&
+            tokens[1].equals("F4", ignoreCase = true)
+    }
 
     /**
      * 自動重連上次成功連線的裝置（無記錄則回呼失敗）。
@@ -379,20 +516,12 @@ class ObdManager(
             callback(true, null)
             return
         }
-        val address = lastDeviceAddress()
-        if (address == null) {
+        val target = lastTarget()
+        if (target == null) {
             callback(false, appContext.getString(R.string.obd_connect_error))
             return
         }
-        val device = runCatching {
-            @Suppress("DEPRECATION")
-            BluetoothAdapter.getDefaultAdapter()?.getRemoteDevice(address)
-        }.getOrNull()
-        if (device == null) {
-            callback(false, appContext.getString(R.string.obd_connect_error))
-            return
-        }
-        connect(device, callback)
+        connectTarget(target, callback)
     }
 
     /** ELM327 初始化：ATZ 必成功，其餘設定指令失敗不立即放棄（部分山寨晶片回 '?'） */
@@ -427,15 +556,16 @@ class ObdManager(
      * 送出 ELM327 指令並等待回應（以 '>' 為終止符）。
      * 回應清洗雜訊後取最後一行（ATE0 關閉 echo 後為單行）。失敗或斷線回傳 null。
      */
-    fun sendCommand(cmd: String): String? = synchronized(lock) {
+    fun sendCommand(cmd: String, timeoutMs: Long = ObdConstants.COMMAND_TIMEOUT_MS): String? = synchronized(lock) {
         val t = transport ?: return null
         if (!t.isOpen) return null
         var result: String? = null
         try {
             t.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
+            elmState.update(cmd)
 
             val sb = StringBuilder()
-            val deadline = System.currentTimeMillis() + ObdConstants.COMMAND_TIMEOUT_MS
+            val deadline = System.currentTimeMillis() + timeoutMs
             read@ while (System.currentTimeMillis() < deadline) {
                 while (t.available() > 0) {
                     val c = t.read()
@@ -463,6 +593,15 @@ class ObdManager(
     }
 
     /**
+     * 送出一條 AT 設定指令，若目前 ELM 狀態已達成就跳過（去重，省一次往返）。
+     * 適用於反覆的 Before/After 狀態確保（如長指令的 CAN 模式切換）；
+     * 回傳回應；已達成跳過時回傳 null（呼叫端不應以 null 視為失敗）。
+     */
+    fun sendCommandIfNeeded(cmd: String): String? {
+        return if (elmState.shouldSkip(cmd)) null else sendCommand(cmd)
+    }
+
+    /**
      * 送出 ELM327 指令並回傳「完整」原始回應（清洗雜訊行後保留所有資料行，不含 '>' prompt）。
      * 供 OBD 終端機顯示用；一般功能請使用 sendCommand()（只取最後一行）。
      * 模擬模式下回傳對應的假回應。
@@ -474,6 +613,7 @@ class ObdManager(
         var result: String? = null
         try {
             t.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
+            elmState.update(cmd)
 
             val sb = StringBuilder()
             val deadline = System.currentTimeMillis() + ObdConstants.COMMAND_TIMEOUT_MS
@@ -551,35 +691,36 @@ class ObdManager(
      * 只對支援的 PID 輪詢，避免不支援的 PID 每次浪費一個 timeout 週期。
      * 任一讀取失敗即保留 null（視為全部支援，維持原有行為），不阻斷連線。
      */
-    private fun loadSupportedPids() {
+    /** 讀取支援 PID 清單；成功回 true，失敗回 false（維持 supportedPids = null 表示全部支援） */
+    private fun loadSupportedPids(): Boolean {
         try {
-            val mask00 = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SUPPORTED)
-                ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+            val mask00 = sendPidRequest(ObdConstants.PID_SUPPORTED)
+                ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
             val pids = mutableSetOf<String>()
             for (i in 0 until 32) {
                 if ((mask00 shr (31 - i)) and 1L != 0L) pids += (0x01 + i).pidHex()
             }
             if ((mask00 and 1L) != 0L) {
-                val mask20 = sendCommand(ObdConstants.MODE_CURRENT_DATA + "20")
-                    ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+                val mask20 = sendPidRequest("20")
+                    ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
                 for (i in 0 until 32) {
                     if ((mask20 shr (31 - i)) and 1L != 0L) pids += (0x21 + i).pidHex()
                 }
                 if ((mask20 and 1L) != 0L) {
-                    val mask40 = sendCommand(ObdConstants.MODE_CURRENT_DATA + "40")
-                        ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+                    val mask40 = sendPidRequest("40")
+                        ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
                     for (i in 0 until 32) {
                         if ((mask40 shr (31 - i)) and 1L != 0L) pids += (0x41 + i).pidHex()
                     }
                     if ((mask40 and 1L) != 0L) {
-                        val mask80 = sendCommand(ObdConstants.MODE_CURRENT_DATA + "80")
-                            ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+                        val mask80 = sendPidRequest("80")
+                            ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
                         for (i in 0 until 32) {
                             if ((mask80 shr (31 - i)) and 1L != 0L) pids += (0x81 + i).pidHex()
                         }
                         if ((mask80 and 1L) != 0L) {
-                            val maskC0 = sendCommand(ObdConstants.MODE_CURRENT_DATA + "C0")
-                                ?.let { ObdDecoder.supportedPidMask(it) } ?: return
+                            val maskC0 = sendPidRequest("C0")
+                                ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
                             for (i in 0 until 32) {
                                 if ((maskC0 shr (31 - i)) and 1L != 0L) pids += (0xC1 + i).pidHex()
                             }
@@ -587,10 +728,62 @@ class ObdManager(
                     }
                 }
             }
-            if (pids.isNotEmpty()) supportedPids = pids
+            if (pids.isNotEmpty()) {
+                supportedPids = pids
+                return true
+            }
         } catch (_: Exception) {
             // 讀取失敗時維持 null（全部支援），不阻斷連線
         }
+        return false
+    }
+
+    /**
+     * 自動協定（ATSP0）初始化失敗時的主動協定搜尋：
+     * 1. 依 Car Scanner 優先序逐一嘗試標準協定（CAN → KWP → ISO9141 → J1850）。
+     * 2. 全數失敗再嘗試 KWP/ISO9141 特殊配方（不同鮑率、init 定址、通訊 header）。
+     * 每個候選以 mode 01 PID 0C（RPM）有回應為成功判準。
+     */
+    private fun tryProtocolSearch(): Boolean {
+        for ((proto, label) in ObdConstants.PROTOCOL_SEARCH_ORDER) {
+            if (disconnectPending || !(transport?.isOpen ?: false)) return false
+            if (tryPreset("ATSP$proto", listOf("ATSP$proto"), label)) return true
+        }
+        for (preset in ObdConstants.KWP_INIT_PRESETS) {
+            if (disconnectPending || !(transport?.isOpen ?: false)) return false
+            if (tryPreset(preset.label, preset.commands, preset.label)) return true
+        }
+        return false
+    }
+
+    /** 套用一組協定設定指令並以 010C 驗證；成功回 true */
+    private fun tryPreset(label: String, commands: List<String>, logLabel: String): Boolean {
+        ObdLog.log("PROTOCOL try $logLabel")
+        // 每次候選前重設，確保 AT 狀態回到預設（協定/鮑率/header 全清）
+        sendCommand(ObdConstants.CMD_RESET)
+        Thread.sleep(300)
+        for (cmd in commands) {
+            if (sendCommand(cmd) == null) return false
+        }
+        val probe = sendPidRequest(ObdConstants.PID_RPM)
+        if (probe != null) {
+            ObdLog.log("PROTOCOL OK $logLabel")
+            return true
+        }
+        return false
+    }
+
+    /**
+     * 依 UDS 狀態送出 mode 01 PID 讀取指令並回傳回應。
+     * UDS 車款（22F4 前綴）下回應為 `62 F4 <pid> …`，先 normalize 為 `41 <pid> …`
+     * 供現有解碼器直接解析；非 UDS 或非 mode 01 直接送原始指令。
+     */
+    private fun sendPidRequest(pid: String, mode: String = ObdConstants.MODE_CURRENT_DATA): String? {
+        if (udsMode && mode == ObdConstants.MODE_CURRENT_DATA) {
+            return sendCommand(ObdConstants.UDS_PID_PREFIX + pid)
+                ?.let { ObdDecoder.normalizeUdsResponse(it, targetMode = 0x41) }
+        }
+        return sendCommand(mode + pid)
     }
 
     /** PID 是否受支援；清單尚未建立（null）時視為全部支援（保守行為） */
@@ -657,6 +850,13 @@ class ObdManager(
         mode: String = ObdConstants.MODE_CURRENT_DATA,
     ): Map<String, String?> {
         if (pids.isEmpty()) return emptyMap()
+        // UDS 的 22F4 每個 DID 獨立回應，無法合併指令，逐個送出並 normalize
+        if (udsMode && mode == ObdConstants.MODE_CURRENT_DATA) {
+            return pids.associateWith { pid ->
+                sendCommand(ObdConstants.UDS_PID_PREFIX + pid)
+                    ?.let { ObdDecoder.normalizeUdsResponse(it, targetMode = 0x41) }
+            }
+        }
         val cmd = listOf(mode) + pids
         val raw = sendRawCommand(cmd.joinToString(" "))
         val parsed = raw?.let { ObdDecoder.parseMode01Batch(it, mode.toInt(16)) }.orEmpty()
@@ -906,40 +1106,112 @@ class ObdManager(
             return ObdDecoder.imReadiness("41 01 01 07 05 07 01")
         }
         if (!isConnected()) return null
-        val resp = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_STATUS)
+        val resp = sendPidRequest(ObdConstants.PID_STATUS)
         return resp?.let { ObdDecoder.imReadiness(it) }
     }
 
-    /** 車身 VIN（mode 09 PID 02） */
+    /** 車身 VIN（mode 09 PID 02）；長回應可能為 ISO-TP 多幀，故使用完整回應 */
     fun readVin(): String? {
         if (demoMode) return "MOTODIAG-DEMO-VIN-0001"
         if (!isConnected()) return null
-        val resp = sendCommand(ObdConstants.MODE_VEHICLE_INFO + "02")
-        return resp?.let { ObdDecoder.vin(it) }
+        val cmd = mode09Command("02")
+        val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.vin(it) } }
+        var result = decode(sendRawCommand(cmd))
+        if (result == null && udsMode) {
+            result = withExtendedSession { decode(sendRawCommand(cmd)) }
+        }
+        return result
     }
 
-    /** 校正 ID（mode 09 PID 0A） */
+    /** 校正 ID（mode 09 PID 0A）；長回應可能為 ISO-TP 多幀，故使用完整回應 */
     fun readCalibrationId(): String? {
         if (demoMode) return "MOTODIAG-DEMO-CALID"
         if (!isConnected()) return null
-        val resp = sendCommand(ObdConstants.MODE_VEHICLE_INFO + "0A")
-        return resp?.let { ObdDecoder.calibrationId(it) }
+        val cmd = mode09Command("0A")
+        val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.calibrationId(it) } }
+        var result = decode(sendRawCommand(cmd))
+        if (result == null && udsMode) {
+            result = withExtendedSession { decode(sendRawCommand(cmd)) }
+        }
+        return result
     }
 
     /** 校驗號碼（mode 09 PID 0B） */
     fun readCvn(): String? {
         if (demoMode) return "ABCD1234"
         if (!isConnected()) return null
-        val resp = sendCommand(ObdConstants.MODE_VEHICLE_INFO + "0B")
-        return resp?.let { ObdDecoder.cvn(it) }
+        val resp = sendCommand(mode09Command("0B"))
+        return resp?.let { mode09Decode(it) }?.let { ObdDecoder.cvn(it) }
     }
 
-    /** ECU 名稱（mode 09 PID 0D） */
+    /** ECU 名稱（mode 09 PID 0D）；長回應可能為 ISO-TP 多幀，故使用完整回應 */
     fun readEcuName(): String? {
         if (demoMode) return "HeliOBD-Demo-ECU"
         if (!isConnected()) return null
-        val resp = sendCommand(ObdConstants.MODE_VEHICLE_INFO + "0D")
-        return resp?.let { ObdDecoder.ecuName(it) }
+        val cmd = mode09Command("0D")
+        val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.ecuName(it) } }
+        var result = decode(sendRawCommand(cmd))
+        if (result == null && udsMode) {
+            result = withExtendedSession { decode(sendRawCommand(cmd)) }
+        }
+        return result
+    }
+
+    /**
+     * 切換 UDS 診斷工作階段（ISO 14229 service 10）：1=預設、2=程式設計、3=擴充。
+     * 部分 ECU 在預設階段限制單次回應長度，切換後可讀取更長的 ISO-TP 多幀資料。
+     * 成功回應 `50 <session>`；失敗（負回應/無回應）回 false。
+     */
+    fun setDiagnosticSession(session: Int): Boolean {
+        if (demoMode) return true
+        if (!isConnected()) return false
+        val resp = sendCommand("%02X%02X".format(ObdConstants.SERVICE_SESSION_CONTROL, session))
+        val ok = resp != null &&
+            !ObdDecoder.isNoDataOrNegativeResponse(resp, service = ObdConstants.SERVICE_SESSION_CONTROL)
+        if (ok) currentSession = session
+        return ok
+    }
+
+    /** 目前 UDS 診斷工作階段編號（預設 1；非 UDS 車款維持預設） */
+    fun currentDiagnosticSession(): Int = currentSession
+
+    /**
+     * 於擴充診斷工作階段下執行讀取，結束時回復原工作階段（僅 UDS 車款）。
+     * 切換失敗時仍以原工作階段嘗試一次。
+     */
+    private inline fun <T> withExtendedSession(block: () -> T?): T? {
+        val original = currentSession
+        if (!udsMode) return block()
+        if (original != ObdConstants.SESSION_EXTENDED) {
+            if (!setDiagnosticSession(ObdConstants.SESSION_EXTENDED)) return block()
+        }
+        try {
+            return block()
+        } finally {
+            if (original != ObdConstants.SESSION_EXTENDED) setDiagnosticSession(original)
+        }
+    }
+
+    /**
+     * 依 UDS 狀態送出 mode 09 讀取指令。
+     * UDS 車款以 DID 0xF8xx 讀取（`22F802` 等）；非 UDS 直接送 `09 <pid>`。
+     */
+    private fun mode09Command(pid: String): String {
+        return if (udsMode) ObdConstants.UDS_INFO_PREFIX + pid else ObdConstants.MODE_VEHICLE_INFO + pid
+    }
+
+    /**
+     * 預處理 mode 09 原始回應。
+     * UDS 車款回應為 `62 F8 <pid> …`（可能 ISO-TP 多幀），先重組多幀再 normalize 為 `49 <pid> …`
+     * 供現有解碼器解析；非 UDS 原樣回傳。
+     */
+    private fun mode09Decode(raw: String): String {
+        if (!udsMode) return raw
+        val assembled = ObdDecoder.assembleIsoTp(raw) ?: return raw
+        return ObdDecoder.normalizeUdsResponse(
+            assembled.joinToString(" ") { "%02X".format(it) },
+            targetMode = 0x49,
+        )
     }
 
     /**
@@ -992,25 +1264,20 @@ class ObdManager(
         }
     }
 
-    /** 車載監控測試結果（mode 06）：失火/燃油系統/綜合元件三組 TID */
+    /** 車載監控測試結果（mode 06）：依 MONITOR_TEST_TIDS 掃描各監控族群 TID */
     fun readMonitorTests(): List<MonitorTest> {
         if (demoMode) {
             return listOf(
-                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], 1),
-                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], 2),
-                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], 3),
-                MonitorTest(1, 0x01, 200, ObdConstants.MONITOR_TEST_NAMES[0x01]),
-                MonitorTest(1, 0x03, 200, ObdConstants.MONITOR_TEST_NAMES[0x03]),
+                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], cylinder = 1, scaledValue = 0.0, unit = "", minValue = 0.0, maxValue = 0.0, passed = true, tidNameRes = ObdConstants.monitorTidNameRes(1)),
+                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], cylinder = 2, scaledValue = 0.0, unit = "", minValue = 0.0, maxValue = 0.0, passed = true, tidNameRes = ObdConstants.monitorTidNameRes(1)),
+                MonitorTest(1, 0x00, 0, ObdConstants.MONITOR_TEST_NAMES[0x00], cylinder = 3, scaledValue = 0.0, unit = "", minValue = 0.0, maxValue = 0.0, passed = true, tidNameRes = ObdConstants.monitorTidNameRes(1)),
+                MonitorTest(1, 0x01, 200, ObdConstants.MONITOR_TEST_NAMES[0x01], scaledValue = 200.0, minValue = 0.0, maxValue = 200.0, passed = true, tidNameRes = ObdConstants.monitorTidNameRes(1)),
+                MonitorTest(1, 0x03, 200, ObdConstants.MONITOR_TEST_NAMES[0x03], scaledValue = 200.0, minValue = 0.0, maxValue = 200.0, passed = true, tidNameRes = ObdConstants.monitorTidNameRes(1)),
             )
         }
         if (!isConnected()) return emptyList()
-        val tids = listOf(
-            ObdConstants.TID_MISFIRE,
-            ObdConstants.TID_FUEL_SYSTEM,
-            ObdConstants.TID_COMPONENTS,
-        )
         val result = mutableListOf<MonitorTest>()
-        for (tid in tids) {
+        for (tid in ObdConstants.MONITOR_TEST_TIDS) {
             val resp = sendCommand(ObdConstants.MODE_MONITOR_TESTS + tid)
             resp?.let { result += ObdDecoder.monitorTests(it) }
         }
@@ -1077,31 +1344,102 @@ class ObdManager(
     fun readDtc(): List<String> {
         if (demoMode) return listOf("P0300", "P0135")
         if (!isConnected()) return emptyList()
-        val resp = sendCommand(ObdConstants.MODE_DTC) ?: return emptyList()
-        return ObdDecoder.dtcList(resp)
+        val resp = sendCommandWithPendingRetry(ObdConstants.MODE_DTC) ?: return emptyList()
+        return ObdDecoder.dtcList(resp, protocolNumber = protocolNumber)
     }
 
     /** 待處理故障碼（mode 07）：尚未確立的間歇性故障 */
     fun readPendingDtc(): List<String> {
         if (demoMode) return listOf("P0301")
         if (!isConnected()) return emptyList()
-        val resp = sendCommand(ObdConstants.MODE_PENDING_DTC) ?: return emptyList()
-        return ObdDecoder.dtcList(resp, modeByte = 0x47)
+        val resp = sendCommandWithPendingRetry(ObdConstants.MODE_PENDING_DTC) ?: return emptyList()
+        return ObdDecoder.dtcList(resp, modeByte = 0x47, protocolNumber = protocolNumber)
     }
 
     /** 永久故障碼（mode 0A）：清除後仍存在的排放相關故障 */
     fun readPermanentDtc(): List<String> {
         if (demoMode) return emptyList()
         if (!isConnected()) return emptyList()
-        val resp = sendCommand(ObdConstants.MODE_PERMANENT_DTC) ?: return emptyList()
-        return ObdDecoder.dtcList(resp, modeByte = 0x4A)
+        val resp = sendCommandWithPendingRetry(ObdConstants.MODE_PERMANENT_DTC) ?: return emptyList()
+        return ObdDecoder.dtcList(resp, modeByte = 0x4A, protocolNumber = protocolNumber)
     }
+
+    /**
+     * 送出指令；KWP 串列協定下依 UDS 負回應判別：
+     * - 0x78（response pending）：ECU 仍在處理，短暫等待後重送，直到取得完整回應或達重試上限。
+     * - 0x11（服務不支援/一般拒絕）：重試無意義，立即回傳（對應 Car Scanner 的取消佇列語義）。
+     * - 其他負回應或正常回應：直接回傳。
+     */
+    private fun sendCommandWithPendingRetry(cmd: String): String? {
+        if (!isSlowProtocol) return sendCommand(cmd)
+        val service = cmd.take(2).toIntOrNull(16) ?: return sendCommand(cmd)
+        var resp = sendCommand(cmd)
+        var attempt = 0
+        while (resp != null && attempt < ObdConstants.KWP_PENDING_RETRIES) {
+            val code = ObdDecoder.negativeResponseCode(resp, service)
+            when {
+                code == 0x78 -> {
+                    attempt++
+                    ObdLog.log("KWP pending 0x78, retry $attempt ($cmd)")
+                    Thread.sleep(ObdConstants.KWP_PENDING_RETRY_DELAY_MS)
+                    resp = sendCommand(cmd)
+                }
+                code == 0x11 -> {
+                    ObdLog.log("NR 0x11（服務不支援/一般拒絕），$cmd 中止重試")
+                    return resp
+                }
+                else -> return resp
+            }
+        }
+        return resp
+    }
+
+    /** KWP 負回應是否為 response pending（0x7F <service> 0x78） */
 
     fun clearDtc(): Boolean {
         if (demoMode) return true
-        if (!isConnected()) return false
-        val resp = sendCommand(ObdConstants.MODE_CLEAR_DTC) ?: return false
-        return resp.uppercase().contains("OK")
+        if (!isConnected()) {
+            lastClearErrorMsg = null
+            return false
+        }
+        repeat(ObdConstants.CLEAR_DTC_ATTEMPTS) {
+            val resp = sendCommand(ObdConstants.MODE_CLEAR_DTC, ObdConstants.CLEAR_DTC_TIMEOUT_MS)
+            val reason = clearFailureReason(resp, service = 0x04)
+            if (reason == null) {
+                lastClearErrorMsg = null
+                return true
+            }
+            lastClearErrorMsg = reason
+            Thread.sleep(ObdConstants.CLEAR_DTC_RETRY_DELAY_MS)
+        }
+        val uds = sendCommand(ObdConstants.MODE_CLEAR_DTC_UDS, ObdConstants.CLEAR_DTC_TIMEOUT_MS)
+        val udsReason = clearFailureReason(uds, service = 0x14)
+        if (udsReason == null) {
+            lastClearErrorMsg = null
+            return true
+        }
+        lastClearErrorMsg = udsReason
+        return false
+    }
+
+    /** 最近一次清碼失敗原因（null = 最近成功或尚未清碼）；供 UI 顯示有意義的錯誤訊息 */
+    fun lastClearError(): String? = lastClearErrorMsg
+
+    /**
+     * 清碼失敗判定：成功回 null；失敗回中文原因。
+     * 失敗種類：無回應、NO DATA / '?' / 空白、UDS 負回應（依 NRC 給出含義）。
+     * 部分 ECU 清碼成功回應為 OK、部分為 `44 00`（mode echo）、部分為空行。
+     */
+    private fun clearFailureReason(resp: String?, service: Int): String? {
+        if (resp == null) return "無回應"
+        val upper = resp.uppercase()
+        if (upper.contains("NO DATA") || upper.contains("?") || upper.isBlank()) return "無資料回應"
+        if (upper.contains("7F")) {
+            val code = ObdDecoder.negativeResponseCode(resp, service)
+            val msg = code?.let { ObdDecoder.negativeResponseMessage(it) }
+            return if (msg != null) "負回應：$msg" else "負回應"
+        }
+        return null
     }
 
     /**
@@ -1196,6 +1534,19 @@ class ObdManager(
             @Suppress("UNCHECKED_CAST")
             getParcelableExtra(name)
         }
+
+    /** 將連線目標序列化存入 prefs（供自動重連） */
+    private fun encodeTarget(target: TransportTarget): String = when (target) {
+        is TransportTarget.ClassicBt -> "classic|${target.device.address}"
+        is TransportTarget.BleBt -> "ble|${target.device.address}"
+        is TransportTarget.Wifi -> "wifi|${target.host}:${target.port}"
+    }
+
+    private fun remoteDeviceOrNull(address: String): BluetoothDevice? =
+        runCatching {
+            @Suppress("DEPRECATION")
+            BluetoothAdapter.getDefaultAdapter()?.getRemoteDevice(address)
+        }.getOrNull()
 
     companion object {
         private const val HISTORY_MAX = 300

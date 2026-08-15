@@ -47,6 +47,24 @@ object ObdConstants {
     const val MODE_EVAP_TEST = "08"      // 雙向控制測試（EVAP 洩漏）
     const val MODE_VEHICLE_INFO = "09"   // 車輛資訊（VIN）
     const val MODE_PERMANENT_DTC = "0A"  // 永久故障碼
+    const val MODE_CLEAR_DTC_UDS = "14FFFFFF" // UDS 清碼（部分 CAN 車款以 UDS 接受清除）
+
+    // ===== UDS 高價值服務（供自訂 PID 使用） =====
+    const val MODE_UDS_BY_IDENTIFIER = "22"  // ReadDataByIdentifier（DID 4 碼 hex，如 22F40C）
+    const val UDS_DID_LENGTH = 4             // DID 為 4 位元組 hex（回應 `62 <DID> <data>`）
+
+    // ===== UDS 診斷工作階段（service 10） =====
+    const val SERVICE_SESSION_CONTROL = 0x10
+    const val SESSION_DEFAULT = 0x01       // 預設（通訊起始狀態，ISO 14229）
+    const val SESSION_PROGRAMMING = 0x02   // 程式設計（允許韌體寫入與較長回應）
+    const val SESSION_EXTENDED = 0x03      // 擴充（允許額外診斷功能與較長回應）
+
+    // ===== UDS（ISO 14229，部分 CAN 車款以 UDS 提供 OBD 數據） =====
+    const val UDS_PROBE_CMD = "22F400"       // UDS 探測：讀取 DID 0xF400（對應 mode 01 PID 00 支援清單）
+    const val UDS_PID_PREFIX = "22F4"        // mode 01 的 UDS DID 前綴（0xF4xx）
+    const val UDS_INFO_PREFIX = "22F8"       // mode 09 的 UDS DID 前綴（0xF8xx）
+    const val UDS_RESPONSE_MARKER = "62"     // UDS ReadDataByIdentifier 正向回應首碼
+    const val UDS_PROBE_TIMEOUT_MS = 3000L   // UDS 探測等待時間（不支援的車回 NO DATA，不用等滿預設超時）
 
     // ===== Mode 05 氧感測器測試（非 CAN 協定專用） =====
     /** Mode 05 PID → 測試名稱資源；PID 01-06 為感測器 1、07-0C 感測器 2、0D-12 感測器 3、13-18 感測器 4 */
@@ -102,6 +120,12 @@ object ObdConstants {
     const val TID_FUEL_SYSTEM = "02"     // 燃油系統
     const val TID_COMPONENTS = "03"      // 綜合元件
 
+    /** 依序查詢的 Mode 06 TID 清單（各監控族群首個 TID + 失火/燃油/綜合元件） */
+    val MONITOR_TEST_TIDS = listOf(
+        "01", "02", "03", "21", "31", "41", "61", "71",
+        "81", "91", "A1", "B1", "C1", "D1", "E1", "F1",
+    )
+
     /** Mode 06 測試項目名稱（TestID → 字串資源；未收錄者以通用格式顯示） */
     val MONITOR_TEST_NAMES: Map<Int, Int> = mapOf(
         0x00 to R.string.mon_test_misfire_count,
@@ -109,6 +133,132 @@ object ObdConstants {
         0x02 to R.string.mon_test_misfire_in_cycle,
         0x03 to R.string.mon_test_total_misfire_cycles,
     )
+
+    /**
+     * Mode 06 測試項目（TestID）解碼規格（源自 SAE J1979 標準縮放表）。
+     * 標準 TestID（<128）：raw = A*256+B（unsigned 16-bit），值 = raw * m / 65535；
+     * 製造商 TestID（>=128）：raw = (short)(A*256+B)（signed 16-bit），值 = raw * m。
+     * @param unit  顯示單位；空白表示無單位
+     * @param m     縮放倍率（標準表為 numerator、製造商表為直接倍率）
+     * @param signed 是否以 signed 16-bit 解讀
+     */
+    data class Mode06Spec(val unit: String, val m: Double, val signed: Boolean = false)
+
+    /** 標準測試項目縮放規格（TestID 1-57）；未收錄者以 raw 顯示（m = 65535） */
+    val MODE06_STD_SPECS: Map<Int, Mode06Spec> = mapOf(
+        1 to Mode06Spec("", 65535.0),
+        2 to Mode06Spec("", 6553.5),
+        3 to Mode06Spec("", 655.35),
+        4 to Mode06Spec("", 65.535),
+        5 to Mode06Spec("", 1.999),
+        6 to Mode06Spec("", 19.988),
+        7 to Mode06Spec("rpm", 16383.75),
+        8 to Mode06Spec("km/h", 655.35),
+        9 to Mode06Spec("km/h", 65535.0),
+        10 to Mode06Spec("V", 7.995),
+        11 to Mode06Spec("V", 65.535),
+        12 to Mode06Spec("V", 655.35),
+        13 to Mode06Spec("mA", 255.996),
+        14 to Mode06Spec("mA", 65535.0),
+        15 to Mode06Spec("mA", 655350.0),
+        16 to Mode06Spec("s", 65.535),
+        17 to Mode06Spec("s", 6553.5),
+        18 to Mode06Spec("s", 65.535),
+        19 to Mode06Spec("Ω", 65.535),
+        20 to Mode06Spec("kΩ", 65.535),
+        21 to Mode06Spec("MΩ", 65.535),
+        22 to Mode06Spec("°C", 6593.5),
+        23 to Mode06Spec("kPa", 655.35),
+        24 to Mode06Spec("kPa", 766.7595),
+        25 to Mode06Spec("kPa", 5177.265),
+        26 to Mode06Spec("kPa", 65535.0),
+        27 to Mode06Spec("kPa", 655350.0),
+        28 to Mode06Spec("°", 655.35),
+        29 to Mode06Spec("°", 32767.5),
+        30 to Mode06Spec("", 1.999),
+        31 to Mode06Spec("", 32767.75),
+        32 to Mode06Spec("", 255.993),
+        33 to Mode06Spec("Hz", 65.535),
+        34 to Mode06Spec("Hz", 65535.0),
+        35 to Mode06Spec("MHz", 65.535),
+        36 to Mode06Spec("", 65535.0),
+        37 to Mode06Spec("km", 65535.0),
+        38 to Mode06Spec("V/ms", 6.5535),
+        39 to Mode06Spec("g/s", 655.35),
+        40 to Mode06Spec("g/s", 65535.0),
+        41 to Mode06Spec("Pa/s", 16384.0),
+        42 to Mode06Spec("kg/h", 65.535),
+        43 to Mode06Spec("", 65535.0),
+        44 to Mode06Spec("g/cyl", 655.35),
+        45 to Mode06Spec("g/strk", 655.35),
+        46 to Mode06Spec("", 65535.0),
+        47 to Mode06Spec("%", 655.35),
+        48 to Mode06Spec("%", 100.00641),
+        49 to Mode06Spec("L", 65.535),
+        50 to Mode06Spec("mm", 50.77),
+        51 to Mode06Spec("", 16.0),
+        52 to Mode06Spec("min", 65535.0),
+        53 to Mode06Spec("s", 655.35),
+        54 to Mode06Spec("g", 655.35),
+        55 to Mode06Spec("g", 6553.5),
+        56 to Mode06Spec("g", 65535.0),
+        57 to Mode06Spec("%", 327.67),
+    )
+
+    /** 製造商測試項目縮放規格（TestID 129-254，signed）；未收錄者以 signed raw 顯示（m = 1.0） */
+    val MODE06_MFR_SPECS: Map<Int, Mode06Spec> = mapOf(
+        129 to Mode06Spec("", 1.0, signed = true),
+        130 to Mode06Spec("", 0.1, signed = true),
+        131 to Mode06Spec("", 0.01, signed = true),
+        132 to Mode06Spec("", 0.001, signed = true),
+        133 to Mode06Spec("", 3.05e-5, signed = true),
+        134 to Mode06Spec("", 0.000305, signed = true),
+        138 to Mode06Spec("V", 122.0, signed = true),
+        139 to Mode06Spec("V", 0.001, signed = true),
+        140 to Mode06Spec("V", 0.01, signed = true),
+        141 to Mode06Spec("mA", 1.0 / 256.0, signed = true),
+        142 to Mode06Spec("mA", 1e-6, signed = true),
+        144 to Mode06Spec("ms", 1.0, signed = true),
+        150 to Mode06Spec("°C", 0.1, signed = true),
+        156 to Mode06Spec("°", 0.01, signed = true),
+        157 to Mode06Spec("°", 0.5, signed = true),
+        168 to Mode06Spec("g/s", 1.0, signed = true),
+        169 to Mode06Spec("Pa/s", 0.25, signed = true),
+        175 to Mode06Spec("%", 0.01, signed = true),
+        176 to Mode06Spec("%", 0.003052, signed = true),
+        177 to Mode06Spec("mV/s", 2.0, signed = true),
+        253 to Mode06Spec("kPa", 0.001, signed = true),
+        254 to Mode06Spec("Pa", 0.25, signed = true),
+    )
+
+    /** 依 TestID 取縮放規格；未收錄時回傳 null（呼叫端以 raw 顯示） */
+    fun mode06SpecOf(testId: Int): Mode06Spec? {
+        if (testId in 1..57) return MODE06_STD_SPECS[testId]
+        if (testId >= 128) return MODE06_MFR_SPECS[testId]
+        return null
+    }
+
+    /**
+     * 依 TID 取監控族群名稱資源（SAE J1979 族群分配）。
+     * 未收錄的 TID 回傳 null，呼叫端以「TID $XX」顯示。
+     */
+    fun monitorTidNameRes(tid: Int): Int? = when (tid) {
+        in 0x01..0x0F -> R.string.diag_tid_misfire
+        in 0x21..0x30 -> R.string.diag_tid_fuel
+        in 0x31..0x40 -> R.string.diag_tid_components
+        in 0x41..0x50 -> R.string.diag_tid_catalyst
+        in 0x61..0x70 -> R.string.diag_tid_heated_catalyst
+        in 0x71..0x80 -> R.string.diag_tid_evap
+        in 0x81..0x90 -> R.string.diag_tid_secondary_air
+        in 0x91..0xA0 -> R.string.diag_tid_o2
+        in 0xA1..0xB0 -> R.string.diag_tid_o2_heater
+        in 0xB1..0xC0 -> R.string.diag_tid_egr
+        in 0xC1..0xD0 -> R.string.diag_tid_nmhc
+        in 0xD1..0xE0 -> R.string.diag_tid_nox
+        in 0xE1..0xF0 -> R.string.diag_tid_boost
+        in 0xF1..0xF8 -> R.string.diag_tid_exhaust_gas
+        else -> null
+    }
 
     // ===== 常用 PID =====
     const val PID_SUPPORTED = "00"       // 支援的 PID 清單（01-20）
@@ -163,8 +313,86 @@ object ObdConstants {
     /** ATDPN 協定編號 → 慢速串列協定（逐指令往返耗時長，需降低輪詢頻率） */
     val SLOW_PROTOCOL_NUMBERS = setOf(3, 4, 5) // 3=ISO 9141-2、4/5=ISO 14230-4 KWP
 
+    /**
+     * 自動協定（ATSP0）初始化失敗後，依序嘗試的標準協定
+     * （對應 Car Scanner SearchForProtocol 的優先順序：CAN → KWP → ISO9141 → J1850）。
+     * 值為 ELM327 ATSP 編號。
+     */
+    val PROTOCOL_SEARCH_ORDER = listOf(
+        6 to "ISO 15765-4 CAN (11 bit, 500k)",
+        7 to "ISO 15765-4 CAN (29 bit, 500k)",
+        4 to "ISO 14230-4 KWP (5-baud init)",
+        5 to "ISO 14230-4 KWP (fast init)",
+        3 to "ISO 9141-2",
+        1 to "SAE J1850 PWM",
+        2 to "SAE J1850 VPW",
+        8 to "ISO 15765-4 CAN (11 bit, 250k)",
+        9 to "ISO 15765-4 CAN (29 bit, 250k)",
+    )
+
+    /**
+     * KWP/ISO9141 特殊初始化配方（移植自 Car Scanner GetAdditionalInit）。
+     * 自動協定（ATSP0）連不上時依序嘗試：部分老車需指定鮑率（ATIB）、
+     * init 定址（ATII）或通訊 header（ATSH）才能完成初始化。
+     * 指令照 ELM327 語法（ATIB 後接 10/48/96 = 10400/4800/9600 baud；
+     * ATIIAxx = init address 0x13/0x33/0x7A/0x10；ATSH 後接 3 byte）。
+     */
+    data class KwpPreset(val label: String, val commands: List<String>)
+
+    val KWP_INIT_PRESETS: List<KwpPreset> = listOf(
+        KwpPreset("KWP fast 10400", listOf("ATSP5", "ATIB10")),
+        KwpPreset("KWP fast 9600", listOf("ATSP5", "ATIB96")),
+        KwpPreset("KWP fast 4800", listOf("ATSP5", "ATIB48")),
+        KwpPreset("KWP 5-baud 10400", listOf("ATSP4", "ATIB10")),
+        KwpPreset("KWP 5-baud 9600", listOf("ATSP4", "ATIB96")),
+        KwpPreset("KWP 5-baud 4800", listOf("ATSP4", "ATIB48")),
+        KwpPreset("ISO9141 9600", listOf("ATSP3", "ATIB96")),
+        KwpPreset("ISO9141 4800", listOf("ATSP3", "ATIB48")),
+        KwpPreset("KWP fast 4800 tester 13", listOf("ATSP5", "ATIB48", "ATIIA13")),
+        KwpPreset("KWP fast 4800 tester 7A", listOf("ATSP5", "ATIB48", "ATIIA7A")),
+        KwpPreset("KWP fast 4800 tester 33", listOf("ATSP5", "ATIB48", "ATIIA33")),
+        KwpPreset("KWP fast 10400 hdr F1", listOf("ATSP5", "ATSH8013F1", "ATIB10", "ATIIA13")),
+        KwpPreset("KWP fast 9600 hdr F0", listOf("ATSP5", "ATSH8013F0", "ATIB96", "ATIIA13")),
+        KwpPreset("KWP fast 9600 hdr F0 alt", listOf("ATSP5", "ATSH8213F0", "ATIB96", "ATIIA13")),
+        KwpPreset("KWP fast 10400 hdr FC", listOf("ATSP5", "ATSH8013FC", "ATIB10", "ATIIA10")),
+        KwpPreset("KWP fast 9600 hdr FC", listOf("ATSP5", "ATSH8013FC", "ATIB96", "ATIIA10")),
+        KwpPreset("KWP 5-baud 10400 hdr F1", listOf("ATSP4", "ATSH8013F1", "ATIB10", "ATIIA13")),
+        KwpPreset("KWP 5-baud 9600 hdr F0", listOf("ATSP4", "ATSH8013F0", "ATIB96", "ATIIA13")),
+        KwpPreset("KWP 5-baud 9600 hdr F0 alt", listOf("ATSP4", "ATSH8213F0", "ATIB96", "ATIIA13")),
+        KwpPreset("KWP 5-baud 10400 hdr FC", listOf("ATSP4", "ATSH8013FC", "ATIB10", "ATIIA13")),
+        KwpPreset("KWP 5-baud 9600 hdr F1", listOf("ATSP4", "ATSH8013F1", "ATIB96", "ATIIA13")),
+        KwpPreset("KWP 5-baud 9600 hdr F1 8x", listOf("ATSP4", "ATSH8113F1", "ATIB96", "ATIIA13")),
+        KwpPreset("ISO9141 10400 hdr F1", listOf("ATSP3", "ATSH686AF1", "ATIB10", "ATIIA33")),
+        KwpPreset("KWP fast 9600 hdr F1", listOf("ATSP5", "ATSH8113F1", "ATIB96", "ATIIA13")),
+        KwpPreset("KWP fast 9600 hdr F1 alt", listOf("ATSP5", "ATSH8213F1", "ATIB96", "ATIIA13")),
+        KwpPreset("KWP fast 10400 hdr FC t10", listOf("ATSP5", "ATSH8110FC", "ATIB10", "ATIIA10")),
+    )
+
     /** ELM327 指令回應逾時（毫秒） */
     const val COMMAND_TIMEOUT_MS = 2000L
+
+    /** 清碼（mode 04）回應逾時（毫秒）：ECU 寫入記憶體需時較長 */
+    const val CLEAR_DTC_TIMEOUT_MS = 5000L
+
+    /** 清碼重試間隔（毫秒） */
+    const val CLEAR_DTC_RETRY_DELAY_MS = 300L
+
+    /** KWP（ISO 14230）0x78 response-pending 的最大重試次數 */
+    const val KWP_PENDING_RETRIES = 3
+
+    /** KWP 0x78 後重送指令的等待間隔（毫秒）：ECU 仍在處理舊請求 */
+    const val KWP_PENDING_RETRY_DELAY_MS = 300L
+
+    /** KWP 負回應是否為 response pending（0x7F <service> 0x78） */
+    fun isKwpResponsePending(resp: String): Boolean {
+        val tokens = resp.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        return tokens.size >= 3 &&
+            tokens[0].equals("7F", ignoreCase = true) &&
+            tokens[2].equals("78", ignoreCase = true)
+    }
+
+    /** 標準 OBD 清碼（mode 04）嘗試次數（部分 ECU 需多次送達） */
+    const val CLEAR_DTC_ATTEMPTS = 3
 
     /** 常見 DTC 描述表（未收錄的碼以通用格式顯示） */
     val dtcDescriptions: Map<String, Int> = mapOf(

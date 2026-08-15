@@ -20,6 +20,7 @@ import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.elm.ImReadiness
 import com.heli.obd.elm.MonitorTest
+import com.heli.obd.elm.ObdDecoder
 import com.heli.obd.elm.ObdManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -139,8 +140,13 @@ class VehicleReportActivity : BaseActivity() {
             sb.append(getString(R.string.diag_mode6_none)).append("\n")
         } else {
             s.monitorTests.forEach { t ->
-                val name = t.nameRes?.let { getString(it) } ?: "TID ${t.tid} Test ${t.testId}"
-                sb.append("  ").append(name).append("：").append(t.value)
+                val tidName = t.tidNameRes?.let { getString(it) } ?: "TID ${t.tid}"
+                val name = t.nameRes?.let { getString(it) } ?: "Test ${t.testId}"
+                val valueText = t.scaledValue?.let { ObdDecoder.formatScaled(it) } ?: t.value.toString()
+                val unitText = t.unit.takeIf { it.isNotEmpty() }?.let { " $it" } ?: ""
+                val passText = t.passed?.let { if (it) getString(R.string.diag_monitor_pass) else getString(R.string.diag_monitor_fail) } ?: ""
+                sb.append("  ").append(tidName).append(" - ").append(name).append("：").append(valueText).append(unitText)
+                    .append(" ").append(passText)
                 t.cylinder?.let { sb.append("（缸 ").append(it).append("）") }
                 sb.append("\n")
             }

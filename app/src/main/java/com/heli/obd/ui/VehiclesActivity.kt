@@ -20,6 +20,7 @@ import com.heli.obd.BaseActivity
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.MainActivity
 import com.heli.obd.R
+import com.heli.obd.vehicles.VehicleBrands
 import com.heli.obd.vehicles.VehicleStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,6 +32,7 @@ import kotlinx.coroutines.withContext
 class VehiclesActivity : BaseActivity() {
 
     private val store by lazy { VehicleStore(this) }
+    private val brands by lazy { VehicleBrands(this) }
     private lateinit var container: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,7 +109,8 @@ class VehiclesActivity : BaseActivity() {
             VehicleStore.TYPE_CAR -> getString(R.string.vehicle_type_car)
             else -> getString(R.string.vehicle_type_motorcycle)
         }
-        val parts = listOf(typeLabel, vehicle.brand, vehicle.engineCc, vehicle.note).filter { it.isNotBlank() }
+        val brandModel = listOf(vehicle.brand, vehicle.model).filter { it.isNotBlank() }.joinToString(" ")
+        val parts = listOf(typeLabel, brandModel, vehicle.engineCc, vehicle.note).filter { it.isNotBlank() }
         detail.text = if (parts.isEmpty()) "" else parts.joinToString(" ｜ ")
         detail.textSize = 13f
         detail.setTextColor(getColor(R.color.text_secondary))
@@ -249,13 +252,131 @@ class VehiclesActivity : BaseActivity() {
 
         form.addView(typeRow)
 
+        var selectedBrand = existing?.brand.orEmpty()
+        var selectedModel = existing?.model.orEmpty()
+
+        fun makeRow(hintRes: Int, value: String): TextView = TextView(this).apply {
+            text = if (value.isBlank()) getString(hintRes) else value
+            textSize = 15f
+            setPadding(0, dp(8), 0, dp(8))
+            setTextColor(
+                if (value.isBlank()) getColor(R.color.text_secondary) else getColor(R.color.text_primary)
+            )
+            setBackgroundResource(R.drawable.bg_row_clickable)
+        }
+
+        val brandRow = makeRow(R.string.vehicles_select_brand, selectedBrand)
+        val modelRow = makeRow(R.string.vehicles_model_hint, selectedModel)
+
+        fun refreshRows() {
+            brandRow.text = selectedBrand.ifBlank { getString(R.string.vehicles_select_brand) }
+            brandRow.setTextColor(
+                if (selectedBrand.isBlank()) getColor(R.color.text_secondary) else getColor(R.color.text_primary)
+            )
+            modelRow.text = selectedModel.ifBlank { getString(R.string.vehicles_model_hint) }
+            modelRow.setTextColor(
+                if (selectedModel.isBlank()) getColor(R.color.text_secondary) else getColor(R.color.text_primary)
+            )
+        }
+
+        fun manualInputDialog(
+            titleRes: Int,
+            hintRes: Int,
+            current: String,
+            onResult: (String) -> Unit,
+        ) {
+            val input = EditText(this).apply {
+                hint = getString(hintRes)
+                setText(current)
+                textSize = 15f
+                setSingleLine(true)
+                setPadding(dp(24), dp(16), dp(24), 0)
+                setTextColor(getColor(R.color.text_primary))
+                setHintTextColor(getColor(R.color.text_secondary))
+            }
+            AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                .setTitle(titleRes)
+                .setView(input)
+                .setPositiveButton(R.string.common_save) { _, _ -> onResult(input.text.toString()) }
+                .setNegativeButton(R.string.common_cancel, null)
+                .show()
+        }
+
+        fun pickModel(models: List<String>) {
+            AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                .setTitle(R.string.vehicles_select_model)
+                .setItems(models.toTypedArray()) { _, which ->
+                    selectedModel = models[which]
+                    refreshRows()
+                }
+                .setNegativeButton(R.string.common_cancel, null)
+                .show()
+        }
+
+        brandRow.setOnClickListener {
+            val brandNames = brands.brandNames()
+            val items = brandNames + getString(R.string.vehicles_manual_input)
+            AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                .setTitle(R.string.vehicles_select_brand)
+                .setItems(items.toTypedArray()) { _, which ->
+                    if (which == brandNames.size) {
+                        manualInputDialog(
+                            R.string.vehicles_select_brand,
+                            R.string.vehicles_brand_hint,
+                            selectedBrand,
+                        ) { value ->
+                            selectedBrand = value.trim()
+                            selectedModel = ""
+                            refreshRows()
+                        }
+                    } else {
+                        selectedBrand = brandNames[which]
+                        selectedModel = ""
+                        val models = brands.modelsOf(selectedBrand)
+                        refreshRows()
+                        if (models.isNotEmpty()) {
+                            pickModel(models)
+                        } else {
+                            Toast.makeText(
+                                this@VehiclesActivity,
+                                R.string.vehicles_no_builtin_models,
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    }
+                }
+                .setNegativeButton(R.string.common_cancel, null)
+                .show()
+        }
+
+        modelRow.setOnClickListener {
+            if (selectedBrand.isBlank()) {
+                Toast.makeText(this@VehiclesActivity, R.string.vehicles_select_brand_first, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val models = brands.modelsOf(selectedBrand)
+            if (models.isEmpty()) {
+                manualInputDialog(
+                    R.string.vehicles_select_model,
+                    R.string.vehicles_model_hint,
+                    selectedModel,
+                ) { value ->
+                    selectedModel = value.trim()
+                    refreshRows()
+                }
+            } else {
+                pickModel(models)
+            }
+        }
+
+        form.addView(brandRow)
+        form.addView(modelRow)
+
         val nameField = field(R.string.vehicles_name_hint, existing?.name.orEmpty())
-        val brandField = field(R.string.vehicles_brand_hint, existing?.brand.orEmpty())
         val ccField = field(R.string.vehicles_cc_hint, existing?.engineCc.orEmpty())
         val noteField = field(R.string.vehicles_note_hint, existing?.note.orEmpty())
 
         form.addView(nameField)
-        form.addView(brandField)
         form.addView(ccField)
         form.addView(noteField)
 
@@ -275,7 +396,8 @@ class VehiclesActivity : BaseActivity() {
                     VehicleStore.Vehicle(
                         id = existing?.id ?: System.currentTimeMillis(),
                         name = name,
-                        brand = brandField.text.toString().trim(),
+                        brand = selectedBrand,
+                        model = selectedModel,
                         engineCc = ccField.text.toString().trim(),
                         note = noteField.text.toString().trim(),
                         type = selectedType,

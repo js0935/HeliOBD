@@ -39,6 +39,7 @@ class AiDiagnoseActivity : BaseActivity() {
     private lateinit var dtcInput: EditText
     private lateinit var dtcListText: TextView
     private lateinit var resultContainer: LinearLayout
+    private lateinit var readDtcBtn: Button
 
     private val selectedSymptoms = mutableSetOf<Int>()
     private val dtcCodes = mutableListOf<String>()
@@ -53,7 +54,8 @@ class AiDiagnoseActivity : BaseActivity() {
         resultContainer = findViewById(R.id.result_container)
 
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
-        findViewById<Button>(R.id.btn_read_dtc).setOnClickListener { readDtcFromObd() }
+        readDtcBtn = findViewById(R.id.btn_read_dtc)
+        readDtcBtn.setOnClickListener { readDtcFromObd() }
         findViewById<Button>(R.id.btn_add_dtc).setOnClickListener { addManualDtc() }
         findViewById<Button>(R.id.btn_diagnose).setOnClickListener { runDiagnosis() }
         findViewById<Button>(R.id.btn_llm_diagnose).setOnClickListener { runLlmDiagnosis() }
@@ -100,15 +102,22 @@ class AiDiagnoseActivity : BaseActivity() {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_LONG).show()
             return
         }
-        val codes = obd.readDtc()
-        if (codes.isEmpty()) {
-            Toast.makeText(this, R.string.ai_diag_no_dtc, Toast.LENGTH_LONG).show()
-            return
+        val busy = BusyUi.mark(readDtcBtn, getString(R.string.busy_reading))
+        lifecycleScope.launch {
+            try {
+                val codes = withContext(Dispatchers.IO) { obd.readDtc() }
+                if (codes.isEmpty()) {
+                    Toast.makeText(this@AiDiagnoseActivity, R.string.ai_diag_no_dtc, Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                codes.forEach {
+                    if (it !in dtcCodes) dtcCodes.add(it)
+                }
+                renderDtcList()
+            } finally {
+                busy.done()
+            }
         }
-        codes.forEach {
-            if (it !in dtcCodes) dtcCodes.add(it)
-        }
-        renderDtcList()
     }
 
     private fun addManualDtc() {

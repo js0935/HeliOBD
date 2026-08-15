@@ -6,7 +6,6 @@
 package com.heli.obd.ui
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.ClipData
 import android.content.Intent
@@ -21,6 +20,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -33,6 +33,7 @@ import com.heli.obd.R
 import com.heli.obd.elm.BtPermissions
 import com.heli.obd.elm.ObdDecoder
 import com.heli.obd.elm.ObdManager
+import com.heli.obd.elm.TransportTarget
 import com.heli.obd.pid.PidStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -164,11 +165,14 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
 
     private fun autoReconnect() {
         if (obd.isConnected()) return
-        val address = obd.lastDeviceAddress() ?: return
-        if (!BtPermissions.hasAll(this)) return
-        val bt = BluetoothAdapter.getDefaultAdapter() ?: return
-        val device = runCatching { bt.getRemoteDevice(address) }.getOrNull() ?: return
-        connectTo(device)
+        val target = obd.lastTarget() ?: return
+        when (target) {
+            is TransportTarget.Wifi -> obd.connectTarget(target) { _, _ -> }
+            else -> {
+                if (!BtPermissions.hasAll(this)) return
+                obd.connectTarget(target) { _, _ -> }
+            }
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -185,6 +189,27 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
 
     @android.annotation.SuppressLint("MissingPermission") // 權限由本頁於 pickDevice 前申請
     private fun pickDevice() {
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.obd_connection_type_title)
+            .setItems(
+                arrayOf(
+                    getString(R.string.obd_connection_type_classic),
+                    getString(R.string.obd_connection_type_ble),
+                    getString(R.string.obd_connection_type_wifi),
+                )
+            ) { _, which ->
+                when (which) {
+                    0 -> pickClassicDevice()
+                    1 -> pickBleDevice()
+                    2 -> pickWifiDevice()
+                }
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    @android.annotation.SuppressLint("MissingPermission") // 權限由使用者於連線選擇前統一申請
+    private fun pickClassicDevice() {
         statusText.text = getString(R.string.obd_scanning)
         obd.discover { devices ->
             if (devices.isEmpty()) {
@@ -203,6 +228,47 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         }
     }
 
+    @android.annotation.SuppressLint("MissingPermission") // 權限由使用者於連線選擇前統一申請
+    private fun pickBleDevice() {
+        statusText.text = getString(R.string.obd_scanning)
+        obd.discoverBle { devices ->
+            if (devices.isEmpty()) {
+                statusText.text = getString(R.string.obd_no_device)
+                Toast.makeText(this, R.string.obd_no_device, Toast.LENGTH_LONG).show()
+                return@discoverBle
+            }
+            val names = devices.map { it.name ?: it.address }
+            AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                .setTitle(R.string.obd_select_device)
+                .setItems(names.toTypedArray()) { _, which ->
+                    connectToBle(devices[which])
+                }
+                .setNegativeButton(R.string.common_cancel, null)
+                .show()
+        }
+    }
+
+    private fun pickWifiDevice() {
+        val saved = (obd.lastTarget() as? TransportTarget.Wifi)
+        val input = EditText(this).apply {
+            setText(saved?.let { "${it.host}:${it.port}" } ?: DEFAULT_WIFI_ADDRESS)
+            hint = DEFAULT_WIFI_ADDRESS
+        }
+        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+            .setTitle(R.string.obd_wifi_title)
+            .setView(input)
+            .setPositiveButton(R.string.common_ok) { _, _ ->
+                val (host, port) = parseWifiAddress(input.text.toString())
+                if (host == null) {
+                    Toast.makeText(this, R.string.obd_wifi_invalid, Toast.LENGTH_LONG).show()
+                } else {
+                    connectToWifi(host, port)
+                }
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
     private fun connectTo(device: BluetoothDevice) {
         statusText.text = getString(R.string.obd_connecting)
         obd.connect(device) { success, message ->
@@ -212,6 +278,39 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
                 checkSuspiciousAdapter()
             }
         }
+    }
+
+    private fun connectToBle(device: BluetoothDevice) {
+        statusText.text = getString(R.string.obd_connecting)
+        obd.connectBle(device) { success, message ->
+            if (!success) {
+                showConnectGuide(message)
+            } else {
+                checkSuspiciousAdapter()
+            }
+        }
+    }
+
+    private fun connectToWifi(host: String, port: Int) {
+        statusText.text = getString(R.string.obd_connecting)
+        obd.connectWifi(host, port) { success, message ->
+            if (!success) {
+                showConnectGuide(message)
+            } else {
+                checkSuspiciousAdapter()
+            }
+        }
+    }
+
+    /** 解析使用者輸入的 `IP:port`；空白 port 或格式錯誤回傳 (null, 0) */
+    private fun parseWifiAddress(text: String): Pair<String?, Int> {
+        val t = text.trim()
+        val host = t.substringBefore(':', missingDelimiterValue = "")
+        if (host.isEmpty()) return null to 0
+        val portStr = t.substringAfter(':', missingDelimiterValue = DEFAULT_WIFI_PORT.toString())
+        val port = portStr.toIntOrNull() ?: return null to 0
+        if (port !in 1..65535) return null to 0
+        return host to port
     }
 
     /** 連線失敗引導：依序檢查插頭／點火／其他 App／通訊協定，避免新手卡關 */
@@ -585,5 +684,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         private const val REQ_BT_PERMISSION = 100
         private const val PAGE_SIZE = 6
         private const val SWIPE_MIN_VELOCITY = 800f
+        private const val DEFAULT_WIFI_ADDRESS = "192.168.0.10:35000"
+        private const val DEFAULT_WIFI_PORT = 35000
     }
 }

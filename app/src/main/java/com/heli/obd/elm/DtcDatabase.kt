@@ -40,19 +40,34 @@ object DtcDatabase {
         }
     }
 
-    /** 查通用（generic）DTC 描述；未收錄或 db 未就緒回傳 null。 */
+    /**
+     * 查通用（generic）DTC 描述。
+     * 查詢順序比照 Car Scanner DescriptionLoader：先精確比對，未命中時降級查
+     * 前 5 字元（ISO 15031-6 標準碼長度）的家族描述；未收錄或 db 未就緒回傳 null。
+     */
     fun description(code: String): String? {
         val database = db ?: return null
         val normalized = code.trim().uppercase()
+        if (normalized.isEmpty()) return null
         return try {
-            database.rawQuery(
-                "SELECT description FROM generic_codes WHERE code = ? LIMIT 1",
-                arrayOf(normalized),
-            ).use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            }
+            queryDescription(database, normalized)
+                ?: if (normalized.length > 5) {
+                    queryDescription(database, normalized.substring(0, 5))
+                } else {
+                    null
+                }
         } catch (_: Exception) {
             null
+        }
+    }
+
+    /** 精確查詢單一 code 的通用描述；無結果回傳 null */
+    private fun queryDescription(database: SQLiteDatabase, code: String): String? {
+        return database.rawQuery(
+            "SELECT description FROM dtc_definitions WHERE code = ? AND is_generic = 1 LIMIT 1",
+            arrayOf(code),
+        ).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
         }
     }
 }

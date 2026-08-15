@@ -254,7 +254,8 @@ class CustomPidActivity : BaseActivity() {
                 val mode = modeField.text.toString().trim()
                 val pid = pidField.text.toString().trim()
                 val formula = formulaField.text.toString().trim()
-                val hexOk = Regex("^[0-9A-Fa-f]{2}$")
+                // PID 欄位：OBD-II 為 2 碼（如 0C），UDS mode 22 DID 為 4 碼（如 F40C）
+                val hexOk = Regex("^[0-9A-Fa-f]{2,4}$")
                 when {
                     name.isEmpty() -> Toast.makeText(this, R.string.pid_name_required, Toast.LENGTH_SHORT).show()
                     !hexOk.matches(mode) -> Toast.makeText(this, R.string.pid_mode_invalid, Toast.LENGTH_SHORT).show()
