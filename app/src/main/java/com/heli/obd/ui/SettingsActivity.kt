@@ -30,6 +30,7 @@ import com.heli.obd.MainActivity
 import com.heli.obd.R
 import com.heli.obd.backup.BackupStore
 import com.heli.obd.elm.BtPermissions
+import com.heli.obd.elm.ObdLog
 import com.heli.obd.elm.ObdManager
 import com.heli.obd.llm.LlmClient
 import com.heli.obd.llm.LlmStore
@@ -114,6 +115,11 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         autoReconnectSwitch.setOnClickListener {
             obd.setAutoReconnectEnabled(autoReconnectSwitch.isChecked)
         }
+
+        findViewById<TextView>(R.id.settings_log_path).text = getString(
+            R.string.settings_log_summary,
+            ObdLog.currentDirPath().ifEmpty { getString(R.string.settings_log_none) },
+        )
 
         val autoUpdateSwitch = findViewById<SwitchCompat>(R.id.settings_auto_update)
         autoUpdateSwitch.isChecked = UpdateChecker.isAutoUpdateEnabled(this)

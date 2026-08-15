@@ -34,7 +34,7 @@ import java.io.IOException
  * 職責：
  * - 掃描 / 列出 ELM327 藍牙裝置（classic SPP）
  * - 建立 RFCOMM socket 連線
- * - ELM327 AT 指令初始化（ATZ、ATE0、ATL0、ATH0、ATSP0）
+ * - ELM327 AT 指令初始化（ATZ、ATE0、ATL1、ATS1、ATH0、ATSP0）
  * - 指令收發（同步、鎖保護、以 '>' 為回應終止符）
  * - 即時數據輪詢（Coroutine 背景執行）
  * - 故障碼讀取 / 清除
@@ -310,6 +310,7 @@ class ObdManager(
         disconnectPending = false
         supportedPids = null
         setState(State.Connecting)
+        ObdLog.start(appContext, device.address)
         ioScope.launch {
             val (ok, msg) = try {
                 val t = transportFactory(device)
@@ -327,6 +328,8 @@ class ObdManager(
                 }
             } catch (e: Exception) {
                 closeQuietly()
+                ObdLog.log("CONNECT FAILED ${e.message.orEmpty().replace('\n', ' ')}")
+                ObdLog.stop()
                 false to (e.message ?: appContext.getString(R.string.obd_connect_error))
             }
             if (ok) {
@@ -351,6 +354,8 @@ class ObdManager(
         pollJob = null
         protocolNumber = null
         closeQuietly()
+        ObdLog.log("DISCONNECT manual")
+        ObdLog.stop()
         setState(State.Idle)
     }
 
@@ -398,9 +403,11 @@ class ObdManager(
         // ATE0 送兩次：便宜 ELM327 常漏掉第一次
         sendCommand(ObdConstants.CMD_ECHO_OFF)
         sendCommand(ObdConstants.CMD_ECHO_OFF)
+        // 注意：不可關閉換行/空格（ATL0/ATS0）。關閉後多行 PID 回應失去 \n 與空格分隔，
+        // ObdDecoder 將無法拆行與拆 byte，導致 mode 01 全部解析失敗（僅 ATRV 電壓仍可讀）。
         listOf(
-            ObdConstants.CMD_LINEFEED_OFF,
-            ObdConstants.CMD_SPACES_OFF,
+            ObdConstants.CMD_LINEFEED_ON,
+            ObdConstants.CMD_SPACES_ON,
             ObdConstants.CMD_HEADERS_OFF,
             ObdConstants.CMD_AUTO_PROTOCOL,
         ).forEach { cmd ->
@@ -418,17 +425,18 @@ class ObdManager(
 
     /**
      * 送出 ELM327 指令並等待回應（以 '>' 為終止符）。
-     * 回應清洗雜訊後取最後一行（ATE0/ATL0/ATH0 之後為單行）。失敗或斷線回傳 null。
+     * 回應清洗雜訊後取最後一行（ATE0 關閉 echo 後為單行）。失敗或斷線回傳 null。
      */
     fun sendCommand(cmd: String): String? = synchronized(lock) {
         val t = transport ?: return null
         if (!t.isOpen) return null
+        var result: String? = null
         try {
             t.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
 
             val sb = StringBuilder()
             val deadline = System.currentTimeMillis() + ObdConstants.COMMAND_TIMEOUT_MS
-            while (System.currentTimeMillis() < deadline) {
+            read@ while (System.currentTimeMillis() < deadline) {
                 while (t.available() > 0) {
                     val c = t.read()
                     if (c == -1) {
@@ -436,17 +444,22 @@ class ObdManager(
                         return@synchronized null
                     }
                     if (c.toChar() == '>') {
-                        return@synchronized lastLine(cleanResponse(sb.toString()))
+                        result = lastLine(cleanResponse(sb.toString()))
+                        break@read
                     }
                     sb.append(c.toChar())
                 }
                 Thread.sleep(15)
             }
-            lastLine(cleanResponse(sb.toString())).takeIf { it.isNotBlank() }
+            if (result == null) {
+                result = lastLine(cleanResponse(sb.toString())).takeIf { it.isNotBlank() }
+            }
         } catch (_: Exception) {
             markDisconnected()
-            null
+            return@synchronized null
         }
+        ObdLog.log("CMD $cmd -> ${result ?: "NO_RESPONSE"}")
+        result
     }
 
     /**
@@ -458,12 +471,13 @@ class ObdManager(
         if (demoMode) return@synchronized demoTerminalResponse(cmd)
         val t = transport ?: return null
         if (!t.isOpen) return null
+        var result: String? = null
         try {
             t.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
 
             val sb = StringBuilder()
             val deadline = System.currentTimeMillis() + ObdConstants.COMMAND_TIMEOUT_MS
-            while (System.currentTimeMillis() < deadline) {
+            read@ while (System.currentTimeMillis() < deadline) {
                 while (t.available() > 0) {
                     val c = t.read()
                     if (c == -1) {
@@ -471,17 +485,23 @@ class ObdManager(
                         return@synchronized null
                     }
                     if (c.toChar() == '>') {
-                        return@synchronized cleanResponse(sb.toString())
+                        result = cleanResponse(sb.toString())
+                        break@read
                     }
                     sb.append(c.toChar())
                 }
                 Thread.sleep(15)
             }
-            cleanResponse(sb.toString()).takeIf { it.isNotBlank() }
+            if (result == null) {
+                result = cleanResponse(sb.toString()).takeIf { it.isNotBlank() }
+            }
         } catch (_: Exception) {
             markDisconnected()
-            null
+            return@synchronized null
         }
+        val logResp = result?.replace('\n', '|') ?: "NO_RESPONSE"
+        ObdLog.log("RAW $cmd -> $logResp")
+        result
     }
 
     /** 模擬模式終端機回應：常用 AT 指令給固定假回應，其餘依模式給簡單回應 */
@@ -492,7 +512,7 @@ class ObdManager(
             c == "ATI" || c == "ATI0" -> "ELM327 v1.5a"
             c == "ATVN" -> "12.34.56"
             c == "ATRV" || c == "ATRV0" -> "13.8V"
-            c == "ATE0" || c == "ATL0" || c == "ATS0" || c == "ATH0" ||
+            c == "ATE0" || c == "ATL1" || c == "ATS1" || c == "ATH0" ||
                 c == "ATSP0" || c == "ATSP A0" || c == "ATAT2" -> "OK"
             c.startsWith("AT") -> "OK"
             c.startsWith("01") || c.startsWith("010") -> "41 ${c.drop(2).padEnd(2, '0')} 00 00"
@@ -934,6 +954,8 @@ class ObdManager(
             pollJob?.cancel()
             pollJob = null
             closeQuietly()
+            ObdLog.log("DISCONNECT unexpected")
+            ObdLog.stop()
             setState(State.Idle)
             scheduleReconnect()
         }

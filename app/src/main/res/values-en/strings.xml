@@ -818,6 +818,8 @@
     <string name="settings_appearance_value">Current: %1$s</string>
     <string name="settings_auto_reconnect_label">Auto-reconnect on disconnect</string>
     <string name="settings_auto_reconnect_desc">Reconnect automatically when Bluetooth drops unexpectedly (up to 3 attempts)</string>
+    <string name="settings_log_summary">OBD Logs\nCommands and responses during a connection are written to log files (up to 50) for troubleshooting\nLog directory: %1$s</string>
+    <string name="settings_log_none">Not created yet (auto-generated on OBD connect)</string>
     <string name="settings_auto_update_label">Auto-check for updates</string>
     <string name="settings_auto_update_desc">Check GitHub for new versions on launch and daily in the background</string>
     <string name="settings_check_update">Check for updates now</string>

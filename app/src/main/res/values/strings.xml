@@ -358,6 +358,8 @@
 <string name="settings_appearance_value">目前：%1$s</string>
     <string name="settings_auto_reconnect_label">斷線自動重連</string>
     <string name="settings_auto_reconnect_desc">藍牙意外斷線時自動重新連線（最多重試 3 次）</string>
+    <string name="settings_log_summary">OBD 記錄\n連線期間的指令與回應會記錄為 log 檔（最多 50 個），方便日後排除通訊問題\n記錄位置：%1$s</string>
+    <string name="settings_log_none">尚未建立（OBD 連線後自動產生）</string>
     <string name="settings_auto_update_label">自動檢查更新</string>
     <string name="settings_auto_update_desc">啟動時與每日背景檢查 GitHub 新版</string>
     <string name="settings_check_update">立即檢查更新</string>

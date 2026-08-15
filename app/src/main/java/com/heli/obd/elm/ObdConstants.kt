@@ -25,8 +25,8 @@ object ObdConstants {
     // ===== ELM327 AT 指令 =====
     const val CMD_RESET = "ATZ"          // 重設
     const val CMD_ECHO_OFF = "ATE0"      // 關閉回應
-    const val CMD_LINEFEED_OFF = "ATL0"  // 關閉換行
-    const val CMD_SPACES_OFF = "ATS0"    // 關閉空格
+    const val CMD_LINEFEED_ON = "ATL1"   // 開啟換行（多行回應需 \n 分隔才能解析）
+    const val CMD_SPACES_ON = "ATS1"     // 開啟空格（PID 回應需空格分隔才能解析）
     const val CMD_HEADERS_OFF = "ATH0"   // 關閉標頭
     const val CMD_AUTO_PROTOCOL = "ATSP0" // 自動協定
     const val CMD_AUTO_PROTOCOL_ALT = "ATSP A0" // 自動協定（空白寫法，部分 clone 才接受）
