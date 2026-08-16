@@ -20,6 +20,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- 引擎警報震動 -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- OBD 記錄檔：Android 8-9 寫入公開 Download 資料夾（Android 10+ 用 MediaStore 免權限） -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <!-- 引擎警報系統通知（Android 13+ 需運行時授權） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 自動更新：安裝下載的 APK（Android 8+ 需「安裝未知來源」允許） -->

@@ -75,6 +75,20 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     private var unitSystem = UnitSystem.METRIC
     private var currentPage = 0
     private var enabledKeys = linkedSetOf<String>()
+    private lateinit var focusTitle: TextView
+    private lateinit var focusButtonRow: LinearLayout
+    private lateinit var extendedContainer: LinearLayout
+    private lateinit var toggleModeBtn: Button
+    private lateinit var focusRpmBtn: Button
+    private lateinit var focusSpeedBtn: Button
+    private lateinit var focusCoolantBtn: Button
+    private lateinit var focusVoltageBtn: Button
+
+    /** 精簡模式目前顯示的單一數據 key（rpm/speed/coolant/voltage） */
+    private var focusKey = "rpm"
+
+    /** 精簡模式開關：true = 只讀取並顯示單一數據 */
+    private var focusMode = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,6 +113,14 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         pageIndicator = findViewById(R.id.txt_page_indicator)
         tileContainer = findViewById(R.id.tile_container)
         tileScroll = findViewById(R.id.tile_scroll)
+        focusTitle = findViewById(R.id.obd_focus_title)
+        focusButtonRow = findViewById(R.id.focus_button_row)
+        extendedContainer = findViewById(R.id.extended_container)
+        toggleModeBtn = findViewById(R.id.btn_toggle_mode)
+        focusRpmBtn = findViewById(R.id.btn_focus_rpm)
+        focusSpeedBtn = findViewById(R.id.btn_focus_speed)
+        focusCoolantBtn = findViewById(R.id.btn_focus_coolant)
+        focusVoltageBtn = findViewById(R.id.btn_focus_voltage)
         setupGauges()
 
         connectBtn.setOnClickListener { ensurePermissionAndConnect() }
@@ -106,17 +128,32 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
             obd.disconnect()
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_SHORT).show()
         }
-        customizeBtn.setOnClickListener { showCustomizeDialog() }
+        customizeBtn.setOnClickListener {
+            if (focusMode) toggleMode()
+            showCustomizeDialog()
+        }
         unitBtn.setOnClickListener { toggleUnit() }
         chartBtn.setOnClickListener { startActivity(Intent(this, ChartActivity::class.java)) }
         pagePrevBtn.setOnClickListener { goToPage(currentPage - 1, 1f) }
         pageNextBtn.setOnClickListener { goToPage(currentPage + 1, -1f) }
+        focusRpmBtn.setOnClickListener { switchFocus("rpm") }
+        focusSpeedBtn.setOnClickListener { switchFocus("speed") }
+        focusCoolantBtn.setOnClickListener { switchFocus("coolant") }
+        focusVoltageBtn.setOnClickListener { switchFocus("voltage") }
+        toggleModeBtn.setOnClickListener { toggleMode() }
         setupTileDragDrop()
         setupPageSwipe()
 
         obd.addListener(this)
         renderState(obd.state)
+        applyFocusGauge(focusKey)
         autoReconnect()
+    }
+
+    override fun onPause() {
+        // 離開監控頁時恢復完整輪詢，避免影響其他頁面的 requestLiveData
+        obd.setFocusKey(null)
+        super.onPause()
     }
 
     override fun onResume() {
@@ -126,6 +163,8 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         obd.setCustomPids(customPids)
         updateUnitBtn()
         renderTiles()
+        obd.setFocusKey(if (focusMode) focusKey else null)
+        applyFocusGauge(if (focusMode) focusKey else "rpm")
     }
 
     override fun onDestroy() {
@@ -140,7 +179,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         if (BtPermissions.hasAll(this)) {
             pickDevice()
         } else {
-            requestPermissions(BtPermissions.required(), REQ_BT_PERMISSION)
+            requestPermissions(BtPermissions.required() + BtPermissions.storage(), REQ_BT_PERMISSION)
         }
     }
 
@@ -342,6 +381,10 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     }
 
     override fun onLiveData(data: ObdManager.LiveData) {
+        if (focusMode) {
+            updateFocusValue(data)
+            return
+        }
         data.rpm?.let { rpmGauge.setValue(it.toFloat()) }
         data.speed?.let { speedGauge.setValue(unitSystem.speed(it.toFloat())) }
         data.coolant?.let { tempGauge.setValue(unitSystem.temp(it.toFloat())) }
@@ -360,6 +403,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
         updateUnitBtn()
         applyUnitToGauges()
         renderTiles()
+        if (focusMode) applyFocusGauge(focusKey)
     }
 
     private fun updateUnitBtn() {
@@ -641,6 +685,88 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
                 }
             )
         )
+    }
+
+    // ===== 精簡模式（單一數據快速讀取） =====
+
+    private fun switchFocus(key: String) {
+        focusKey = key
+        if (focusMode) {
+            obd.setFocusKey(key)
+            applyFocusGauge(key)
+        }
+    }
+
+    private fun toggleMode() {
+        focusMode = !focusMode
+        if (focusMode) {
+            obd.setFocusKey(focusKey)
+            applyFocusGauge(focusKey)
+            extendedContainer.visibility = View.GONE
+            focusButtonRow.visibility = View.VISIBLE
+            toggleModeBtn.text = getString(R.string.monitor_full_display)
+        } else {
+            obd.setFocusKey(null)
+            applyFocusGauge("rpm")
+            extendedContainer.visibility = View.VISIBLE
+            focusButtonRow.visibility = View.GONE
+            toggleModeBtn.text = getString(R.string.monitor_focus_display)
+            renderTiles()
+        }
+    }
+
+    /** 依精簡模式選項調整主錶標題／顏色／單位／範圍（focusKey 變數由呼叫端維護） */
+    private fun applyFocusGauge(key: String) {
+        val imperial = unitSystem == UnitSystem.IMPERIAL
+        when (key) {
+            "speed" -> {
+                focusTitle.text = getString(R.string.obd_speed)
+                rpmGauge.setColor(0xFFF1C40F.toInt())
+                rpmGauge.setUnit(unitSystem.speedUnit())
+                rpmGauge.setRange(maxValue = if (imperial) 124f else 200f)
+            }
+            "coolant" -> {
+                focusTitle.text = getString(R.string.obd_temp)
+                rpmGauge.setColor(0xFFE74C3C.toInt())
+                rpmGauge.setUnit(unitSystem.tempUnit())
+                rpmGauge.setRange(
+                    maxValue = if (imperial) 284f else 140f,
+                    redFromValue = if (imperial) 230f else 110f,
+                )
+            }
+            "voltage" -> {
+                focusTitle.text = getString(R.string.obd_voltage)
+                rpmGauge.setColor(0xFF3498DB.toInt())
+                rpmGauge.setUnit("V")
+                rpmGauge.setRange(maxValue = 16f, redBelowValue = 11.5f)
+            }
+            else -> {
+                focusTitle.text = getString(R.string.obd_rpm)
+                rpmGauge.setColor(0xFF2ECC71.toInt())
+                rpmGauge.setUnit("RPM")
+                rpmGauge.setRange(maxValue = 12000f, redFromValue = 9000f)
+            }
+        }
+        updateFocusButtons(key)
+    }
+
+    private fun updateFocusButtons(key: String) {
+        fun mark(btn: Button, selected: Boolean) {
+            btn.setBackgroundResource(if (selected) R.drawable.bg_button else R.drawable.bg_card)
+        }
+        mark(focusRpmBtn, key == "rpm")
+        mark(focusSpeedBtn, key == "speed")
+        mark(focusCoolantBtn, key == "coolant")
+        mark(focusVoltageBtn, key == "voltage")
+    }
+
+    private fun updateFocusValue(data: ObdManager.LiveData) {
+        when (focusKey) {
+            "speed" -> data.speed?.let { rpmGauge.setValue(unitSystem.speed(it.toFloat())) }
+            "coolant" -> data.coolant?.let { rpmGauge.setValue(unitSystem.temp(it.toFloat())) }
+            "voltage" -> data.voltage?.let { rpmGauge.setValue(it) }
+            else -> data.rpm?.let { rpmGauge.setValue(it.toFloat()) }
+        }
     }
 
     private fun setupGauges() {

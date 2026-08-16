@@ -140,6 +140,35 @@ class ObdManager(
     @Volatile
     private var protocolNumber: Int? = null
 
+    /** 分號批次是否已知不支援（慢速協定或曾整批無回應/回 '?'）：true 後全部改逐個查詢 */
+    @Volatile
+    private var batchDisabled = false
+
+    /** 暫停即時數據輪詢（診斷讀取期間避免與輪詢搶同一 socket，拖慢讀取） */
+    @Volatile
+    private var pollingPaused = false
+
+    /** 暫停即時數據輪詢；與 [resumePolling] 成對使用 */
+    fun pausePolling() {
+        pollingPaused = true
+    }
+
+    /** 恢復即時數據輪詢 */
+    fun resumePolling() {
+        pollingPaused = false
+    }
+
+    /** 執行 [block] 期間暫停輪詢，結束後還原（供診斷讀取使用） */
+    private inline fun <T> withPollingPaused(block: () -> T): T {
+        val wasPaused = pollingPaused
+        pollingPaused = true
+        try {
+            return block()
+        } finally {
+            pollingPaused = wasPaused
+        }
+    }
+
     /** 是否為 UDS 車款（ISO 14229）：以 22F400 探測成功後啟用 22F4/22F8 DID 讀取 */
     @Volatile
     private var udsMode = false
@@ -194,6 +223,7 @@ class ObdManager(
     private var pollTick = 0
     private var lastVoltage: Float? = null
     private var lastIntake: Int? = null
+    private var lastLoad: Int? = null
     private var lastMaf: Float? = null
     private var lastFuelRate: Float? = null
     private var lastTorqueNm: Float? = null
@@ -208,6 +238,12 @@ class ObdManager(
     private var lastAmbientTemp: Int? = null
     private var lastOilTemp: Int? = null
     private var lastCustom: Map<Long, Float?> = emptyMap()
+
+    /** 精簡模式：非 null 時每輪只讀取單一數據（"rpm"/"speed"/"coolant"/"voltage"） */
+    private var focusKey: String? = null
+
+    /** 最後一筆完整快照：精簡模式下其餘欄位沿用此基底，切換顯示不會閃空 */
+    private var lastFullLiveData: LiveData? = null
 
     // ===== 歷史數據 ring buffer（key 與 MonitorTiles 一致） =====
     private val history = mutableMapOf<String, ArrayDeque<Float>>()
@@ -478,12 +514,17 @@ class ObdManager(
      * ATDPN 失敗時以 `01 00` 探測回應的格式兜底推斷（KWP 帶 3-byte header、CAN 回 `41 00 …`）。
      */
     private fun detectProtocolNumber(): Int? {
-        val dpn = sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)
+        val raw = sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)
             ?.let { lastLine(it) }
             ?.trim()
             ?.split(Regex("\\s+"))
             ?.firstOrNull()
-            ?.toIntOrNull(16)
+        // ELM327 自動協定（ATSP0）下 ATDPN 回 A5（A=auto、5=ISO 14230-4 KWP）等；
+        // 需去掉 'A' 前綴再解讀，否則 A5 會被誤判成 165，導致 KWP 不被當慢速協定而仍發批次。
+        val dpn = raw?.let { s ->
+            val body = if (s.length > 1 && s.startsWith("A", ignoreCase = true)) s.substring(1) else s
+            body.toIntOrNull(10) ?: body.toIntOrNull(16)
+        }
         if (dpn != null) return dpn
         val probe = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SUPPORTED)
             ?: return null
@@ -799,6 +840,12 @@ class ObdManager(
         customPids = pids
     }
 
+    /** 設定精簡模式：每輪只輪詢指定單一數據（key 為 "rpm"/"speed"/"coolant"/"voltage"；null 恢復完整輪詢）。 */
+    fun setFocusKey(key: String?) {
+        if (key != null && key != "rpm" && key != "speed" && key != "coolant" && key != "voltage") return
+        focusKey = key
+    }
+
     private fun startPolling() {
         pollJob?.cancel()
         pollJob = ioScope.launch {
@@ -806,6 +853,10 @@ class ObdManager(
             else ObdConstants.POLL_INTERVAL_MS
             var consecutiveFailures = 0
             while (isActive) {
+                if (pollingPaused) {
+                    delay(100)
+                    continue
+                }
                 if (!isConnected()) break
                 val started = System.currentTimeMillis()
                 val data = requestLiveData()
@@ -815,12 +866,21 @@ class ObdManager(
                         .any { it != null }
                     if (hasValue) {
                         consecutiveFailures = 0
-                        // 自適應間隔：單次輪詢耗時逼近目前間隔時放大，避免指令堆疊；
-                        // 餘裕充足時緩慢縮小，但不低於基準間隔。
-                        intervalMs = if (elapsed > intervalMs * 0.8) {
-                            (elapsed * 1.5).toLong().coerceAtMost(ObdConstants.POLL_INTERVAL_MS * 4)
+                        intervalMs = if (focusKey != null) {
+                            // 精簡模式僅查單一數據，間隔壓到最短讓更新貼近即時
+                            if (isSlowProtocol) 60L else 120L
+                        } else if (isSlowProtocol) {
+                            // KWP/ISO9141 已停用合併批次、逐個查詢，指令不會堆疊；
+                            // 間隔維持短值，讓轉速/車速/水溫/電壓貼近即時更新
+                            elapsed.coerceAtMost(300)
                         } else {
-                            (intervalMs * 0.9).toLong().coerceAtLeast(ObdConstants.POLL_INTERVAL_MS)
+                            // 自適應間隔：單次輪詢耗時逼近目前間隔時放大，避免指令堆疊；
+                            // 餘裕充足時緩慢縮小，但不低於基準間隔。
+                            if (elapsed > intervalMs * 0.8) {
+                                (elapsed * 1.5).toLong().coerceAtMost(ObdConstants.POLL_INTERVAL_MS * 4)
+                            } else {
+                                (intervalMs * 0.9).toLong().coerceAtLeast(ObdConstants.POLL_INTERVAL_MS)
+                            }
                         }
                     } else {
                         // 整輪無任何數據 → 退避
@@ -857,42 +917,55 @@ class ObdManager(
                     ?.let { ObdDecoder.normalizeUdsResponse(it, targetMode = 0x41) }
             }
         }
+        // 慢速協定（KWP/ISO9141）或已知批次不支援：直接逐個查詢，
+        // 避免 `01 0C 0D 05 04` 這類合併指令整批 NO_RESPONSE 白等約 2 秒。
+        if (isSlowProtocol || batchDisabled) {
+            return pids.associateWith { sendCommand(mode + it) }
+        }
         val cmd = listOf(mode) + pids
         val raw = sendRawCommand(cmd.joinToString(" "))
         val parsed = raw?.let { ObdDecoder.parseMode01Batch(it, mode.toInt(16)) }.orEmpty()
-        return pids.associateWith { pid ->
+        val result = pids.associateWith { pid ->
             parsed[pid] ?: sendCommand(mode + pid)
         }
+        // 整批無回應或 ELM 回 '?'：批次無效，之後停用避免反覆白等
+        if (raw.isNullOrBlank() || raw.trim() == "?") batchDisabled = true
+        return result
     }
 
     fun requestLiveData(): LiveData? {
         if (demoMode) return simulateLiveData().also { recordHistory(it) }
         if (!isConnected()) return null
+        val focus = focusKey
+        if (focus != null) {
+            val focused = readFocused(focus)
+            if (focused != null) return focused
+            // 尚未有完整快照基底時，先跑一輪完整讀取建立基底，之後維持精簡讀取
+        }
         val tick = ++pollTick
         // 慢速協定（KWP/ISO9141）將 medium/slow 分層的週期加倍，降低單輪指令數避免堆疊
         val cycle = if (isSlowProtocol) 2 else 1
         val medium = tick % (2 * cycle) == 1
         val slow = tick % (4 * cycle) == 1
-        // 核心 PID（轉速/車速/水溫/負載）每 tick 批次取回
+        // 核心 PID（轉速/車速/水溫）每 tick 取回；負載移至 medium 層，縮短每輪往返讓核心數值更新更快
         val core = sendBatchMode01(
             buildList {
                 add(ObdConstants.PID_RPM)
                 add(ObdConstants.PID_SPEED)
                 add(ObdConstants.PID_COOLANT)
-                if (isPidSupported(ObdConstants.PID_LOAD)) add(ObdConstants.PID_LOAD)
             }
         )
         val rpm = core[ObdConstants.PID_RPM]?.let { ObdDecoder.rpm(it) }
         val speed = core[ObdConstants.PID_SPEED]?.let { ObdDecoder.speed(it) }
         val coolant = core[ObdConstants.PID_COOLANT]?.let { ObdDecoder.coolantTemp(it) }
-        val load = core[ObdConstants.PID_LOAD]?.let { ObdDecoder.engineLoad(it) }
-        val voltage = if (medium) {
-            sendCommand(ObdConstants.CMD_VOLTAGE)
-                ?.let { ObdDecoder.voltage(it) }?.also { lastVoltage = it }
-        } else lastVoltage
+        // 電壓（ATRV）每 tick 讀取，維持電壓即時更新
+        val voltage = sendCommand(ObdConstants.CMD_VOLTAGE)
+            ?.let { ObdDecoder.voltage(it) }?.also { lastVoltage = it }
+            ?: lastVoltage
         // medium 層 PID 批次取回（以支援清單過濾）
         val mediumResponses = if (medium) sendBatchMode01(
             buildList {
+                if (isPidSupported(ObdConstants.PID_LOAD)) add(ObdConstants.PID_LOAD)
                 if (isPidSupported(ObdConstants.PID_INTAKE)) add(ObdConstants.PID_INTAKE)
                 if (isPidSupported(ObdConstants.PID_MAF)) add(ObdConstants.PID_MAF)
                 if (isPidSupported(ObdConstants.PID_FUEL_RATE)) add(ObdConstants.PID_FUEL_RATE)
@@ -903,6 +976,8 @@ class ObdManager(
                 if (isPidSupported(ObdConstants.PID_MODULE_VOLTAGE)) add(ObdConstants.PID_MODULE_VOLTAGE)
             }
         ) else emptyMap()
+        val load = mediumResponses[ObdConstants.PID_LOAD]?.let { ObdDecoder.engineLoad(it) }
+            ?.also { lastLoad = it } ?: lastLoad
         val intake = mediumResponses[ObdConstants.PID_INTAKE]?.let { ObdDecoder.intakeTemp(it) }
             ?.also { lastIntake = it } ?: lastIntake
         val maf = mediumResponses[ObdConstants.PID_MAF]?.let { ObdDecoder.maf(it) }
@@ -969,7 +1044,25 @@ class ObdManager(
             fuelTrimLong = fuelTrimLong,
             ambientTemp = ambientTemp,
             oilTemp = oilTemp,
-        ).also { recordHistory(it) }
+        ).also { recordHistory(it) }.also { lastFullLiveData = it }
+    }
+
+    /** 精簡模式：只查詢單一數據並更新對應欄位，其餘欄位沿用最後一筆完整快照。 */
+    private fun readFocused(key: String): LiveData? {
+        if (!isConnected()) return null
+        val base = lastFullLiveData ?: return null
+        val updated = when (key) {
+            "rpm" -> sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_RPM)
+                ?.let { base.copy(rpm = ObdDecoder.rpm(it)) }
+            "speed" -> sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SPEED)
+                ?.let { base.copy(speed = ObdDecoder.speed(it)) }
+            "coolant" -> sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_COOLANT)
+                ?.let { base.copy(coolant = ObdDecoder.coolantTemp(it)) }
+            "voltage" -> sendCommand(ObdConstants.CMD_VOLTAGE)
+                ?.let { base.copy(voltage = ObdDecoder.voltage(it)) }
+            else -> null
+        } ?: return null
+        return updated.also { recordHistory(it) }
     }
 
     private fun readCustomPids(): Map<Long, Float?> =
@@ -1030,13 +1123,15 @@ class ObdManager(
             )
         }
         if (!isConnected()) return null
-        return ConnectionDiag(
-            version = sendCommand(ObdConstants.CMD_INFO)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
-            deviceDesc = sendCommand(ObdConstants.CMD_DEVICE_DESC)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
-            voltage = sendCommand(ObdConstants.CMD_VOLTAGE)?.let { ObdDecoder.voltage(it) },
-            protocol = sendCommand(ObdConstants.CMD_DESCRIBE_PROTOCOL)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
-            protocolNumber = sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
-        )
+        return withPollingPaused {
+            ConnectionDiag(
+                version = sendCommand(ObdConstants.CMD_INFO)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+                deviceDesc = sendCommand(ObdConstants.CMD_DEVICE_DESC)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+                voltage = sendCommand(ObdConstants.CMD_VOLTAGE)?.let { ObdDecoder.voltage(it) },
+                protocol = sendCommand(ObdConstants.CMD_DESCRIBE_PROTOCOL)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+                protocolNumber = sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+            )
+        }
     }
 
     /**
@@ -1068,10 +1163,18 @@ class ObdManager(
             )
         }
         if (!isConnected()) return null
-        val trigger = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_FREEZE_DTC)
-            ?.let { ObdDecoder.freezeDtc(it) }
+        return withPollingPaused {
+        val triggerRaw = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_FREEZE_DTC)
+        // 觸發碼回應非「41」前綴（log 實例：`0102 -> 10 C5`）代表該車不支援凍結框，
+        // 後續 19 個 02xx PID 也只會回無效回應，直接中止讀取
+        if (triggerRaw == null || !triggerRaw.trim().startsWith("41")) {
+            ObdLog.log("freeze frame trigger 回應無效（${triggerRaw?.trim() ?: "無回應"}），跳過凍結框讀取")
+            return null
+        }
+        val trigger = ObdDecoder.freezeDtc(triggerRaw)
         val intPids = ObdConstants.FREEZE_FRAME_PIDS.map { it.first }
         val intResponses = sendBatchMode01(intPids, mode = ObdConstants.MODE_FREEZE_FRAME)
+        if (intResponses.values.none { it != null }) return null
         val values = ObdConstants.FREEZE_FRAME_PIDS.associate { (pid, labelRes) ->
             labelRes to when (pid) {
                 ObdConstants.PID_COOLANT -> intResponses[pid]?.let { ObdDecoder.coolantTemp(it) }
@@ -1098,6 +1201,7 @@ class ObdManager(
             }
         }
         return FreezeFrame(trigger, values, floatValues)
+        }
     }
 
     /** I/M 排放就緒狀態（mode 01 PID 01） */
@@ -1106,42 +1210,50 @@ class ObdManager(
             return ObdDecoder.imReadiness("41 01 01 07 05 07 01")
         }
         if (!isConnected()) return null
-        val resp = sendPidRequest(ObdConstants.PID_STATUS)
-        return resp?.let { ObdDecoder.imReadiness(it) }
+        return withPollingPaused {
+            val resp = sendPidRequest(ObdConstants.PID_STATUS)
+            resp?.let { ObdDecoder.imReadiness(it) }
+        }
     }
 
     /** 車身 VIN（mode 09 PID 02）；長回應可能為 ISO-TP 多幀，故使用完整回應 */
     fun readVin(): String? {
         if (demoMode) return "MOTODIAG-DEMO-VIN-0001"
         if (!isConnected()) return null
-        val cmd = mode09Command("02")
-        val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.vin(it) } }
-        var result = decode(sendRawCommand(cmd))
-        if (result == null && udsMode) {
-            result = withExtendedSession { decode(sendRawCommand(cmd)) }
+        return withPollingPaused {
+            val cmd = mode09Command("02")
+            val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.vin(it) } }
+            var result = decode(sendRawCommand(cmd))
+            if (result == null && udsMode) {
+                result = withExtendedSession { decode(sendRawCommand(cmd)) }
+            }
+            result
         }
-        return result
     }
 
     /** 校正 ID（mode 09 PID 0A）；長回應可能為 ISO-TP 多幀，故使用完整回應 */
     fun readCalibrationId(): String? {
         if (demoMode) return "MOTODIAG-DEMO-CALID"
         if (!isConnected()) return null
-        val cmd = mode09Command("0A")
-        val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.calibrationId(it) } }
-        var result = decode(sendRawCommand(cmd))
-        if (result == null && udsMode) {
-            result = withExtendedSession { decode(sendRawCommand(cmd)) }
+        return withPollingPaused {
+            val cmd = mode09Command("0A")
+            val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.calibrationId(it) } }
+            var result = decode(sendRawCommand(cmd))
+            if (result == null && udsMode) {
+                result = withExtendedSession { decode(sendRawCommand(cmd)) }
+            }
+            result
         }
-        return result
     }
 
     /** 校驗號碼（mode 09 PID 0B） */
     fun readCvn(): String? {
         if (demoMode) return "ABCD1234"
         if (!isConnected()) return null
-        val resp = sendCommand(mode09Command("0B"))
-        return resp?.let { mode09Decode(it) }?.let { ObdDecoder.cvn(it) }
+        return withPollingPaused {
+            val resp = sendCommand(mode09Command("0B"))
+            resp?.let { mode09Decode(it) }?.let { ObdDecoder.cvn(it) }
+        }
     }
 
     /** ECU 名稱（mode 09 PID 0D）；長回應可能為 ISO-TP 多幀，故使用完整回應 */
@@ -1279,7 +1391,15 @@ class ObdManager(
         val result = mutableListOf<MonitorTest>()
         for (tid in ObdConstants.MONITOR_TEST_TIDS) {
             val resp = sendCommand(ObdConstants.MODE_MONITOR_TESTS + tid)
-            resp?.let { result += ObdDecoder.monitorTests(it) }
+            if (resp != null) {
+                // 回應非「46」前綴（負回應／無效）代表該車不支援此監控族群，
+                // 其餘 TID 也是相同回應，直接中止掃描節省通訊時間
+                if (!resp.trim().startsWith("46")) {
+                    ObdLog.log("mode06 TID $tid 回應非 46 前綴（${resp.trim()}），中止剩餘掃描")
+                    break
+                }
+                result += ObdDecoder.monitorTests(resp)
+            }
         }
         return result
     }
@@ -1301,7 +1421,15 @@ class ObdManager(
         val result = mutableListOf<O2Test>()
         for (pid in ObdConstants.O2_TEST_PIDS) {
             val resp = sendCommand(ObdConstants.MODE_O2_TEST + pid)
-            resp?.let { result += ObdDecoder.o2Tests(it) }
+            if (resp != null) {
+                // 回應非「45」前綴（負回應／無效）代表該車不支援 mode 05 氧感測器測試，
+                // 其餘 PID 也會回相同回應，直接中止掃描
+                if (!resp.trim().startsWith("45")) {
+                    ObdLog.log("mode05 PID $pid 回應非 45 前綴（${resp.trim()}），中止剩餘掃描")
+                    break
+                }
+                result += ObdDecoder.o2Tests(resp)
+            }
         }
         return result
     }
@@ -1344,24 +1472,30 @@ class ObdManager(
     fun readDtc(): List<String> {
         if (demoMode) return listOf("P0300", "P0135")
         if (!isConnected()) return emptyList()
-        val resp = sendCommandWithPendingRetry(ObdConstants.MODE_DTC) ?: return emptyList()
-        return ObdDecoder.dtcList(resp, protocolNumber = protocolNumber)
+        return withPollingPaused {
+            val resp = sendCommandWithPendingRetry(ObdConstants.MODE_DTC) ?: return emptyList()
+            ObdDecoder.dtcList(resp, protocolNumber = protocolNumber)
+        }
     }
 
     /** 待處理故障碼（mode 07）：尚未確立的間歇性故障 */
     fun readPendingDtc(): List<String> {
         if (demoMode) return listOf("P0301")
         if (!isConnected()) return emptyList()
-        val resp = sendCommandWithPendingRetry(ObdConstants.MODE_PENDING_DTC) ?: return emptyList()
-        return ObdDecoder.dtcList(resp, modeByte = 0x47, protocolNumber = protocolNumber)
+        return withPollingPaused {
+            val resp = sendCommandWithPendingRetry(ObdConstants.MODE_PENDING_DTC) ?: return emptyList()
+            ObdDecoder.dtcList(resp, modeByte = 0x47, protocolNumber = protocolNumber)
+        }
     }
 
     /** 永久故障碼（mode 0A）：清除後仍存在的排放相關故障 */
     fun readPermanentDtc(): List<String> {
         if (demoMode) return emptyList()
         if (!isConnected()) return emptyList()
-        val resp = sendCommandWithPendingRetry(ObdConstants.MODE_PERMANENT_DTC) ?: return emptyList()
-        return ObdDecoder.dtcList(resp, modeByte = 0x4A, protocolNumber = protocolNumber)
+        return withPollingPaused {
+            val resp = sendCommandWithPendingRetry(ObdConstants.MODE_PERMANENT_DTC) ?: return emptyList()
+            ObdDecoder.dtcList(resp, modeByte = 0x4A, protocolNumber = protocolNumber)
+        }
     }
 
     /**
@@ -1402,24 +1536,27 @@ class ObdManager(
             lastClearErrorMsg = null
             return false
         }
-        repeat(ObdConstants.CLEAR_DTC_ATTEMPTS) {
-            val resp = sendCommand(ObdConstants.MODE_CLEAR_DTC, ObdConstants.CLEAR_DTC_TIMEOUT_MS)
-            val reason = clearFailureReason(resp, service = 0x04)
-            if (reason == null) {
-                lastClearErrorMsg = null
-                return true
+        return withPollingPaused {
+            repeat(ObdConstants.CLEAR_DTC_ATTEMPTS) {
+                val resp = sendCommand(ObdConstants.MODE_CLEAR_DTC, ObdConstants.CLEAR_DTC_TIMEOUT_MS)
+                val reason = clearFailureReason(resp, service = 0x04)
+                if (reason == null) {
+                    lastClearErrorMsg = null
+                    return true
+                }
+                lastClearErrorMsg = reason
+                Thread.sleep(ObdConstants.CLEAR_DTC_RETRY_DELAY_MS)
             }
-            lastClearErrorMsg = reason
-            Thread.sleep(ObdConstants.CLEAR_DTC_RETRY_DELAY_MS)
+            val uds = sendCommand(ObdConstants.MODE_CLEAR_DTC_UDS, ObdConstants.CLEAR_DTC_TIMEOUT_MS)
+            val udsReason = clearFailureReason(uds, service = 0x14)
+            if (udsReason == null) {
+                lastClearErrorMsg = null
+                true
+            } else {
+                lastClearErrorMsg = udsReason
+                false
+            }
         }
-        val uds = sendCommand(ObdConstants.MODE_CLEAR_DTC_UDS, ObdConstants.CLEAR_DTC_TIMEOUT_MS)
-        val udsReason = clearFailureReason(uds, service = 0x14)
-        if (udsReason == null) {
-            lastClearErrorMsg = null
-            return true
-        }
-        lastClearErrorMsg = udsReason
-        return false
     }
 
     /** 最近一次清碼失敗原因（null = 最近成功或尚未清碼）；供 UI 顯示有意義的錯誤訊息 */

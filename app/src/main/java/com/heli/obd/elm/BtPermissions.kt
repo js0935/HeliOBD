@@ -35,4 +35,9 @@ object BtPermissions {
         required().all {
             context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
         }
+
+    /** 寫入公開 Download 記錄檔所需的儲存權限（Android 8-9）；Android 10+ 不需權限。 */
+    fun storage(): Array<String> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) emptyArray()
+        else arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 }

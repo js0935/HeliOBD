@@ -231,7 +231,7 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         if (BtPermissions.hasAll(this)) {
             connectFlow()
         } else {
-            requestPermissions(BtPermissions.required(), REQ_BT_PERMISSION)
+            requestPermissions(BtPermissions.required() + BtPermissions.storage(), REQ_BT_PERMISSION)
         }
     }
 
