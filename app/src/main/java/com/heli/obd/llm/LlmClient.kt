@@ -13,7 +13,8 @@ import java.net.URL
 /**
  * OpenAI 相容 Chat Completions 客戶端。
  *
- * 支援任何 OpenAI 相容端點（官方、Azure、Groq、Ollama、自架 vLLM 等），
+ * 預設使用 NVIDIA NIM 端點（integrate.api.nvidia.com/v1），支援 100+ 模型。
+ * 相容任何 OpenAI 相容 API（官方、Azure、Groq、Ollama、自架 vLLM 等）。
  * 純 JVM 邏輯（無 Android 依賴），可在 JVM 上單元測試。
  */
 object LlmClient {
@@ -28,13 +29,14 @@ object LlmClient {
 
     /**
      * 送出 chat completion 請求並回傳 assistant 回覆文字。
+     * 若模型回傳 `reasoning_content` 而 `content` 為空，自動 fallback。
      * @throws LlmException 網路失敗或 API 回傳錯誤
      */
     fun chat(
         config: Config,
         systemPrompt: String,
         userPrompt: String,
-        timeoutMs: Int = 60_000,
+        timeoutMs: Int = 120_000,
     ): String {
         val url = URL(config.baseUrl.trimEnd('/') + "/chat/completions")
         val conn = url.openConnection() as HttpURLConnection
@@ -64,11 +66,16 @@ object LlmClient {
                 throw LlmException("HTTP $code: ${raw.take(300)}")
             }
             val json = JSONObject(raw)
-            return json.getJSONArray("choices")
+            val message = json.getJSONArray("choices")
                 .getJSONObject(0)
                 .getJSONObject("message")
-                .getString("content")
-                .trim()
+            // content 為空時嘗試 reasoning_content（NVIDIA NIM 推理模型）
+            val content = message.optString("content", "").trim()
+            if (content.isNotBlank()) return content
+            val reasoning = message.optString("reasoning_content", "").trim()
+                .ifBlank { message.optString("reasoning", "").trim() }
+            if (reasoning.isNotBlank()) return reasoning
+            throw LlmException("模型回傳空回應")
         } catch (e: LlmException) {
             throw e
         } catch (e: Exception) {

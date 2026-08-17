@@ -149,13 +149,13 @@
     <string name="llm_analyze_failed">AI analysis failed: %1$s</string>
     <string name="llm_not_configured">AI service is not configured. Set your API key in Settings first.</string>
     <string name="llm_section_title">AI Service</string>
-    <string name="llm_section_desc">Use any OpenAI-compatible API (official, Azure, Groq, Ollama, self-hosted vLLM…) for plain-language DTC explanations and repair advice. Data is sent only when you tap "Deep LLM Analysis".</string>
+    <string name="llm_section_desc">Use NVIDIA NIM compatible API (GLM-5.2, DeepSeek, Llama, Mistral and 100+ models) for plain-language DTC explanations and repair advice. Data is sent only when you tap "Deep LLM Analysis".</string>
     <string name="llm_base_url_label">API Base URL</string>
-    <string name="llm_base_url_hint">https://api.openai.com/v1</string>
+    <string name="llm_base_url_hint">https://integrate.api.nvidia.com/v1</string>
     <string name="llm_api_key_label">API Key</string>
-    <string name="llm_api_key_hint">sk-…</string>
+    <string name="llm_api_key_hint">nvapi-…</string>
     <string name="llm_model_label">Model</string>
-    <string name="llm_model_hint">gpt-4o-mini</string>
+    <string name="llm_model_hint">nvidia/nemotron-3-ultra-550b-a55b</string>
     <!-- Trip review -->
     <string name="trip_record_start">Start Recording</string>
     <string name="trip_record_stop">Stop Recording</string>

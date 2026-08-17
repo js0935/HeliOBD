@@ -19,6 +19,10 @@ import android.widget.TextView
 import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
 import com.heli.obd.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
 
 /**
  * OBD 終端機：手動輸入 AT / UDS / OBD 模式指令，即時顯示 ELM327 完整原始回應。
@@ -125,22 +129,20 @@ class TerminalActivity : BaseActivity() {
         appendLine("> $cmd")
         sending = true
         val busy = BusyUi.mark(sendBtn, getString(R.string.busy_sending))
-        Thread {
-            val response = obd.sendRawCommand(cmd)
-            runOnUiThread {
-                sending = false
-                busy.done()
-                if (response == null) {
-                    if (!obd.isDemoMode() && !obd.isConnected()) {
-                        appendLine(getString(R.string.terminal_not_connected), secondary = true)
-                    } else {
-                        appendLine(getString(R.string.terminal_no_response), secondary = true)
-                    }
+        lifecycleScope.launch {
+            val response = withContext(Dispatchers.IO) { obd.sendRawCommand(cmd) }
+            sending = false
+            busy.done()
+            if (response == null) {
+                if (!obd.isDemoMode() && !obd.isConnected()) {
+                    appendLine(getString(R.string.terminal_not_connected), secondary = true)
                 } else {
-                    appendLine(response)
+                    appendLine(getString(R.string.terminal_no_response), secondary = true)
                 }
+            } else {
+                appendLine(response)
             }
-        }.start()
+        }
     }
 
     private fun moveHistory(delta: Int) {

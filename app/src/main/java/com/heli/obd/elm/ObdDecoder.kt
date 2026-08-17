@@ -88,6 +88,12 @@ data class ConnectionDiag(
  */
 object ObdDecoder {
 
+    /** 空白字元正則（熱路徑共用，避免每次重新編譯） */
+    private val WS: Regex = Regex("\\s+")
+
+    /** 數值正則：整數或小數（電壓等） */
+    private val NUM = Regex("([0-9]+(?:\\.[0-9]+)?)")
+
     /** 引擎轉速（PID 0C）：A*256+B，再除以 4 → RPM */
     fun rpm(hexResponse: String): Int? {
         val bytes = parseBytes(hexResponse) ?: return null
@@ -120,7 +126,7 @@ object ObdDecoder {
 
     /** 電瓶電壓（ATRV）：`12.5V` → 12.5；失敗回傳 null */
     fun voltage(raw: String): Float? {
-        val m = Regex("([0-9]+(?:\\.[0-9]+)?)").find(raw) ?: return null
+        val m = NUM.find(raw) ?: return null
         return m.groupValues[1].toFloatOrNull()
     }
 
@@ -450,7 +456,7 @@ object ObdDecoder {
 
     /** 解析單行 hex → bytes；格式錯誤回傳 null */
     private fun parseLineBytes(line: String): IntArray? {
-        val tokens = line.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        val tokens = line.trim().split(WS).filter { it.isNotEmpty() }
         if (tokens.isEmpty()) return null
         val bytes = try {
             IntArray(tokens.size) { tokens[it].toInt(16) }
@@ -644,7 +650,7 @@ object ObdDecoder {
         val prefix = "%02X".format(modeByte)
         val result = mutableMapOf<String, String>()
         hexResponse.lines().forEach { line ->
-            val tokens = line.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+            val tokens = line.trim().split(WS).filter { it.isNotEmpty() }
             if (tokens.size < 2) return@forEach
             // ISO 9141-2 / ISO 14230-4（KWP）回應帶 3 位元組 header（如 `48 6B 10`），
             // 山寨 ELM327 常無法以 ATH0 關閉，先剝除才能匹配 `<modeByte> <PID>`。
@@ -680,7 +686,7 @@ object ObdDecoder {
         if (lines.isEmpty()) return hexResponse
         val out = mutableListOf<String>()
         for (line in lines) {
-            val tokens = line.split(Regex("\\s+")).filter { it.isNotEmpty() }
+            val tokens = line.split(WS).filter { it.isNotEmpty() }
             if (tokens.size >= 3 && tokens[0].equals("62", ignoreCase = true)) {
                 val didHi = tokens[1].toIntOrNull(16)
                 if (didHi != null && (didHi and 0xF0) == 0xF0) {
@@ -695,7 +701,7 @@ object ObdDecoder {
 
     /** 將 `41 0C 1A F8` 這類回應拆成位元組陣列；格式錯誤回傳 null */
     private fun parseBytes(hex: String): IntArray? {
-        val tokens = hex.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        val tokens = hex.trim().split(WS)
         if (tokens.isEmpty()) return null
         val bytes = try {
             IntArray(tokens.size) { tokens[it].toInt(16) }
@@ -762,7 +768,7 @@ object ObdDecoder {
      * 回傳對應的 ATDPN 協定編號：5 = ISO 14230-4 KWP、6 = ISO 15765-4 CAN 11/500、0 = 無法判斷。
      */
     fun inferProtocolFromProbe(probeResponse: String): Int {
-        val tokens = probeResponse.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        val tokens = probeResponse.trim().split(WS).filter { it.isNotEmpty() }
         if (tokens.isEmpty()) return 0
         if (isElmHeaderTokens(tokens)) return 5
         val first = tokens[0].toIntOrNull(16) ?: return 0
@@ -813,7 +819,7 @@ object ObdDecoder {
         val lines = hexResponse.lines().map { it.trim() }.filter { it.isNotEmpty() }
         for (line in lines) {
             if (line.contains("NO DATA", ignoreCase = true)) continue
-            val tokens = line.split(Regex("\\s+")).filter { it.isNotEmpty() }
+            val tokens = line.split(WS).filter { it.isNotEmpty() }
             for (i in 0..tokens.size - 3) {
                 if (!tokens[i].equals("7F", ignoreCase = true)) continue
                 val svc = tokens[i + 1].toIntOrNull(16) ?: continue

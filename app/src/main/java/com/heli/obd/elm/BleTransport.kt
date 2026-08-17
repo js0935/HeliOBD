@@ -15,11 +15,10 @@ import android.bluetooth.BluetoothDevice
 import android.os.Handler
 import android.os.Looper
 import java.util.UUID
-import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * BLE ELM327 實作：封裝 BluetoothGatt。
@@ -49,7 +48,12 @@ class BleTransport : ObdTransport {
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val data = LinkedBlockingQueue<Int>()
+
+    /** 無鎖環形緩衝區：BLE callback 為單一寫入者，IO 執行緒為單一讀取者 */
+    private val ringBuf = ByteArray(4096)
+    private val writePos = AtomicInteger(0)
+    private val readPos = AtomicInteger(0)
+
     private val isConnected = AtomicBoolean(false)
     private val closed = AtomicBoolean(false)
 
@@ -71,8 +75,7 @@ class BleTransport : ObdTransport {
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     isConnected.set(false)
                     gattState = GattState.IDLE
-                    // 喚醒可能正阻塞在 read() 的 ObdManager 讀取迴圈
-                    data.put(-1)
+                    closed.set(true)
                     serviceLatch.countDown()
                     connectedLatch.countDown()
                 }
@@ -126,7 +129,16 @@ class BleTransport : ObdTransport {
             value: ByteArray,
         ) {
             if (isConnected.get() && value.isNotEmpty()) {
-                value.forEach { data.put(it.toInt() and 0xFF) }
+                val wp = writePos.get()
+                val rp = readPos.get()
+                val free = ringBuf.size - (wp - rp)
+                val toWrite = minOf(value.size, free)
+                if (toWrite > 0) {
+                    for (i in 0 until toWrite) {
+                        ringBuf[(wp + i) % ringBuf.size] = value[i]
+                    }
+                    writePos.addAndGet(toWrite)
+                }
             }
         }
 
@@ -151,7 +163,8 @@ class BleTransport : ObdTransport {
     override fun open(target: TransportTarget): Boolean {
         val device = (target as? TransportTarget.BleBt)?.device ?: return false
         closed.set(false)
-        data.clear()
+        writePos.set(0)
+        readPos.set(0)
         isConnected.set(false)
         gattState = GattState.CONNECTING
         connectedLatch = CountDownLatch(1)
@@ -208,24 +221,21 @@ class BleTransport : ObdTransport {
     }
 
     override fun read(): Int {
-        return try {
-            val v = data.take()
-            if (v == -1) {
-                // EOF sentinel：同時確保後續 read 也立刻回 EOF
-                if (data.peek() == null) data.put(-1)
-                -1
-            } else {
-                v
+        while (true) {
+            val rp = readPos.get()
+            val wp = writePos.get()
+            if (rp < wp) {
+                val b = ringBuf[rp % ringBuf.size].toInt() and 0xFF
+                readPos.incrementAndGet()
+                return b
             }
-        } catch (_: InterruptedException) {
-            -1
+            if (closed.get()) return -1
+            // 無資料但未關閉：短暫等待 BLE callback 寫入
+            Thread.sleep(1)
         }
     }
 
-    override fun available(): Int {
-        // -1 sentinel 不計入可讀位元組數
-        return data.count { it != -1 }
-    }
+    override fun available(): Int = (writePos.get() - readPos.get()).coerceAtLeast(0)
 
     override fun close() {
         if (closed.getAndSet(true)) return
@@ -234,7 +244,6 @@ class BleTransport : ObdTransport {
         val g = gatt
         gatt = null
         writeChar = null
-        data.put(-1)
         if (g != null) {
             mainHandler.post {
                 runCatching { g.disconnect() }

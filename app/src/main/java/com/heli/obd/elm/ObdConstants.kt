@@ -13,6 +13,9 @@ import com.heli.obd.R
  */
 object ObdConstants {
 
+    /** 空白字元正則（熱路徑共用，避免每次重新編譯） */
+    val WS = Regex("\\s+")
+
     /** 藍牙 SPP（序列埠）標準 UUID */
     const val SPP_UUID = "00001101-0000-1000-8000-00805F9B34FB"
 
@@ -279,7 +282,9 @@ object ObdConstants {
     const val PID_TIMING_ADVANCE = "0E"  // 點火提前角
     const val PID_THROTTLE = "11"        // 節氣門位置
     const val PID_FUEL_LEVEL = "2F"      // 燃油油位
-    const val PID_MODULE_VOLTAGE = "42"  // 控制模組電壓
+    const val PID_MODULE_VOLTAGE = "42"    // 控制模組電壓
+    /** 核心 PID 清單（轉速/車速/水溫），輪詢每 tick 使用，避免重複 buildList */
+    val CORE_PIDS = listOf(PID_RPM, PID_SPEED, PID_COOLANT)
     const val PID_AMBIENT_TEMP = "46"    // 環境溫度
     const val PID_OIL_TEMP = "5C"        // 引擎機油溫度
 
@@ -309,6 +314,12 @@ object ObdConstants {
 
     /** 慢速協定（ISO 9141-2 / ISO 14230-4 KWP）的輪詢基準間隔（毫秒）：單次往返耗時長，間隔太密易堆疊指令 */
     const val POLL_INTERVAL_MS_SLOW = 1000L
+
+    /**
+     * 連續無 OBD PID 數據（全部回 NO DATA / 無回應）的次數上限；超過後暫停輪詢並通知 UI。
+     * KWP 單次往返約 200-300ms，10 次 ≈ 2-3 秒無數據即判定 ECU 離線。
+     */
+    const val MAX_PID_FAILURES = 10
 
     /** ATDPN 協定編號 → 慢速串列協定（逐指令往返耗時長，需降低輪詢頻率） */
     val SLOW_PROTOCOL_NUMBERS = setOf(3, 4, 5) // 3=ISO 9141-2、4/5=ISO 14230-4 KWP
@@ -385,7 +396,7 @@ object ObdConstants {
 
     /** KWP 負回應是否為 response pending（0x7F <service> 0x78） */
     fun isKwpResponsePending(resp: String): Boolean {
-        val tokens = resp.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        val tokens = resp.trim().split(WS).filter { it.isNotEmpty() }
         return tokens.size >= 3 &&
             tokens[0].equals("7F", ignoreCase = true) &&
             tokens[2].equals("78", ignoreCase = true)

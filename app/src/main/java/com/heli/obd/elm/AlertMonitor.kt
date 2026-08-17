@@ -58,6 +58,13 @@ object AlertMonitor {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
 
+    /** 快取 SharedPreferences 與閾值，避免每 500ms 重複查找 */
+    private var cachedPrefs: android.content.SharedPreferences? = null
+    private var cachedEnabled = false
+    private var cachedCoolantMax = 110
+    private var cachedRpmMax = 9000
+    private var cachedVoltageMin = 11.5f
+
     private val listener = object : ObdManager.Listener {
         override fun onStateChanged(state: ObdManager.State) {}
 
@@ -70,6 +77,7 @@ object AlertMonitor {
         if (attached) return
         attached = true
         context = appContext.applicationContext
+        reloadPrefs()
         obd.addListener(listener)
     }
 
@@ -80,31 +88,39 @@ object AlertMonitor {
         context = null
     }
 
-    private fun checkValues(data: ObdManager.LiveData) {
+    private fun reloadPrefs() {
         val ctx = context ?: return
-        val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        if (!prefs.getBoolean(KEY_ENABLED, false)) return
+        val p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        cachedPrefs = p
+        cachedEnabled = p.getBoolean(KEY_ENABLED, false)
+        cachedCoolantMax = p.getInt(KEY_COOLANT_MAX, 110)
+        cachedRpmMax = p.getInt(KEY_RPM_MAX, 9000)
+        cachedVoltageMin = p.getFloat(KEY_VOLTAGE_MIN, 11.5f)
+    }
+
+    private fun checkValues(data: ObdManager.LiveData) {
+        if (!cachedEnabled) return
 
         val now = System.currentTimeMillis()
 
         data.coolant?.let { coolant ->
-            val max = prefs.getInt(KEY_COOLANT_MAX, 110)
-            if (coolant > max && now - lastCoolantAlert > ALERT_COOLDOWN_MS) {
+            if (coolant > cachedCoolantMax && now - lastCoolantAlert > ALERT_COOLDOWN_MS) {
                 lastCoolantAlert = now
+                val ctx = context ?: return
                 alert(ctx, ctx.getString(R.string.alert_msg_coolant, coolant))
             }
         }
         data.rpm?.let { rpm ->
-            val max = prefs.getInt(KEY_RPM_MAX, 9000)
-            if (rpm > max && now - lastRpmAlert > ALERT_COOLDOWN_MS) {
+            if (rpm > cachedRpmMax && now - lastRpmAlert > ALERT_COOLDOWN_MS) {
                 lastRpmAlert = now
+                val ctx = context ?: return
                 alert(ctx, ctx.getString(R.string.alert_msg_rpm, rpm))
             }
         }
         data.voltage?.let { voltage ->
-            val min = prefs.getFloat(KEY_VOLTAGE_MIN, 11.5f)
-            if (voltage < min && now - lastVoltageAlert > ALERT_COOLDOWN_MS) {
+            if (voltage < cachedVoltageMin && now - lastVoltageAlert > ALERT_COOLDOWN_MS) {
                 lastVoltageAlert = now
+                val ctx = context ?: return
                 alert(ctx, ctx.getString(R.string.alert_msg_voltage, "%.1f".format(voltage)))
             }
         }
@@ -171,8 +187,7 @@ object AlertMonitor {
     }
 
     private fun speak(ctx: Context, message: String) {
-        val voiceEnabled = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_VOICE, true)
+        val voiceEnabled = cachedPrefs?.getBoolean(KEY_VOICE, true) ?: true
         if (!voiceEnabled) return
         runCatching {
             if (tts == null) {

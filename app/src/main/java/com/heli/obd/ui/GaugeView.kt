@@ -35,6 +35,13 @@ class GaugeView @JvmOverloads constructor(
     private var hasValue = false
     private var customColor: Int? = null
 
+    /** 快取的顏色值（避免每次 onDraw 都呼叫 ContextCompat.getColor） */
+    private var colorPrimary = 0
+    private var colorDanger = 0
+    private var colorTextPrimary = 0
+    private var colorTextSecondary = 0
+    private var colorSurfaceAlt = 0
+
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
@@ -65,6 +72,14 @@ class GaugeView @JvmOverloads constructor(
     private val minorTickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
+    }
+
+    init {
+        colorPrimary = colorRes(R.color.primary)
+        colorDanger = colorRes(R.color.danger)
+        colorTextPrimary = colorRes(R.color.text_primary)
+        colorTextSecondary = colorRes(R.color.text_secondary)
+        colorSurfaceAlt = colorRes(R.color.surface_alt)
     }
 
     private val startAngle = 135f
@@ -122,10 +137,10 @@ class GaugeView @JvmOverloads constructor(
         val stroke = if (isLarge()) dp(14f) else dp(10f)
         val radius = minOf(width, height) / 2f - stroke / 2f - dp(4f)
 
-        val primary = customColor ?: colorRes(R.color.primary)
-        val danger = colorRes(R.color.danger)
-        val textPrimary = colorRes(R.color.text_primary)
-        val textSecondary = colorRes(R.color.text_secondary)
+        val primary = customColor ?: colorPrimary
+        val danger = colorDanger
+        val textPrimary = colorTextPrimary
+        val textSecondary = colorTextSecondary
 
         trackPaint.strokeWidth = stroke
         arcPaint.strokeWidth = stroke
@@ -134,7 +149,7 @@ class GaugeView @JvmOverloads constructor(
         majorTickPaint.strokeWidth = dp(2f)
         minorTickPaint.strokeWidth = dp(1f)
 
-        trackPaint.color = colorRes(R.color.surface_alt)
+        trackPaint.color = colorSurfaceAlt
         pointerPaint.color = customColor ?: textPrimary
         valuePaint.color = customColor ?: textPrimary
         unitPaint.color = textSecondary

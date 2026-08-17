@@ -41,9 +41,11 @@ class HudActivity : BaseActivity(), ObdManager.Listener {
     private lateinit var demoBtn: TextView
 
     private val clockHandler = Handler(Looper.getMainLooper())
+    private val clockFormat = lazy { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     private val clockTick = object : Runnable {
         override fun run() {
-            clockText.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            val now = System.currentTimeMillis()
+            clockText.text = clockFormat.value.format(Date(now))
             clockHandler.postDelayed(this, 1000)
         }
     }

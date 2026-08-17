@@ -72,6 +72,8 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     private lateinit var tileScroll: ScrollView
     private val tileViews = mutableMapOf<String, TextView>()
     private var customPids: List<PidStore.CustomPid> = emptyList()
+    /** 快取的 Tile 列表，避免每次輪詢重建（每 500ms 一次） */
+    private var cachedTiles: List<MonitorTiles.Tile>? = null
     private var unitSystem = UnitSystem.METRIC
     private var currentPage = 0
     private var enabledKeys = linkedSetOf<String>()
@@ -448,7 +450,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     private fun renderTiles() {
         tileContainer.removeAllViews()
         tileViews.clear()
-        val tiles = MonitorTiles.builtin(this) + MonitorTiles.custom(customPids)
+        val tiles = cachedTiles ?: (MonitorTiles.builtin(this) + MonitorTiles.custom(customPids)).also { cachedTiles = it }
         enabledKeys = MonitorTiles.loadEnabled(this)
         val shown = tiles.filter { it.key in enabledKeys }
         val pages = (shown.size + PAGE_SIZE - 1) / PAGE_SIZE
@@ -623,7 +625,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     }
 
     private fun updateTiles(data: ObdManager.LiveData) {
-        val tiles = MonitorTiles.builtin(this) + MonitorTiles.custom(customPids)
+        val tiles = cachedTiles ?: (MonitorTiles.builtin(this) + MonitorTiles.custom(customPids)).also { cachedTiles = it }
         tiles.forEach { tile ->
             tileViews[tile.key]?.let { tv ->
                 tv.text = tile.valueOf(unitSystem, data)?.let { formatValue(it) } ?: "—"

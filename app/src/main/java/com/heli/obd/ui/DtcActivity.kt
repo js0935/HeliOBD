@@ -106,20 +106,24 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         }
         statusText.text = getString(R.string.obd_connecting)
         lifecycleScope.launch {
-            val codes = withContext(Dispatchers.IO) { obd.readDtc() }
-            val pending = withContext(Dispatchers.IO) { obd.readPendingDtc() }
-            val permanent = withContext(Dispatchers.IO) { obd.readPermanentDtc() }
-            freezeFrame = withContext(Dispatchers.IO) { obd.readFreezeFrame() }
-            imReadiness = withContext(Dispatchers.IO) { obd.readImReadiness() }
-            vin = withContext(Dispatchers.IO) { obd.readVin() }
-            calid = withContext(Dispatchers.IO) { obd.readCalibrationId() }
-            cvn = withContext(Dispatchers.IO) { obd.readCvn() }
-            monitorTests = withContext(Dispatchers.IO) { obd.readMonitorTests() }
-            descOverrides = withContext(Dispatchers.IO) {
+            val codes: List<String>
+            val pending: List<String>
+            val permanent: List<String>
+            withContext(Dispatchers.IO) {
+                codes = obd.readDtc()
+                pending = obd.readPendingDtc()
+                permanent = obd.readPermanentDtc()
+                freezeFrame = obd.readFreezeFrame()
+                imReadiness = obd.readImReadiness()
+                vin = obd.readVin()
+                calid = obd.readCalibrationId()
+                cvn = obd.readCvn()
+                monitorTests = obd.readMonitorTests()
                 DtcDatabase.ensureReady(applicationContext)
-                (codes + pending + permanent).distinct()
-                    .filter { ObdConstants.dtcDescriptionRes(it) == R.string.dtc_unknown }
-                    .associateWith { DtcDatabase.description(it) }
+                descOverrides =
+                    (codes + pending + permanent).distinct()
+                        .filter { ObdConstants.dtcDescriptionRes(it) == R.string.dtc_unknown }
+                        .associateWith { DtcDatabase.description(it) }
             }
             storedCodes = codes
             pendingCodes = pending

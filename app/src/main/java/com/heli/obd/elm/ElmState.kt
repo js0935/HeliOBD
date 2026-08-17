@@ -60,12 +60,19 @@ class ElmState {
     /** ATFCSD 流控資料 */
     var flowControlData: String = ""
 
+    /** 移除空白並轉大寫（共用於 update / shouldSkip，避免重複配置） */
+    private fun normalize(raw: String): String {
+        val sb = StringBuilder(raw.length)
+        for (c in raw) if (c != ' ') sb.append(c.uppercaseChar())
+        return sb.toString()
+    }
+
     /** 依剛送出的指令更新狀態（僅處理 AT 指令，其餘忽略） */
     fun update(rawCmd: String?) {
         val cmd = rawCmd ?: return
         if (cmd.length < 2) return
         if (cmd[1] != 't' && cmd[1] != 'T') return
-        val f = cmd.replace(" ", "").uppercase()
+        val f = normalize(cmd)
         when {
             f == "ATZ" || f == "ATWS" || f == "ATD" -> reset()
             f == "ATSPA0" -> protocol = 0
@@ -111,7 +118,7 @@ class ElmState {
      * 例如已開 ATCFC1（canFlowControl=true）則再次 ATCFC1 可跳過。
      */
     fun shouldSkip(rawCmd: String): Boolean {
-        val f = rawCmd.replace(" ", "").uppercase()
+        val f = normalize(rawCmd)
         return when {
             f == "ATCFC1" -> canFlowControl
             f == "ATCFC0" -> !canFlowControl

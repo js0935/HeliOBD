@@ -48,6 +48,7 @@ object ObdLog {
     private const val FALLBACK_DIR_NAME = "HeliOBD"
 
     private val timeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+    private val reusableDate = Date()
     private val fileNameFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
 
     @Volatile
@@ -147,7 +148,7 @@ object ObdLog {
     fun log(message: String) {
         val w = writer ?: return
         try {
-            w.write("[${timeFormat.format(Date())}] $message\n")
+            w.write("[${timeFormat.format(reusableDate.also { it.time = System.currentTimeMillis() })}] $message\n")
             if (++lineCount % FLUSH_LINE_INTERVAL == 0) w.flush()
         } catch (_: Exception) {
             // 記錄失敗不影響通訊主流程

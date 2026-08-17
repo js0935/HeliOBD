@@ -17,8 +17,8 @@ object LlmStore {
     private const val KEY_API_KEY = "llm_api_key"
     private const val KEY_MODEL = "llm_model"
 
-    const val DEFAULT_BASE_URL = "https://api.openai.com/v1"
-    const val DEFAULT_MODEL = "gpt-4o-mini"
+    const val DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
+    const val DEFAULT_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"
 
     private fun prefs(context: Context): android.content.SharedPreferences =
         context.getSharedPreferences(ObdManager.PREFS, Context.MODE_PRIVATE)
