@@ -17,6 +17,7 @@ import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.BaseActivity
 import com.heli.obd.MainActivity
@@ -164,7 +165,7 @@ class AiDiagnoseActivity : BaseActivity() {
             return
         }
         if (!LlmStore.isConfigured(this)) {
-            Toast.makeText(this, R.string.llm_not_configured, Toast.LENGTH_LONG).show()
+            showApiKeyDialog()
             return
         }
         val config = LlmStore.load(this)
@@ -210,6 +211,44 @@ class AiDiagnoseActivity : BaseActivity() {
         err.setTextColor(getColor(R.color.danger))
         err.setPadding(0, dp(10), 0, 0)
         resultContainer.addView(err)
+    }
+
+    private fun showApiKeyDialog() {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(16), dp(24), dp(8))
+        }
+        val keyInput = EditText(this).apply {
+            hint = getString(R.string.llm_api_key_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            setBackgroundResource(R.drawable.bg_input)
+            setText(LlmStore.load(this@AiDiagnoseActivity).apiKey)
+        }
+        val hint = TextView(this).apply {
+            text = getString(R.string.llm_not_configured)
+            textSize = 13f
+            setTextColor(getColor(R.color.text_secondary))
+            setPadding(0, dp(4), 0, dp(8))
+        }
+        layout.addView(hint)
+        layout.addView(keyInput)
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.llm_api_key_label)
+            .setView(layout)
+            .setPositiveButton(R.string.common_ok) { _, _ ->
+                val key = keyInput.text.toString().trim()
+                if (key.isNotBlank()) {
+                    val current = LlmStore.load(this)
+                    LlmStore.save(this, current.copy(apiKey = key))
+                    runLlmDiagnosis()
+                } else {
+                    Toast.makeText(this, R.string.llm_not_configured, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
     }
 
     private fun addLlmResultCard(answer: String) {

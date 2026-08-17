@@ -144,7 +144,7 @@
     <string name="ai_diag_no_dtc">No trouble codes read</string>
     <string name="ai_diag_no_result">No issues found, vehicle is healthy</string>
     <string name="ai_diag_confidence">Confidence: %1$d%%</string>
-    <string name="llm_analyze_btn">Deep LLM Analysis</string>
+    <string name="llm_analyze_btn">Deep AI Analysis</string>
     <string name="llm_analyzing">AI analyzing, please wait…</string>
     <string name="llm_analyze_failed">AI analysis failed: %1$s</string>
     <string name="llm_not_configured">AI service is not configured. Set your API key in Settings first.</string>
