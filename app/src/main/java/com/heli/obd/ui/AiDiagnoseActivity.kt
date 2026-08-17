@@ -5,6 +5,10 @@
  */
 package com.heli.obd.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -41,6 +45,7 @@ class AiDiagnoseActivity : BaseActivity() {
     private lateinit var dtcListText: TextView
     private lateinit var resultContainer: LinearLayout
     private lateinit var readDtcBtn: Button
+    private lateinit var llmBtn: Button
 
     private val selectedSymptoms = mutableSetOf<Int>()
     private val dtcCodes = mutableListOf<String>()
@@ -59,7 +64,8 @@ class AiDiagnoseActivity : BaseActivity() {
         readDtcBtn.setOnClickListener { readDtcFromObd() }
         findViewById<Button>(R.id.btn_add_dtc).setOnClickListener { addManualDtc() }
         findViewById<Button>(R.id.btn_diagnose).setOnClickListener { runDiagnosis() }
-        findViewById<Button>(R.id.btn_llm_diagnose).setOnClickListener { runLlmDiagnosis() }
+        llmBtn = findViewById(R.id.btn_llm_diagnose)
+        llmBtn.setOnClickListener { runLlmDiagnosis() }
 
         buildSymptomChips()
     }
@@ -174,6 +180,9 @@ class AiDiagnoseActivity : BaseActivity() {
             .map { getString(it.labelRes) }
         val codes = dtcCodes.toList()
 
+        llmBtn.isEnabled = false
+        llmBtn.text = getString(R.string.llm_analyzing)
+
         resultContainer.removeAllViews()
         val loading = TextView(this)
         loading.text = getString(R.string.llm_analyzing)
@@ -200,6 +209,9 @@ class AiDiagnoseActivity : BaseActivity() {
                 addLlmResultCard(answer)
             } catch (e: Exception) {
                 showLlmError(e.message ?: "unknown")
+            } finally {
+                llmBtn.isEnabled = true
+                llmBtn.text = getString(R.string.llm_analyze_btn)
             }
         }
     }
@@ -278,6 +290,45 @@ class AiDiagnoseActivity : BaseActivity() {
         body.setPadding(0, dp(8), 0, 0)
         card.addView(body)
 
+        val btnRow = LinearLayout(this)
+        btnRow.orientation = LinearLayout.HORIZONTAL
+        btnRow.setPadding(0, dp(8), 0, 0)
+
+        val shareBtn = TextView(this)
+        shareBtn.text = "分享"
+        shareBtn.textSize = 13f
+        shareBtn.setTextColor(getColor(R.color.primary))
+        shareBtn.setPadding(dp(12), dp(6), dp(12), dp(6))
+        shareBtn.setBackgroundResource(R.drawable.bg_button)
+        shareBtn.setOnClickListener {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, "HeliOBD AI 診斷結果\n\n$answer")
+            }
+            startActivity(Intent.createChooser(intent, "分享診斷結果"))
+        }
+        btnRow.addView(shareBtn)
+
+        val copyBtn = TextView(this)
+        copyBtn.text = "複製"
+        copyBtn.textSize = 13f
+        copyBtn.setTextColor(getColor(R.color.primary))
+        copyBtn.setPadding(dp(12), dp(6), dp(12), dp(6))
+        copyBtn.setBackgroundResource(R.drawable.bg_button)
+        val copyLp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
+        copyLp.marginStart = dp(8)
+        copyBtn.layoutParams = copyLp
+        copyBtn.setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("ai_diagnosis", answer))
+            Toast.makeText(this, "已複製到剪貼簿", Toast.LENGTH_SHORT).show()
+        }
+        btnRow.addView(copyBtn)
+
+        card.addView(btnRow)
         resultContainer.addView(card)
     }
 
