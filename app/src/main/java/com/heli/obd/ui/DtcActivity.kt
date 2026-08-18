@@ -48,6 +48,7 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
 
     private lateinit var statusText: TextView
     private lateinit var container: LinearLayout
+    private lateinit var readBtn: Button
     private lateinit var tabStored: TextView
     private lateinit var tabPending: TextView
     private lateinit var tabPermanent: TextView
@@ -76,7 +77,8 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         statusText = findViewById(R.id.dtc_status_text)
         container = findViewById(R.id.dtc_container)
 
-        findViewById<Button>(R.id.btn_read_dtc).setOnClickListener { readAll() }
+        readBtn = findViewById(R.id.btn_read_dtc)
+        readBtn.setOnClickListener { readAll() }
         clearBtn = findViewById(R.id.btn_clear_dtc)
         clearBtn.setOnClickListener { confirmClearDtc() }
         exportBtn = findViewById(R.id.btn_export_dtc)
@@ -105,35 +107,40 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
             return
         }
         statusText.text = getString(R.string.obd_connecting)
+        val busy = BusyUi.mark(readBtn, getString(R.string.busy_reading))
         lifecycleScope.launch {
-            val codes: List<String>
-            val pending: List<String>
-            val permanent: List<String>
-            withContext(Dispatchers.IO) {
-                codes = obd.readDtc()
-                pending = obd.readPendingDtc()
-                permanent = obd.readPermanentDtc()
-                freezeFrame = obd.readFreezeFrame()
-                imReadiness = obd.readImReadiness()
-                vin = obd.readVin()
-                calid = obd.readCalibrationId()
-                cvn = obd.readCvn()
-                monitorTests = obd.readMonitorTests()
-                DtcDatabase.ensureReady(applicationContext)
-                descOverrides =
-                    (codes + pending + permanent).distinct()
-                        .filter { ObdConstants.dtcDescriptionRes(it) == R.string.dtc_unknown }
-                        .associateWith { DtcDatabase.description(it) }
+            try {
+                val codes: List<String>
+                val pending: List<String>
+                val permanent: List<String>
+                withContext(Dispatchers.IO) {
+                    codes = obd.readDtc()
+                    pending = obd.readPendingDtc()
+                    permanent = obd.readPermanentDtc()
+                    freezeFrame = obd.readFreezeFrame()
+                    imReadiness = obd.readImReadiness()
+                    vin = obd.readVin()
+                    calid = obd.readCalibrationId()
+                    cvn = obd.readCvn()
+                    monitorTests = obd.readMonitorTests()
+                    DtcDatabase.ensureReady(applicationContext)
+                    descOverrides =
+                        (codes + pending + permanent).distinct()
+                            .filter { ObdConstants.dtcDescriptionRes(it) == R.string.dtc_unknown }
+                            .associateWith { DtcDatabase.description(it) }
+                }
+                storedCodes = codes
+                pendingCodes = pending
+                permanentCodes = permanent
+                renderDtcTab(currentTab)
+                renderFreezeFrame(freezeFrame)
+                renderImReadiness(imReadiness)
+                renderVin(vin, calid, cvn)
+                renderMonitorTests(monitorTests)
+                statusText.text = getString(R.string.dtc_read)
+            } finally {
+                busy.done()
             }
-            storedCodes = codes
-            pendingCodes = pending
-            permanentCodes = permanent
-            renderDtcTab(currentTab)
-            renderFreezeFrame(freezeFrame)
-            renderImReadiness(imReadiness)
-            renderVin(vin, calid, cvn)
-            renderMonitorTests(monitorTests)
-            statusText.text = getString(R.string.dtc_read)
         }
     }
 

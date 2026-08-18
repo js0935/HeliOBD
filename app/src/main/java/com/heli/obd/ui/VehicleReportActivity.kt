@@ -59,14 +59,18 @@ class VehicleReportActivity : BaseActivity() {
     }
 
     private fun build() {
-        findViewById<Button>(R.id.btn_report_build).isEnabled = false
+        val btn = findViewById<Button>(R.id.btn_report_build)
+        val busy = BusyUi.mark(btn, getString(R.string.busy_generating))
         lifecycleScope.launch {
-            val snapshot = withContext(Dispatchers.IO) { collectData() }
-            findViewById<Button>(R.id.btn_report_build).isEnabled = true
-            report = formatReport(snapshot)
-            reportText.text = report
-            if (snapshot.vin == null && snapshot.dtcCodes.isEmpty()) {
-                Toast.makeText(this@VehicleReportActivity, R.string.obd_disconnected, Toast.LENGTH_SHORT).show()
+            try {
+                val snapshot = withContext(Dispatchers.IO) { collectData() }
+                report = formatReport(snapshot)
+                reportText.text = report
+                if (snapshot.vin == null && snapshot.dtcCodes.isEmpty()) {
+                    Toast.makeText(this@VehicleReportActivity, R.string.obd_disconnected, Toast.LENGTH_SHORT).show()
+                }
+            } finally {
+                busy.done()
             }
         }
     }

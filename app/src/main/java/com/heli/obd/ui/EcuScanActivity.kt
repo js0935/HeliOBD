@@ -52,12 +52,15 @@ class EcuScanActivity : BaseActivity() {
         }
         statusText.text = getString(R.string.ecu_scanning)
         container.removeAllViews()
-        findViewById<Button>(R.id.btn_scan).isEnabled = false
-
+        val btn = findViewById<Button>(R.id.btn_scan)
+        val busy = BusyUi.mark(btn, getString(R.string.busy_scanning))
         lifecycleScope.launch {
-            val modules = withContext(Dispatchers.IO) { obd.scanEcuModules() }
-            renderModules(modules)
-            findViewById<Button>(R.id.btn_scan).isEnabled = true
+            try {
+                val modules = withContext(Dispatchers.IO) { obd.scanEcuModules() }
+                renderModules(modules)
+            } finally {
+                busy.done()
+            }
         }
     }
 

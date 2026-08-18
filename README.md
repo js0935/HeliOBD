@@ -88,7 +88,7 @@ HeliOBD 是一套專為汽機車維修與車主設計的 OBD-II 診斷工具，�
 | 模擬模式 | 無硬體也能體驗全部功能 |
 | 自動更新 | 主畫面更新卡片常駐顯示版本狀態；啟動與每日背景檢查 GitHub 新版，一鍵下載安裝（含「安裝未知來源」權限引導；設定頁可關閉自動檢查） |
 | 斷線自動重連 | 藍牙意外斷線時自動重新連線上次裝置（最多 3 次；設定頁可關閉） |
-| OBD 診斷記錄 | 連線期間的指令與回應自動寫入 log 檔（最多 50 個，超過刪最舊），排除通訊問題用 |
+| OBD 診斷記錄 | 連線期間的指令與回應自動寫入 log 檔（最多 50 個，超過刪最舊），排除通訊問題用；斷線時自動上傳到 GitHub Issues（設定頁可關閉） |
 
 ---
 
@@ -184,8 +184,9 @@ app/src/main/java/com/heli/obd/
 │   ├── DiagnosisEngine.kt  AI 診斷規則引擎
 │   └── HealthCheckEngine.kt 健康檢查評分引擎（綠 / 黃 / 紅）
 ├── elm/                    ELM327 藍牙通訊層
-│   ├── ObdManager.kt       掃描 / 連線 / AT 指令 / 協定偵測 / 分層輪詢 / 故障碼 / 模擬模式 / 斷線自動重連
-│   └── ObdLog.kt           OBD 連線診斷記錄（HeliOBD 資料夾，最多 50 個 log 檔）
+│   ├── ObdManager.kt       掃描 / 連線 / AT 指令 / 協定偵測 / 分層輪詢 / 故障碼 / 模擬模式 / 斷線自動重連 / LOG 自動上傳
+│   ├── ObdLog.kt           OBD 連線診斷記錄（HeliOBD 資料夾，最多 50 個 log 檔）
+│   ├── LogUploader.kt      LOG 分享與自動上傳到 GitHub Issues（內建 Token）
 │   ├── ObdDecoder.kt       回應解碼（RPM / 車速 / 水溫 / 電壓 / DTC / O2 / EVAP；KWP 3-byte header 剝離）
 │   ├── ObdConstants.kt     PID 與 DTC 描述表（含 ECU header / Mode 05 / Mode 08）
 │   ├── DtcDatabase.kt      DTC 描述資料庫查詢層（assets/dtc_codes.db）
@@ -252,7 +253,7 @@ app/src/main/java/com/heli/obd/
     ├── HudActivity.kt        抬頭顯示
     ├── EngineSoundActivity.kt 引擎聲浪
     ├── TerminalActivity.kt   OBD 終端機（AT / UDS）
-    ├── SettingsActivity.kt   設定（日夜模式 / 語音警示 / 連線 / 自動更新 / 斷線自動重連 / OBD 記錄路徑）
+    ├── SettingsActivity.kt   設定（日夜模式 / 語音警示 / 連線 / 自動更新 / 斷線自動重連 / LOG 自動上傳 / OBD 記錄路徑）
     ├── SplashActivity.kt     啟動畫面
     ├── FeaturePlaceholderActivity.kt  占位
     ├── UnitSystem.kt         單位制換算
@@ -337,6 +338,10 @@ App 內建 RSA 離線授權（與 PC 工具 LicenseKeyGenUI 配對），可選�
 
 | 版本 | 內容 |
 |---|---|
+| v0.3.3 | LOG 自動上傳 v0.3.3（versionCode 14）：OBD 斷線時自動將診斷 LOG 上傳到 GitHub Issues；移除手動上傳按鈕，改為設定頁開關控制（預設開啟）；GitHub Token 已內建免設定 |
+| v0.3.2 | GitHub Token 內建 v0.3.2（versionCode 13）：GitHub Token 以翻轉+Base64 混淆內建於 App，上傳 LOG 免手動設定 |
+| v0.3.1 | 效能優化與 Bug 修復 v0.3.1（versionCode 12）：BLE busy-wait 改用 CountDownLatch（降低 CPU/電池消耗）；TripRecorder removeAt(0) 改用 ArrayDeque O(1)；ChartView/TripChartView Path 物件重用；WifiTransport 加入 SO_TIMEOUT；移除 BaseActivity 全域 KeepScreenOn；13 個按鈕加入 BusyUi 狀態回饋；LLM API Key 遮罩顯示；LOG 分享/上傳功能 |
+| v0.3.0 | NVIDIA NIM LLM 整合 v0.3.0（versionCode 11）：AI 深度解讀（LLM 診斷對話）；行程錄製自動化（ObdManager 整合）；行程回放動態曲線；LOG 分享與 GitHub 上傳；DtcActivity 讀取按鈕 loading；12 項效能優化（medium/slow PID 快取、StringBuilder、suspend fun、指數退避）；7 項 Bug 修復 |
 | `30233f6` | 車廠/車型資料庫整合 v0.2.7（versionCode 9）：多車管理新增內建車廠/車型選擇器（數十品牌、數百款車型，`assets/vehicle_brands.json`，整理自參考 APK 車廠資料）；新增車型欄位（既有車輛向後相容）；lint 0/32 |
 | `b2ec17f` | 修正即時數據僅顯示電壓 v0.2.6（versionCode 8）：移除關閉換行/空格的 ATL0/ATS0（會使多行 PID 回應無法解析）改為 ATL1/ATS1 明確開啟；新增 OBD 診斷記錄（連線期間指令與回應寫入 App 專屬外部儲存 HeliOBD 資料夾，最多 50 個 log 檔，超過刪最舊；設定頁顯示路徑）；lint 0/32 |
 | `7023e3b` | 斷線自動重連 + 正式簽名發版 v0.2.5（versionCode 7）：藍牙意外斷線自動重連上次裝置（最多 3 次，延遲 5 秒；使用者主動斷線不觸發；設定頁開關）；首度以 release keystore 正式簽名 + R8 建置發布（APK 6.61 → 2.64 MB）；lint 0/32 |

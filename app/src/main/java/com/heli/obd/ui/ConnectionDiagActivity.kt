@@ -53,11 +53,15 @@ class ConnectionDiagActivity : BaseActivity() {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_SHORT).show()
             return
         }
-        findViewById<Button>(R.id.btn_diag_refresh).isEnabled = false
+        val btn = findViewById<Button>(R.id.btn_diag_refresh)
+        val busy = BusyUi.mark(btn, getString(R.string.busy_reading))
         lifecycleScope.launch {
-            val diag = withContext(Dispatchers.IO) { obd.readConnectionDiag() }
-            findViewById<Button>(R.id.btn_diag_refresh).isEnabled = true
-            render(diag)
+            try {
+                val diag = withContext(Dispatchers.IO) { obd.readConnectionDiag() }
+                render(diag)
+            } finally {
+                busy.done()
+            }
         }
     }
 

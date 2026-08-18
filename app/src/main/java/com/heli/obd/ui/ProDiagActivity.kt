@@ -86,23 +86,27 @@ class ProDiagActivity : BaseActivity() {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_SHORT).show()
             return
         }
-        findViewById<Button>(R.id.btn_pro_diag_refresh).isEnabled = false
+        val btn = findViewById<Button>(R.id.btn_pro_diag_refresh)
+        val busy = BusyUi.mark(btn, getString(R.string.busy_reading))
         lifecycleScope.launch {
-            val data = withContext(Dispatchers.IO) {
-                ProDiagData(
-                    vin = obd.readVin(),
-                    calibrationId = obd.readCalibrationId(),
-                    cvn = obd.readCvn(),
-                    readiness = obd.readImReadiness(),
-                    freezeFrame = obd.readFreezeFrame(),
-                    monitorTests = obd.readMonitorTests(),
-                    confirmed = obd.readDtc(),
-                    pending = obd.readPendingDtc(),
-                    permanent = obd.readPermanentDtc(),
-                )
+            try {
+                val data = withContext(Dispatchers.IO) {
+                    ProDiagData(
+                        vin = obd.readVin(),
+                        calibrationId = obd.readCalibrationId(),
+                        cvn = obd.readCvn(),
+                        readiness = obd.readImReadiness(),
+                        freezeFrame = obd.readFreezeFrame(),
+                        monitorTests = obd.readMonitorTests(),
+                        confirmed = obd.readDtc(),
+                        pending = obd.readPendingDtc(),
+                        permanent = obd.readPermanentDtc(),
+                    )
+                }
+                render(data)
+            } finally {
+                busy.done()
             }
-            findViewById<Button>(R.id.btn_pro_diag_refresh).isEnabled = true
-            render(data)
         }
     }
 

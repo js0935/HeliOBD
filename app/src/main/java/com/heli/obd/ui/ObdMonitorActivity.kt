@@ -13,6 +13,7 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import android.provider.Settings
 import android.view.DragEvent
 import android.view.GestureDetector
@@ -95,6 +96,7 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_obd_monitor)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         statusText = findViewById(R.id.obd_status_text)
         rpmGauge = findViewById(R.id.gauge_rpm)
@@ -791,18 +793,21 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
                 statusText.text = getString(R.string.obd_connecting)
                 statusText.setTextColor(getColor(R.color.lock))
                 connectBtn.visibility = View.VISIBLE
+                connectBtn.isEnabled = false
                 disconnectBtn.visibility = View.GONE
             }
             ObdManager.State.Ready -> {
                 statusText.text = getString(R.string.obd_connected)
                 statusText.setTextColor(getColor(R.color.success))
                 connectBtn.visibility = View.GONE
+                connectBtn.isEnabled = true
                 disconnectBtn.visibility = View.VISIBLE
             }
             is ObdManager.State.Error -> {
                 statusText.text = getString(R.string.obd_disconnected)
                 statusText.setTextColor(getColor(R.color.danger))
                 connectBtn.visibility = View.VISIBLE
+                connectBtn.isEnabled = true
                 disconnectBtn.visibility = View.GONE
             }
         }

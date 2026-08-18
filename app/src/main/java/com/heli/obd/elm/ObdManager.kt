@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.locks.ReentrantLock
+import com.heli.obd.trip.TripRecorder
 
 /**
  * OBD 藍牙連線管理員（ELM327）。
@@ -104,6 +105,7 @@ class ObdManager(
     private var transport: ObdTransport? = null
     private var pollJob: Job? = null
     private val listeners = CopyOnWriteArrayList<Listener>()
+    val tripRecorder = TripRecorder(appContext, this)
 
     @Volatile
     private var currentState: State = State.Idle
@@ -137,6 +139,15 @@ class ObdManager(
     /** 支援的 PID 清單（mode 01 PID 00/20/40 bitmask）；null = 尚未建立（視為全部支援） */
     @Volatile
     private var supportedPids: Set<String>? = null
+
+    /** 預計算的 medium 層 PID 列表（負載/進氣/MAF/油耗/扭力/MAP/點火/節氣門/模組電壓），supportPids 變更時重算 */
+    private var cachedMediumPids: List<String> = emptyList()
+
+    /** 預計算的 slow 層 PID 列表（短期/長期燃油修正/寬域AFR/燃油液位/環境溫度/機油溫度），supportPids 變更時重算 */
+    private var cachedSlowPids: List<String> = emptyList()
+
+    /** 預計算的自訂 PID 分組（mode → pids），setCustomPids() 時重算 */
+    private var groupedCustomPids: Map<String, List<PidStore.CustomPid>> = emptyMap()
 
     /** 連線時的協定編號（ATDPN）；null = 未知/偵測失敗（視為快速協定） */
     @Volatile
@@ -482,6 +493,8 @@ class ObdManager(
     fun connectTarget(target: TransportTarget, callback: (success: Boolean, message: String?) -> Unit) {
         disconnectPending = false
         supportedPids = null
+        cachedMediumPids = emptyList()
+        cachedSlowPids = emptyList()
         udsMode = false
         currentSession = ObdConstants.SESSION_DEFAULT
         setState(State.Connecting)
@@ -491,8 +504,13 @@ class ObdManager(
                 val t = transportFactory(target)
                 if (!t.open(target)) throw IOException("connect failed (${target.displayName})")
                 transport = t
-                // 連線成立後稍等，避免首批 AT 指令被剛建立的 socket 丟棄（ coroutine delay 可被取消）
-                delay(500)
+                // 連線成立後依傳輸層給予不同穩定延遲：WiFi 即時可用，BLE 需較短等待，Classic BT 需最久
+                val stabilizationDelay = when (target) {
+                    is TransportTarget.Wifi -> 100L
+                    is TransportTarget.BleBt -> 300L
+                    is TransportTarget.ClassicBt -> 500L
+                }
+                delay(stabilizationDelay)
                 val initOk = initElm327()
                 if (!initOk) {
                     closeQuietly()
@@ -512,6 +530,7 @@ class ObdManager(
                 closeQuietly()
                 ObdLog.log("CONNECT FAILED ${e.message.orEmpty().replace('\n', ' ')}")
                 ObdLog.stop()
+                autoUploadLog()
                 false to (e.message ?: appContext.getString(R.string.obd_connect_error))
             }
             if (ok) {
@@ -521,6 +540,7 @@ class ObdManager(
                 resetExtrasCache()
                 setState(State.Ready)
                 startPolling()
+                if (!tripRecorder.isRecording()) tripRecorder.start()
             } else {
                 setState(State.Error(msg ?: appContext.getString(R.string.obd_connect_error)))
             }
@@ -536,9 +556,12 @@ class ObdManager(
         pollJob?.cancel()
         pollJob = null
         protocolNumber = null
+        focusKey = null
+        if (tripRecorder.isRecording()) tripRecorder.stop()
         closeQuietly()
         ObdLog.log("DISCONNECT manual")
         ObdLog.stop()
+        autoUploadLog()
         setState(State.Idle)
     }
 
@@ -599,10 +622,10 @@ class ObdManager(
     }
 
     /** ELM327 初始化：ATZ 必成功，其餘設定指令失敗不立即放棄（部分山寨晶片回 '?'） */
-    private fun initElm327(): Boolean {
+    private suspend fun initElm327(): Boolean {
         if (sendCommand(ObdConstants.CMD_RESET) == null) return false
-        // ATZ 後等待裝置重置（250ms 為 ELM327 實測安全下限，較原 500ms 省一半等待）
-        Thread.sleep(250)
+        // ATZ 後等待裝置重置（250ms 為 ELM327 實測安全下限，使用 suspend delay 不阻塞 IO 線）
+        delay(250)
         // ATE0 送兩次：便宜 ELM327 常漏掉第一次
         sendCommand(ObdConstants.CMD_ECHO_OFF)
         sendCommand(ObdConstants.CMD_ECHO_OFF)
@@ -678,7 +701,7 @@ class ObdManager(
 
     fun sendCommand(cmd: String, timeoutMs: Long = ObdConstants.COMMAND_TIMEOUT_MS): String? {
         val result = transmitAndRead(cmd, timeoutMs, extractLastLine = true)
-        ObdLog.log("CMD $cmd -> ${result ?: "NO_RESPONSE"}")
+        if (ObdLog.isActive()) ObdLog.log("CMD $cmd -> ${result ?: "NO_RESPONSE"}")
         return result
     }
 
@@ -697,8 +720,10 @@ class ObdManager(
     fun sendRawCommand(cmd: String): String? {
         if (demoMode) return demoTerminalResponse(cmd)
         val result = transmitAndRead(cmd, extractLastLine = false)
-        val logResp = result?.replace('\n', '|') ?: "NO_RESPONSE"
-        ObdLog.log("RAW $cmd -> $logResp")
+        if (ObdLog.isActive()) {
+            val logResp = result?.replace('\n', '|') ?: "NO_RESPONSE"
+            ObdLog.log("RAW $cmd -> $logResp")
+        }
         return result
     }
 
@@ -726,6 +751,14 @@ class ObdManager(
      * 保留純資料行。sendRawCommand 保留多行結構；sendCommand 再取最後一行。
      */
     private fun cleanResponse(raw: String): String {
+        // ATE0 關閉 echo 後幾乎所有回應都是單行，快速路徑避免 split/uppercase/StringBuilder 分配
+        if (!raw.contains('\n')) {
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty()) return ""
+            val upper = trimmed.uppercase()
+            if (upper.contains("SEARCHING") || upper.contains("BUS INIT") || upper.contains("STOPPED")) return ""
+            return trimmed
+        }
         val sb = StringBuilder(raw.length)
         for (line in raw.lines()) {
             val cleaned = line.trim()
@@ -738,8 +771,10 @@ class ObdManager(
         return sb.toString()
     }
 
-    private fun lastLine(raw: String): String =
-        raw.trim().lines().lastOrNull { it.isNotBlank() } ?: ""
+    private fun lastLine(raw: String): String {
+        if (!raw.contains('\n')) return raw.trim()
+        return raw.trim().lines().lastOrNull { it.isNotBlank() } ?: ""
+    }
 
     // ===== 即時數據 =====
 
@@ -751,42 +786,22 @@ class ObdManager(
     /** 讀取支援 PID 清單；成功回 true，失敗回 false（維持 supportedPids = null 表示全部支援） */
     private fun loadSupportedPids(): Boolean {
         try {
-            val mask00 = sendPidRequest(ObdConstants.PID_SUPPORTED)
-                ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
             val pids = mutableSetOf<String>()
-            for (i in 0 until 32) {
-                if ((mask00 shr (31 - i)) and 1L != 0L) pids += (0x01 + i).pidHex()
-            }
-            if ((mask00 and 1L) != 0L) {
-                val mask20 = sendPidRequest("20")
-                    ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
+            val offsets = intArrayOf(0x00, 0x20, 0x40, 0x80, 0xC0)
+            var mask = sendPidRequest(ObdConstants.PID_SUPPORTED)
+                ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
+            for (offset in offsets) {
                 for (i in 0 until 32) {
-                    if ((mask20 shr (31 - i)) and 1L != 0L) pids += (0x21 + i).pidHex()
+                    if ((mask shr (31 - i)) and 1L != 0L) pids += (offset + 0x01 + i).pidHex()
                 }
-                if ((mask20 and 1L) != 0L) {
-                    val mask40 = sendPidRequest("40")
-                        ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
-                    for (i in 0 until 32) {
-                        if ((mask40 shr (31 - i)) and 1L != 0L) pids += (0x41 + i).pidHex()
-                    }
-                    if ((mask40 and 1L) != 0L) {
-                        val mask80 = sendPidRequest("80")
-                            ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
-                        for (i in 0 until 32) {
-                            if ((mask80 shr (31 - i)) and 1L != 0L) pids += (0x81 + i).pidHex()
-                        }
-                        if ((mask80 and 1L) != 0L) {
-                            val maskC0 = sendPidRequest("C0")
-                                ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
-                            for (i in 0 until 32) {
-                                if ((maskC0 shr (31 - i)) and 1L != 0L) pids += (0xC1 + i).pidHex()
-                            }
-                        }
-                    }
-                }
+                if ((mask and 1L) == 0L) break
+                val nextOffset = offset + 0x20
+                mask = sendPidRequest("%02X".format(nextOffset))
+                    ?.let { ObdDecoder.supportedPidMask(it) } ?: return false
             }
             if (pids.isNotEmpty()) {
                 supportedPids = pids
+                rebuildCachedPidLists()
                 return true
             }
         } catch (_: Exception) {
@@ -847,6 +862,22 @@ class ObdManager(
     private fun isPidSupported(pid: String): Boolean =
         supportedPids?.contains(pid) ?: true
 
+    /** 依 supportedPids 重新計算 medium/slow 快取列表（loadSupportedPids 成功後或斷線重置時呼叫） */
+    private fun rebuildCachedPidLists() {
+        val allPids = listOf(
+            ObdConstants.PID_LOAD, ObdConstants.PID_INTAKE, ObdConstants.PID_MAF,
+            ObdConstants.PID_FUEL_RATE, ObdConstants.PID_TORQUE, ObdConstants.PID_MAP,
+            ObdConstants.PID_TIMING_ADVANCE, ObdConstants.PID_THROTTLE, ObdConstants.PID_MODULE_VOLTAGE,
+        )
+        cachedMediumPids = if (supportedPids == null) allPids else allPids.filter { isPidSupported(it) }
+        val slowPids = listOf(
+            ObdConstants.PID_SHORT_FUEL_TRIM, ObdConstants.PID_LONG_FUEL_TRIM,
+            ObdConstants.PID_WIDEBAND_AFR, ObdConstants.PID_FUEL_LEVEL,
+            ObdConstants.PID_AMBIENT_TEMP, ObdConstants.PID_OIL_TEMP,
+        )
+        cachedSlowPids = if (supportedPids == null) slowPids else slowPids.filter { isPidSupported(it) }
+    }
+
     /** Int → ELM PID 十六進位字串（0x0C → "0C"） */
     private fun Int.pidHex(): String =
         (this and 0xFF).toString(16).uppercase().padStart(2, '0')
@@ -854,6 +885,7 @@ class ObdManager(
     /** 設定要隨輪詢一起讀取的自訂 PID（車廠專用感測器）。 */
     fun setCustomPids(pids: List<PidStore.CustomPid>) {
         customPids = pids
+        groupedCustomPids = pids.groupBy { it.mode }
     }
 
     /** 設定精簡模式：每輪只輪詢指定單一數據（key 為 "rpm"/"speed"/"coolant"/"voltage"；null 恢復完整輪詢）。 */
@@ -951,8 +983,9 @@ class ObdManager(
         if (isSlowProtocol || batchDisabled) {
             return pids.associateWith { sendCommand(mode + it) }
         }
-        val cmd = listOf(mode) + pids
-        val raw = sendRawCommand(cmd.joinToString(" "))
+        val cmd = StringBuilder(mode.length + pids.size * 3).append(mode)
+        for (pid in pids) cmd.append(' ').append(pid)
+        val raw = sendRawCommand(cmd.toString())
         val parsed = raw?.let { ObdDecoder.parseMode01Batch(it, mode.toInt(16)) }.orEmpty()
         val result = pids.associateWith { pid ->
             parsed[pid] ?: sendCommand(mode + pid)
@@ -965,17 +998,28 @@ class ObdManager(
     fun requestLiveData(): LiveData? {
         if (demoMode) return simulateLiveData().also { recordHistory(it) }
         if (!isConnected()) return null
+        val tick = ++pollTick
+        val cycle = if (isSlowProtocol) 2 else 1
+        val slow = tick % (4 * cycle) == 1
         val focus = focusKey
         if (focus != null) {
-            val focused = readFocused(focus)
-            if (focused != null) return focused
+            if (focus == "voltage") {
+                // voltage 變化緩慢，精簡模式限制為 slow 層頻率（每4 tick），避免 ATRV 洪水
+                if (slow) {
+                    val focused = readFocused(focus)
+                    if (focused != null) return focused
+                }
+                // 非 slow tick：沿用最後快照，不送 ATRV
+                val cached = lastFullLiveData
+                if (cached != null) return cached
+            } else {
+                val focused = readFocused(focus)
+                if (focused != null) return focused
+            }
             // 尚未有完整快照基底時，先跑一輪完整讀取建立基底，之後維持精簡讀取
         }
-        val tick = ++pollTick
-        // 慢速協定（KWP/ISO9141）將 medium/slow 分層的週期加倍，降低單輪指令數避免堆疊
-        val cycle = if (isSlowProtocol) 2 else 1
+        // 慢速協定（KWP/ISO9141）將 medium 分層的週期加倍，降低單輪指令數避免堆疊
         val medium = tick % (2 * cycle) == 1
-        val slow = tick % (4 * cycle) == 1
         // 核心 PID（轉速/車速/水溫）每 tick 取回；負載移至 medium 層，縮短每輪往返讓核心數值更新更快
         val core = sendBatchMode01(ObdConstants.CORE_PIDS)
         val rpm = core[ObdConstants.PID_RPM]?.let { ObdDecoder.rpm(it) }
@@ -987,20 +1031,8 @@ class ObdManager(
                 ?.let { ObdDecoder.voltage(it) }?.also { lastVoltage = it }
                 ?: lastVoltage
         } else lastVoltage
-        // medium 層 PID 批次取回（以支援清單過濾）
-        val mediumResponses = if (medium) sendBatchMode01(
-            buildList {
-                if (isPidSupported(ObdConstants.PID_LOAD)) add(ObdConstants.PID_LOAD)
-                if (isPidSupported(ObdConstants.PID_INTAKE)) add(ObdConstants.PID_INTAKE)
-                if (isPidSupported(ObdConstants.PID_MAF)) add(ObdConstants.PID_MAF)
-                if (isPidSupported(ObdConstants.PID_FUEL_RATE)) add(ObdConstants.PID_FUEL_RATE)
-                if (isPidSupported(ObdConstants.PID_TORQUE)) add(ObdConstants.PID_TORQUE)
-                if (isPidSupported(ObdConstants.PID_MAP)) add(ObdConstants.PID_MAP)
-                if (isPidSupported(ObdConstants.PID_TIMING_ADVANCE)) add(ObdConstants.PID_TIMING_ADVANCE)
-                if (isPidSupported(ObdConstants.PID_THROTTLE)) add(ObdConstants.PID_THROTTLE)
-                if (isPidSupported(ObdConstants.PID_MODULE_VOLTAGE)) add(ObdConstants.PID_MODULE_VOLTAGE)
-            }
-        ) else emptyMap()
+        // medium 層 PID 批次取回（使用預計算快取，避免每 tick 重建 List）
+        val mediumResponses = if (medium && cachedMediumPids.isNotEmpty()) sendBatchMode01(cachedMediumPids) else emptyMap()
         val load = mediumResponses[ObdConstants.PID_LOAD]?.let { ObdDecoder.engineLoad(it) }
             ?.also { lastLoad = it } ?: lastLoad
         val intake = mediumResponses[ObdConstants.PID_INTAKE]?.let { ObdDecoder.intakeTemp(it) }
@@ -1019,17 +1051,8 @@ class ObdManager(
             ?.also { lastThrottle = it } ?: lastThrottle
         val moduleVoltage = mediumResponses[ObdConstants.PID_MODULE_VOLTAGE]?.let { ObdDecoder.moduleVoltage(it) }
             ?.also { lastModuleVoltage = it } ?: lastModuleVoltage
-        // slow 層 PID（每 4 tick 一次）批次取回
-        val slowResponses = if (slow) sendBatchMode01(
-            buildList {
-                if (isPidSupported(ObdConstants.PID_SHORT_FUEL_TRIM)) add(ObdConstants.PID_SHORT_FUEL_TRIM)
-                if (isPidSupported(ObdConstants.PID_LONG_FUEL_TRIM)) add(ObdConstants.PID_LONG_FUEL_TRIM)
-                if (isPidSupported(ObdConstants.PID_WIDEBAND_AFR)) add(ObdConstants.PID_WIDEBAND_AFR)
-                if (isPidSupported(ObdConstants.PID_FUEL_LEVEL)) add(ObdConstants.PID_FUEL_LEVEL)
-                if (isPidSupported(ObdConstants.PID_AMBIENT_TEMP)) add(ObdConstants.PID_AMBIENT_TEMP)
-                if (isPidSupported(ObdConstants.PID_OIL_TEMP)) add(ObdConstants.PID_OIL_TEMP)
-            }
-        ) else emptyMap()
+        // slow 層 PID（每 4 tick 一次）批次取回（使用預計算快取）
+        val slowResponses = if (slow && cachedSlowPids.isNotEmpty()) sendBatchMode01(cachedSlowPids) else emptyMap()
         val fuelTrim = slowResponses[ObdConstants.PID_SHORT_FUEL_TRIM]?.let { ObdDecoder.fuelTrim(it) }
             ?.also { lastFuelTrim = it } ?: lastFuelTrim
         val fuelTrimLong = slowResponses[ObdConstants.PID_LONG_FUEL_TRIM]?.let { ObdDecoder.fuelTrimLong(it) }
@@ -1091,11 +1114,10 @@ class ObdManager(
     }
 
     private fun readCustomPids(): Map<Long, Float?> {
-        if (customPids.isEmpty()) return emptyMap()
-        // 按 mode 分組：相同 mode 01 的 PID 可批次送出，減少 ELM327 往返
-        val grouped = customPids.groupBy { it.mode }
+        if (groupedCustomPids.isEmpty()) return emptyMap()
+        // 使用預計算的分組（setCustomPids 時已 groupBy），避免每 slow tick 重建 Map
         val results = mutableMapOf<Long, Float?>()
-        for ((mode, pids) in grouped) {
+        for ((mode, pids) in groupedCustomPids) {
             if (mode == ObdConstants.MODE_CURRENT_DATA) {
                 val batch = sendBatchMode01(pids.map { it.pid })
                 for (p in pids) {
@@ -1309,13 +1331,15 @@ class ObdManager(
     fun readEcuName(): String? {
         if (demoMode) return "HeliOBD-Demo-ECU"
         if (!isConnected()) return null
-        val cmd = mode09Command("0D")
-        val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.ecuName(it) } }
-        var result = decode(sendRawCommand(cmd))
-        if (result == null && udsMode) {
-            result = withExtendedSession { decode(sendRawCommand(cmd)) }
+        return withPollingPaused {
+            val cmd = mode09Command("0D")
+            val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.ecuName(it) } }
+            var result = decode(sendRawCommand(cmd))
+            if (result == null && udsMode) {
+                result = withExtendedSession { decode(sendRawCommand(cmd)) }
+            }
+            result
         }
-        return result
     }
 
     /**
@@ -1386,11 +1410,30 @@ class ObdManager(
         ioScope.launch {
             pollJob?.cancel()
             pollJob = null
+            focusKey = null
+            if (tripRecorder.isRecording()) tripRecorder.stop()
             closeQuietly()
             ObdLog.log("DISCONNECT unexpected")
             ObdLog.stop()
+            autoUploadLog()
             setState(State.Idle)
             scheduleReconnect()
+        }
+    }
+
+    /** 自動上傳 LOG 到 GitHub（背景執行，不阻塞主流程） */
+    private fun autoUploadLog() {
+        if (!LogUploader.isAutoUploadEnabled(appContext)) return
+        ioScope.launch {
+            val file = LogUploader.latestLogFile(appContext) ?: return@launch
+            val content = LogUploader.readLogContent(file)
+            if (content.isEmpty()) return@launch
+            LogUploader.uploadToGitHub(
+                appContext,
+                title = "自動上傳 LOG - ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())}",
+                logContent = content,
+                extraInfo = LogUploader.deviceInfo(appContext),
+            )
         }
     }
 
@@ -1403,7 +1446,8 @@ class ObdManager(
         if (!reconnectEnabled || demoMode) return
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) return
         reconnectJob = ioScope.launch {
-            delay(RECONNECT_DELAY_MS)
+            // 指數退避：5s → 10s → 20s，避免固定間隔重試耗電
+            delay(RECONNECT_DELAY_MS * (1 shl reconnectAttempts))
             // 期間內使用者已主動斷線，或已有其他連線成立 → 取消重連
             if (!disconnectPending || transport?.isOpen == true) return@launch
             reconnectAttempts++
@@ -1438,28 +1482,24 @@ class ObdManager(
         }
         if (!isConnected()) return emptyList()
         if (isExtrasUnsupported(ObdConstants.MODE_MONITOR_TESTS)) return emptyList()
-        val result = mutableListOf<MonitorTest>()
-        var firstResponse: String? = null
-        for (tid in ObdConstants.MONITOR_TEST_TIDS) {
-            val resp = if (firstResponse != null && tid == ObdConstants.MONITOR_TEST_TIDS.first()) {
-                firstResponse
-            } else {
-                sendCommand(ObdConstants.MODE_MONITOR_TESTS + tid)
-            }
-            if (tid == ObdConstants.MONITOR_TEST_TIDS.first()) firstResponse = resp
-            if (resp != null) {
-                // 回應非「46」前綴（負回應／無效）代表該車不支援此監控族群，
-                // 其餘 TID 也是相同回應，直接中止掃描節省通訊時間
-                if (!resp.trim().startsWith("46")) {
-                    ObdLog.log("mode06 TID $tid 回應非 46 前綴（${resp.trim()}），中止剩餘掃描")
-                    recordExtrasFailure(ObdConstants.MODE_MONITOR_TESTS)
-                    break
+        return withPollingPaused {
+            val result = mutableListOf<MonitorTest>()
+            for (tid in ObdConstants.MONITOR_TEST_TIDS) {
+                val resp = sendCommand(ObdConstants.MODE_MONITOR_TESTS + tid)
+                if (resp != null) {
+                    // 回應非「46」前綴（負回應／無效）代表該車不支援此監控族群，
+                    // 其餘 TID 也是相同回應，直接中止掃描節省通訊時間
+                    if (!resp.trim().startsWith("46")) {
+                        ObdLog.log("mode06 TID $tid 回應非 46 前綴（${resp.trim()}），中止剩餘掃描")
+                        recordExtrasFailure(ObdConstants.MODE_MONITOR_TESTS)
+                        break
+                    }
+                    result += ObdDecoder.monitorTests(resp)
                 }
-                result += ObdDecoder.monitorTests(resp)
             }
+            if (result.isNotEmpty()) recordExtrasSuccess(ObdConstants.MODE_MONITOR_TESTS)
+            result
         }
-        if (result.isNotEmpty()) recordExtrasSuccess(ObdConstants.MODE_MONITOR_TESTS)
-        return result
     }
 
     /**
@@ -1477,22 +1517,25 @@ class ObdManager(
         }
         if (!isConnected()) return emptyList()
         if (isExtrasUnsupported(ObdConstants.MODE_O2_TEST)) return emptyList()
-        val result = mutableListOf<O2Test>()
-        for (pid in ObdConstants.O2_TEST_PIDS) {
-            val resp = sendCommand(ObdConstants.MODE_O2_TEST + pid)
-            if (resp != null) {
-                // 回應非「45」前綴（負回應／無效）代表該車不支援 mode 05 氧感測器測試，
-                // 其餘 PID 也會回相同回應，直接中止掃描
-                if (!resp.trim().startsWith("45")) {
-                    ObdLog.log("mode05 PID $pid 回應非 45 前綴（${resp.trim()}），中止剩餘掃描")
-                    recordExtrasFailure(ObdConstants.MODE_O2_TEST)
-                    break
+        return withPollingPaused {
+            val result = mutableListOf<O2Test>()
+            // 過濾已知空隙 PID（04/08/0C/10/14 不對應任何感測器），避免送無效指令提前中止掃描
+            for (pid in ObdConstants.O2_TEST_PIDS.filter { it.toInt(16) % 4 != 0 }) {
+                val resp = sendCommand(ObdConstants.MODE_O2_TEST + pid)
+                if (resp != null) {
+                    // 回應非「45」前綴（負回應／無效）代表該車不支援 mode 05 氧感測器測試，
+                    // 其餘 PID 也會回相同回應，直接中止掃描
+                    if (!resp.trim().startsWith("45")) {
+                        ObdLog.log("mode05 PID $pid 回應非 45 前綴（${resp.trim()}），中止剩餘掃描")
+                        recordExtrasFailure(ObdConstants.MODE_O2_TEST)
+                        break
+                    }
+                    result += ObdDecoder.o2Tests(resp)
                 }
-                result += ObdDecoder.o2Tests(resp)
             }
+            if (result.isNotEmpty()) recordExtrasSuccess(ObdConstants.MODE_O2_TEST)
+            result
         }
-        if (result.isNotEmpty()) recordExtrasSuccess(ObdConstants.MODE_O2_TEST)
-        return result
     }
 
     /** EVAP 系統洩漏測試（mode 08 PID 01）：回傳測試狀態 */
@@ -1500,10 +1543,12 @@ class ObdManager(
         if (demoMode) return EvapTest(2, ObdConstants.EVAP_STATUS_NAMES[2]!!)
         if (!isConnected()) return null
         if (isExtrasUnsupported("0801")) return null
-        val resp = sendCommand(ObdConstants.MODE_EVAP_TEST + ObdConstants.EVAP_TEST_PID)
-        val result = resp?.let { ObdDecoder.evapStatus(it) }
-        if (result != null) recordExtrasSuccess("0801") else recordExtrasFailure("0801")
-        return result
+        return withPollingPaused {
+            val resp = sendCommand(ObdConstants.MODE_EVAP_TEST + ObdConstants.EVAP_TEST_PID)
+            val result = resp?.let { ObdDecoder.evapStatus(it) }
+            if (result != null) recordExtrasSuccess("0801") else recordExtrasFailure("0801")
+            result
+        }
     }
 
     /**
@@ -1519,17 +1564,19 @@ class ObdManager(
             )
         }
         if (!isConnected()) return emptyList()
-        val found = mutableListOf<EcuModule>()
-        for ((header, nameRes) in ObdConstants.ECU_HEADERS) {
-            sendCommand(ObdConstants.CMD_SET_HEADER + header)
-            val resp = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SUPPORTED)
-            if (resp?.startsWith("41 00") == true) {
-                found.add(EcuModule(header, nameRes))
+        return withPollingPaused {
+            val found = mutableListOf<EcuModule>()
+            for ((header, nameRes) in ObdConstants.ECU_HEADERS) {
+                sendCommand(ObdConstants.CMD_SET_HEADER + header)
+                val resp = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SUPPORTED)
+                if (resp?.startsWith("41 00") == true) {
+                    found.add(EcuModule(header, nameRes))
+                }
             }
+            // 重設 header 至 OBD-II 預設廣播（7DF），讓後續輪詢回到標準 header
+            sendCommand(ObdConstants.CMD_SET_HEADER + "7DF")
+            found
         }
-        // 重設 header 至 OBD-II 預設廣播（7DF），讓後續輪詢回到標準 header
-        sendCommand(ObdConstants.CMD_SET_HEADER + "7DF")
-        return found
     }
 
     // ===== 故障碼 =====

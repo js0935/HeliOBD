@@ -39,7 +39,7 @@ import java.util.Locale
 class TripActivity : BaseActivity() {
 
     private val obd get() = MainActivity.ObdManagerHolder.obd(this)
-    private val recorder by lazy { TripRecorder(this, obd) }
+    private val recorder get() = obd.tripRecorder
 
     private lateinit var recordBtn: Button
     private lateinit var statusText: TextView
@@ -127,11 +127,6 @@ class TripActivity : BaseActivity() {
     override fun onPause() {
         refreshHandler.removeCallbacks(refreshTick)
         super.onPause()
-    }
-
-    override fun onDestroy() {
-        if (recorder.isRecording()) recorder.stop()
-        super.onDestroy()
     }
 
     private fun startRecording() {
@@ -580,13 +575,26 @@ class TripActivity : BaseActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(300)
             )
         }
+        val wrapper = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(8), dp(16), 0)
+            addView(chart)
+        }
         val title = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
             .format(Date(trip.startTime))
-        AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+        val dialog = AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
             .setTitle(getString(R.string.trip_chart) + "｜" + title)
-            .setView(chart)
+            .setView(wrapper)
             .setPositiveButton(R.string.common_ok, null)
-            .show()
+            .setNeutralButton(R.string.chart_playback) { _, _ ->
+                if (chart.isPlaybackPlaying()) {
+                    chart.pausePlayback()
+                } else {
+                    chart.startPlayback()
+                }
+            }
+            .create()
+        dialog.show()
     }
 
     private fun showTrack(trip: TripRecorder.TripSummary) {

@@ -58,12 +58,14 @@ class O2EvapActivity : BaseActivity() {
             return
         }
         o2Container.removeAllViews()
-        btnO2.isEnabled = false
-
+        val busy = BusyUi.mark(btnO2, getString(R.string.busy_reading))
         lifecycleScope.launch {
-            val tests = withContext(Dispatchers.IO) { obd.readO2Tests() }
-            renderO2Tests(tests)
-            btnO2.isEnabled = true
+            try {
+                val tests = withContext(Dispatchers.IO) { obd.readO2Tests() }
+                renderO2Tests(tests)
+            } finally {
+                busy.done()
+            }
         }
     }
 
@@ -101,12 +103,14 @@ class O2EvapActivity : BaseActivity() {
             return
         }
         evapStatusText.text = getString(R.string.evap_status_running)
-        btnEvap.isEnabled = false
-
+        val busy = BusyUi.mark(btnEvap, getString(R.string.busy_sending))
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) { obd.runEvapTest() }
-            renderEvapStatus(result)
-            btnEvap.isEnabled = true
+            try {
+                val result = withContext(Dispatchers.IO) { obd.runEvapTest() }
+                renderEvapStatus(result)
+            } finally {
+                busy.done()
+            }
         }
     }
 

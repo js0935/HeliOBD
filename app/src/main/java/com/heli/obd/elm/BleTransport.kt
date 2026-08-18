@@ -53,6 +53,7 @@ class BleTransport : ObdTransport {
     private val ringBuf = ByteArray(4096)
     private val writePos = AtomicInteger(0)
     private val readPos = AtomicInteger(0)
+    private val dataLatch = java.util.concurrent.atomic.AtomicReference(CountDownLatch(1))
 
     private val isConnected = AtomicBoolean(false)
     private val closed = AtomicBoolean(false)
@@ -138,6 +139,7 @@ class BleTransport : ObdTransport {
                         ringBuf[(wp + i) % ringBuf.size] = value[i]
                     }
                     writePos.addAndGet(toWrite)
+                    dataLatch.get().countDown()
                 }
             }
         }
@@ -165,6 +167,7 @@ class BleTransport : ObdTransport {
         closed.set(false)
         writePos.set(0)
         readPos.set(0)
+        dataLatch.set(CountDownLatch(1))
         isConnected.set(false)
         gattState = GattState.CONNECTING
         connectedLatch = CountDownLatch(1)
@@ -230,8 +233,14 @@ class BleTransport : ObdTransport {
                 return b
             }
             if (closed.get()) return -1
-            // 無資料但未關閉：短暫等待 BLE callback 寫入
-            Thread.sleep(1)
+            // 無資料但未關閉：阻塞等待 BLE callback 寫入（最多 500ms，避免永久卡死）
+            try {
+                dataLatch.get().await(500, TimeUnit.MILLISECONDS)
+            } catch (_: InterruptedException) { }
+            // 若 latch 已觸發但資料已被消費，重置以便下次等待
+            if (writePos.get() > readPos.get()) {
+                dataLatch.set(CountDownLatch(1))
+            }
         }
     }
 

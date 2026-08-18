@@ -140,7 +140,7 @@ class VehiclesActivity : BaseActivity() {
         }
 
         val readVin = opButton(R.string.vehicles_read_vin, R.color.primary)
-        readVin.setOnClickListener { readVinFor(vehicle) }
+        readVin.setOnClickListener { readVinFor(vehicle, readVin) }
         ops.addView(readVin)
 
         val edit = opButton(R.string.common_edit, R.color.text_secondary)
@@ -165,29 +165,33 @@ class VehiclesActivity : BaseActivity() {
         return card
     }
 
-    private fun readVinFor(vehicle: VehicleStore.Vehicle) {
+    private fun readVinFor(vehicle: VehicleStore.Vehicle, readVinBtn: View) {
         val obd = MainActivity.ObdManagerHolder.obd(this)
         if (!obd.isConnected()) {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_LONG).show()
             return
         }
-        Toast.makeText(this, R.string.obd_connecting, Toast.LENGTH_SHORT).show()
+        val busy = BusyUi.mark(readVinBtn, getString(R.string.busy_reading))
         lifecycleScope.launch {
-            val vin = withContext(Dispatchers.IO) { obd.readVin() }
-            if (vin == null || vin.length < 11) {
-                Toast.makeText(this@VehiclesActivity, R.string.diag_vin_failed, Toast.LENGTH_LONG).show()
-                return@launch
-            }
-            AlertDialog.Builder(this@VehiclesActivity, R.style.Theme_HeliOBD_Dialog)
-                .setTitle(R.string.vehicles_read_vin)
-                .setMessage(vin)
-                .setPositiveButton(R.string.common_ok) { _, _ ->
-                    store.upsert(vehicle.copy(note = vin))
-                    renderList()
-                    Toast.makeText(this@VehiclesActivity, R.string.vehicles_vin_loaded, Toast.LENGTH_SHORT).show()
+            try {
+                val vin = withContext(Dispatchers.IO) { obd.readVin() }
+                if (vin == null || vin.length < 11) {
+                    Toast.makeText(this@VehiclesActivity, R.string.diag_vin_failed, Toast.LENGTH_LONG).show()
+                    return@launch
                 }
-                .setNegativeButton(R.string.common_cancel, null)
-                .show()
+                AlertDialog.Builder(this@VehiclesActivity, R.style.Theme_HeliOBD_Dialog)
+                    .setTitle(R.string.vehicles_read_vin)
+                    .setMessage(vin)
+                    .setPositiveButton(R.string.common_ok) { _, _ ->
+                        store.upsert(vehicle.copy(note = vin))
+                        renderList()
+                        Toast.makeText(this@VehiclesActivity, R.string.vehicles_vin_loaded, Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton(R.string.common_cancel, null)
+                    .show()
+            } finally {
+                busy.done()
+            }
         }
     }
 

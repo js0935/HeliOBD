@@ -366,6 +366,8 @@
     <string name="busy_exporting">匯出中…</string>
     <string name="busy_importing">匯入中…</string>
     <string name="busy_clearing">清除中…</string>
+    <string name="busy_analyzing">分析中…</string>
+    <string name="busy_generating">產生中…</string>
     <string name="terminal_welcome">HeliOBD OBD 終端機\n輸入 AT 指令（如 ATZ、ATRV）或 OBD 模式指令（如 010C）\n回應將即時顯示於此</string>
     <string name="settings_title">連線設定</string>
     <string name="settings_connection_label">連線狀態</string>
@@ -382,6 +384,17 @@
     <string name="settings_auto_reconnect_desc">藍牙意外斷線時自動重新連線（最多重試 3 次）</string>
     <string name="settings_log_summary">OBD 記錄\n連線期間的指令與回應會記錄為 log 檔（最多 50 個），方便日後排除通訊問題\n記錄位置：%1$s</string>
     <string name="settings_log_none">尚未建立（OBD 連線後自動產生）</string>
+    <string name="log_section_title">LOG 管理</string>
+    <string name="log_section_desc">診斷 LOG 記錄 OBD 通訊過程，可用於排除問題</string>
+    <string name="log_share">分享 LOG</string>
+    <string name="log_upload_github">上傳到 GitHub</string>
+    <string name="log_auto_upload">斷線時自動上傳 LOG 到 GitHub</string>
+    <string name="log_upload_success">已上傳到 GitHub Issue</string>
+    <string name="log_upload_no_token">請先設定 GitHub Token</string>
+    <string name="log_upload_error">上傳失敗，請檢查 Token 與網路</string>
+    <string name="log_no_file">尚無 LOG 檔案</string>
+    <string name="log_github_token_label">GitHub Token</string>
+    <string name="log_github_token_hint">ghp_xxxxxxxxxxxx</string>
     <string name="settings_auto_update_label">自動檢查更新</string>
     <string name="settings_auto_update_desc">啟動時與每日背景檢查 GitHub 新版</string>
     <string name="settings_check_update">立即檢查更新</string>

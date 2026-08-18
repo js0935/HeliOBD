@@ -65,19 +65,23 @@ class VehicleInfoActivity : BaseActivity() {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_SHORT).show()
             return
         }
-        findViewById<Button>(R.id.btn_vehicle_info_refresh).isEnabled = false
+        val btn = findViewById<Button>(R.id.btn_vehicle_info_refresh)
+        val busy = BusyUi.mark(btn, getString(R.string.busy_reading))
         lifecycleScope.launch {
-            val data = withContext(Dispatchers.IO) {
-                VehicleInfoData(
-                    vin = obd.readVin(),
-                    calibrationId = obd.readCalibrationId(),
-                    cvn = obd.readCvn(),
-                    ecuName = obd.readEcuName(),
-                    diag = obd.readConnectionDiag(),
-                )
+            try {
+                val data = withContext(Dispatchers.IO) {
+                    VehicleInfoData(
+                        vin = obd.readVin(),
+                        calibrationId = obd.readCalibrationId(),
+                        cvn = obd.readCvn(),
+                        ecuName = obd.readEcuName(),
+                        diag = obd.readConnectionDiag(),
+                    )
+                }
+                render(data)
+            } finally {
+                busy.done()
             }
-            findViewById<Button>(R.id.btn_vehicle_info_refresh).isEnabled = true
-            render(data)
         }
     }
 

@@ -143,6 +143,9 @@ object ObdLog {
         }
     }
 
+    /** 目前是否有啟用的 writer（避免呼叫端白白做字串插值） */
+    fun isActive(): Boolean = writer != null
+
     /** 寫一行記錄（指令／回應／事件）；尚未開始 session 或寫入失敗時忽略。 */
     @Synchronized
     fun log(message: String) {

@@ -75,6 +75,7 @@ class ChartView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = 1.5f
     }
+    private val reusablePath = Path()
 
     fun setSeries(list: List<Series>) {
         series = list
@@ -201,7 +202,7 @@ class ChartView @JvmOverloads constructor(
 
         for (s in series) {
             linePaint.color = s.color
-            val path = Path()
+            reusablePath.reset()
             var started = false
             for (i in 0 until n) {
                 val v = samples[i][s.label] ?: continue
@@ -209,13 +210,13 @@ class ChartView @JvmOverloads constructor(
                 val ratio = (v / s.maxValue).coerceIn(0f, 1f)
                 val y = top + plotH * (1f - ratio)
                 if (!started) {
-                    path.moveTo(x, y)
+                    reusablePath.moveTo(x, y)
                     started = true
                 } else {
-                    path.lineTo(x, y)
+                    reusablePath.lineTo(x, y)
                 }
             }
-            canvas.drawPath(path, linePaint)
+            canvas.drawPath(reusablePath, linePaint)
         }
     }
 

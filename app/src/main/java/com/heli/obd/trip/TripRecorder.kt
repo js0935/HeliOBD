@@ -91,7 +91,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
     private var fuelRateCount = 0
     private var idleTimeSec = 0
 
-    private val samples = mutableListOf<Sample>()
+    private val samples = ArrayDeque<Sample>()
     private var listener: ObdManager.Listener? = null
 
     @Volatile
@@ -226,7 +226,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
                     )
                 )
                 if (samples.size > MAX_SAMPLES) {
-                    samples.removeAt(0)
+                    samples.removeFirst()
                 }
             }
         }
@@ -330,7 +330,7 @@ class TripRecorder(private val context: Context, private val obd: ObdManager) {
         File(context.filesDir, "trips").apply { mkdirs() }
 
     private fun save(summary: TripSummary) {
-        File(tripDir(), "trip_${summary.id}.json").writeText(encodeSummary(summary, samples).toString())
+        File(tripDir(), "trip_${summary.id}.json").writeText(encodeSummary(summary, samples.toList()).toString())
     }
 
     companion object {

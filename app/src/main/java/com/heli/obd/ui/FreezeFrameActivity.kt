@@ -57,15 +57,19 @@ class FreezeFrameActivity : BaseActivity() {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_SHORT).show()
             return
         }
-        findViewById<Button>(R.id.btn_freeze_refresh).isEnabled = false
+        val btn = findViewById<Button>(R.id.btn_freeze_refresh)
+        val busy = BusyUi.mark(btn, getString(R.string.busy_reading))
         lifecycleScope.launch {
-            val freeze = withContext(Dispatchers.IO) { obd.readFreezeFrame() }
-            findViewById<Button>(R.id.btn_freeze_refresh).isEnabled = true
-            if (freeze == null) {
-                Toast.makeText(this@FreezeFrameActivity, R.string.diag_freeze_none, Toast.LENGTH_SHORT).show()
-                return@launch
+            try {
+                val freeze = withContext(Dispatchers.IO) { obd.readFreezeFrame() }
+                if (freeze == null) {
+                    Toast.makeText(this@FreezeFrameActivity, R.string.diag_freeze_none, Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                render(freeze)
+            } finally {
+                busy.done()
             }
-            render(freeze)
         }
     }
 

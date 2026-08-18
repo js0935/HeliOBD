@@ -75,18 +75,22 @@ class SmogCheckActivity : BaseActivity() {
             Toast.makeText(this, R.string.obd_disconnected, Toast.LENGTH_SHORT).show()
             return
         }
-        findViewById<Button>(R.id.btn_smog_check).isEnabled = false
+        val btn = findViewById<Button>(R.id.btn_smog_check)
+        val busy = BusyUi.mark(btn, getString(R.string.busy_checking))
         lifecycleScope.launch {
-            val (im, dtcCodes) = withContext(Dispatchers.IO) {
-                obd.readImReadiness() to obd.readDtc()
+            try {
+                val (im, dtcCodes) = withContext(Dispatchers.IO) {
+                    obd.readImReadiness() to obd.readDtc()
+                }
+                if (im == null) {
+                    verdictText.text = getString(R.string.smog_no_data)
+                    verdictText.setTextColor(getColor(R.color.text_secondary))
+                    return@launch
+                }
+                render(im, dtcCodes)
+            } finally {
+                busy.done()
             }
-            findViewById<Button>(R.id.btn_smog_check).isEnabled = true
-            if (im == null) {
-                verdictText.text = getString(R.string.smog_no_data)
-                verdictText.setTextColor(getColor(R.color.text_secondary))
-                return@launch
-            }
-            render(im, dtcCodes)
         }
     }
 

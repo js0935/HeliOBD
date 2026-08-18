@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.WindowManager
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -78,6 +79,7 @@ class RealtimeChartActivity : BaseActivity(), ObdManager.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_realtime_chart)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         statusText = findViewById(R.id.chart_status_text)
         chart = findViewById(R.id.chart_view)

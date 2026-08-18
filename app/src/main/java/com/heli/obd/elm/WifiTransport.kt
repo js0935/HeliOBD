@@ -30,6 +30,7 @@ class WifiTransport : ObdTransport {
         return try {
             val s = Socket()
             s.connect(InetSocketAddress(wifi.host, wifi.port), CONNECT_TIMEOUT_MS)
+            s.soTimeout = READ_TIMEOUT_MS
             socket = s
             input = DataInputStream(s.getInputStream())
             output = s.getOutputStream()
@@ -59,5 +60,6 @@ class WifiTransport : ObdTransport {
 
     private companion object {
         const val CONNECT_TIMEOUT_MS = 8_000
+        const val READ_TIMEOUT_MS = 3_000
     }
 }

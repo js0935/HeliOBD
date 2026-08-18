@@ -30,6 +30,7 @@ import com.heli.obd.R
 import com.heli.obd.backup.BackupStore
 import com.heli.obd.elm.BtPermissions
 import com.heli.obd.elm.ObdLog
+import com.heli.obd.elm.LogUploader
 import com.heli.obd.elm.ObdManager
 import com.heli.obd.elm.TransportTarget
 import com.heli.obd.llm.LlmClient
@@ -38,6 +39,9 @@ import com.heli.obd.update.UpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * 連線設定：OBD 連線/斷開控制（仿車機 App 的連線管理），
@@ -98,6 +102,9 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
         llmBaseUrlField = findViewById(R.id.settings_llm_base_url)
         llmApiKeyField = findViewById(R.id.settings_llm_api_key)
         llmModelField = findViewById(R.id.settings_llm_model)
+        llmApiKeyField.inputType = android.text.InputType.TYPE_CLASS_TEXT or
+            android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        llmApiKeyField.transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
         val llm = LlmStore.load(this)
         llmBaseUrlField.setText(llm.baseUrl)
         llmApiKeyField.setText(llm.apiKey)
@@ -126,6 +133,14 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
             ObdLog.currentDirPath().ifEmpty { getString(R.string.settings_log_none) },
         )
 
+        findViewById<Button>(R.id.btn_log_share).setOnClickListener { shareLog() }
+
+        val autoUploadSwitch = findViewById<SwitchCompat>(R.id.settings_auto_upload_github)
+        autoUploadSwitch.isChecked = LogUploader.isAutoUploadEnabled(this)
+        autoUploadSwitch.setOnClickListener {
+            LogUploader.setAutoUploadEnabled(this, autoUploadSwitch.isChecked)
+        }
+
         val autoUpdateSwitch = findViewById<SwitchCompat>(R.id.settings_auto_update)
         autoUpdateSwitch.isChecked = UpdateChecker.isAutoUpdateEnabled(this)
         autoUpdateSwitch.setOnClickListener {
@@ -151,6 +166,17 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
 
     override fun onLiveData(data: ObdManager.LiveData) {
         // 連線設定畫面不需即時數據
+    }
+
+    // ===== LOG 管理 =====
+
+    private fun shareLog() {
+        val file = LogUploader.latestLogFile(this)
+        if (file == null) {
+            Toast.makeText(this, R.string.log_no_file, Toast.LENGTH_SHORT).show()
+            return
+        }
+        LogUploader.shareLogFile(this, file)
     }
 
     // ===== 自動更新 =====

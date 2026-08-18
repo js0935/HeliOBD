@@ -180,9 +180,6 @@ class AiDiagnoseActivity : BaseActivity() {
             .map { getString(it.labelRes) }
         val codes = dtcCodes.toList()
 
-        llmBtn.isEnabled = false
-        llmBtn.text = getString(R.string.llm_analyzing)
-
         resultContainer.removeAllViews()
         val loading = TextView(this)
         loading.text = getString(R.string.llm_analyzing)
@@ -191,6 +188,7 @@ class AiDiagnoseActivity : BaseActivity() {
         loading.setPadding(0, dp(10), 0, 0)
         resultContainer.addView(loading)
 
+        val busy = BusyUi.mark(llmBtn, getString(R.string.busy_analyzing))
         lifecycleScope.launch {
             resultContainer.removeAllViews()
             try {
@@ -210,8 +208,7 @@ class AiDiagnoseActivity : BaseActivity() {
             } catch (e: Exception) {
                 showLlmError(e.message ?: "unknown")
             } finally {
-                llmBtn.isEnabled = true
-                llmBtn.text = getString(R.string.llm_analyze_btn)
+                busy.done()
             }
         }
     }

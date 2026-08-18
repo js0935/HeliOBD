@@ -832,6 +832,8 @@
     <string name="busy_exporting">Exporting…</string>
     <string name="busy_importing">Importing…</string>
     <string name="busy_clearing">Clearing…</string>
+    <string name="busy_analyzing">Analyzing…</string>
+    <string name="busy_generating">Generating…</string>
     <string name="terminal_welcome">HeliOBD OBD Terminal\nEnter AT commands (e.g. ATZ, ATRV) or OBD mode commands (e.g. 010C)\nReplies appear here in real time</string>
     <string name="settings_connection_label">Connection</string>
     <string name="settings_appearance_label">Appearance</string>
@@ -840,6 +842,16 @@
     <string name="settings_auto_reconnect_desc">Reconnect automatically when Bluetooth drops unexpectedly (up to 3 attempts)</string>
     <string name="settings_log_summary">OBD Logs\nCommands and responses during a connection are written to log files (up to 50) for troubleshooting\nLog directory: %1$s</string>
     <string name="settings_log_none">Not created yet (auto-generated on OBD connect)</string>
+    <string name="log_section_title">Log Management</string>
+    <string name="log_section_desc">Diagnostic logs record OBD communication for troubleshooting</string>
+    <string name="log_share">Share Log</string>
+    <string name="log_upload_github">Upload to GitHub</string>
+    <string name="log_upload_success">Uploaded to GitHub Issue</string>
+    <string name="log_upload_no_token">Please set a GitHub Token first</string>
+    <string name="log_upload_error">Upload failed, check token and network</string>
+    <string name="log_no_file">No log file yet</string>
+    <string name="log_github_token_label">GitHub Token</string>
+    <string name="log_github_token_hint">ghp_xxxxxxxxxxxx</string>
     <string name="settings_auto_update_label">Auto-check for updates</string>
     <string name="settings_auto_update_desc">Check GitHub for new versions on launch and daily in the background</string>
     <string name="settings_check_update">Check for updates now</string>
