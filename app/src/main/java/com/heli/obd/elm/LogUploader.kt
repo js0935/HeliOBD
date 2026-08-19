@@ -5,6 +5,7 @@
  */
 package com.heli.obd.elm
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -71,6 +72,27 @@ object LogUploader {
         if (!dir.exists()) return null
         return dir.listFiles { f -> f.isFile && f.name.endsWith(".log") }
             ?.maxByOrNull { it.lastModified() }
+    }
+
+    /** Android 10+：清除所有 HeliOBD_LOGS 檔案的 IS_PENDING 旗標，讓 MediaStore 查詢能找到 */
+    fun clearPendingFlags(context: Context) {
+        try {
+            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            val projection = arrayOf(MediaStore.Downloads._ID)
+            val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? AND ${MediaStore.Downloads.IS_PENDING} != 0"
+            val selectionArgs = arrayOf(Environment.DIRECTORY_DOWNLOADS + "/" + ObdLog.DIR_NAME + "%")
+            context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { c ->
+                val idCol = c.getColumnIndexOrThrow(MediaStore.Downloads._ID)
+                while (c.moveToNext()) {
+                    val id = c.getLong(idCol)
+                    context.contentResolver.update(
+                        MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY, id),
+                        ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
+                        null, null
+                    )
+                }
+            }
+        } catch (_: Exception) { }
     }
 
     private fun latestLogViaMediaStore(context: Context): File? {

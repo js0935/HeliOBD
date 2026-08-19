@@ -5,10 +5,8 @@
  */
 package com.heli.obd.ui
 
-import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
@@ -23,7 +21,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SwitchCompat
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.App
@@ -178,23 +175,14 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
     ) { granted -> if (granted) doShareLog() }
 
     private fun shareLog() {
-        val sdk = Build.VERSION.SDK_INT
-        ObdLog.log("shareLog clicked SDK=$sdk")
-        if (sdk >= Build.VERSION_CODES.TIRAMISU) {
-            val perm = "android.permission.READ_MEDIA_DOWNLOADS"
-            val granted = ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED
-            ObdLog.log("shareLog perm=$perm granted=$granted")
-            if (!granted) {
-                Toast.makeText(this, "需要「媒體檔案」權限才能讀取 LOG", Toast.LENGTH_SHORT).show()
-                logPermissionLauncher.launch(perm)
-                return
-            }
-        }
         doShareLog()
     }
 
     private fun doShareLog() {
         ObdLog.log("doShareLog start")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            LogUploader.clearPendingFlags(this)
+        }
         val file = LogUploader.latestLogFile(this)
         ObdLog.log("doShareLog file=${file?.absolutePath ?: "null"}")
         if (file == null) {
