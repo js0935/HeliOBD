@@ -6,4 +6,7 @@
     <cache-path
         name="apk_download"
         path="." />
+    <external-path
+        name="download_logs"
+        path="Download/HeliOBD_LOGS/" />
 </paths>
