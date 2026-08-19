@@ -70,8 +70,6 @@ object ObdLog {
     @Synchronized
     fun start(context: Context, deviceAddress: String?) {
         stop()
-        // 清除上次異常結束留下的 pending 旗標，確保 LOG 分享功能可找到檔案
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) clearPendingFlags(context)
         val name = "HeliOBD_" + fileNameFormat.format(Date()) + ".log"
         val ok =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -211,27 +209,6 @@ object ObdLog {
                     null,
                     null
                 )
-            }
-        } catch (_: Exception) { }
-    }
-
-    /** Android 10+：清除上次異常結束留下的 IS_PENDING 旗標，讓 LOG 分享功能可找到檔案 */
-    private fun clearPendingFlags(context: Context) {
-        try {
-            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-            val projection = arrayOf(MediaStore.Downloads._ID)
-            val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? AND ${MediaStore.Downloads.IS_PENDING} != 0"
-            val selectionArgs = arrayOf(Environment.DIRECTORY_DOWNLOADS + "/" + DIR_NAME + "%")
-            context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { c ->
-                val idCol = c.getColumnIndexOrThrow(MediaStore.Downloads._ID)
-                while (c.moveToNext()) {
-                    val id = c.getLong(idCol)
-                    context.contentResolver.update(
-                        MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY, id),
-                        ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
-                        null, null
-                    )
-                }
             }
         } catch (_: Exception) { }
     }
