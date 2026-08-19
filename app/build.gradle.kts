@@ -18,8 +18,8 @@ android {
         applicationId = "com.heli.obd"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "0.3.3"
+        versionCode = 15
+        versionName = "0.3.4"
     }
 
     signingConfigs {

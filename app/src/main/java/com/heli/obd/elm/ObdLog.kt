@@ -187,8 +187,8 @@ object ObdLog {
         try {
             val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
             val projection = arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.DISPLAY_NAME)
-            val selection = "${MediaStore.Downloads.RELATIVE_PATH} = ?"
-            val selectionArgs = arrayOf(Environment.DIRECTORY_DOWNLOADS + "/" + DIR_NAME + "/")
+            val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ?"
+            val selectionArgs = arrayOf(Environment.DIRECTORY_DOWNLOADS + "/" + DIR_NAME + "%")
             val ids = arrayListOf<Pair<Long, String>>()
             context.contentResolver.query(collection, projection, selection, selectionArgs,
                 "${MediaStore.Downloads._ID} ASC")

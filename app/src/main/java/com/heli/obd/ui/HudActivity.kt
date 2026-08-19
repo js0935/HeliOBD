@@ -53,7 +53,6 @@ class HudActivity : BaseActivity(), ObdManager.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_hud)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemUi()
 
         speedValue = findViewById(R.id.hud_speed_value)

@@ -96,7 +96,6 @@ class ObdMonitorActivity : BaseActivity(), ObdManager.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_obd_monitor)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         statusText = findViewById(R.id.obd_status_text)
         rpmGauge = findViewById(R.id.gauge_rpm)
