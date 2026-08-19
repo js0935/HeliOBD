@@ -196,7 +196,13 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
             Toast.makeText(this, R.string.log_no_file, Toast.LENGTH_SHORT).show()
             return
         }
-        LogUploader.shareLogFile(this, file)
+        try {
+            if (!LogUploader.shareLogFile(this, file)) {
+                Toast.makeText(this, "無法分享 LOG 檔案", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "分享失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     // ===== 自動更新 =====
