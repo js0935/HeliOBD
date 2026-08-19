@@ -58,7 +58,12 @@ object LogUploader {
     fun latestLogFile(context: Context): File? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return latestLogViaMediaStore(context)
+                ?: latestLogViaFileSystem()
         }
+        return latestLogViaFileSystem()
+    }
+
+    private fun latestLogViaFileSystem(): File? {
         val dir = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             ObdLog.DIR_NAME,
