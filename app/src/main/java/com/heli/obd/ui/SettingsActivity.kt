@@ -133,7 +133,10 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
             ObdLog.currentDirPath().ifEmpty { getString(R.string.settings_log_none) },
         )
 
-        findViewById<Button>(R.id.btn_log_share).setOnClickListener { shareLog() }
+        findViewById<Button>(R.id.btn_log_share).setOnClickListener {
+            android.util.Log.d("HeliOBD", "btn_log_share clicked")
+            shareLog()
+        }
 
         val autoUploadSwitch = findViewById<SwitchCompat>(R.id.settings_auto_upload_github)
         autoUploadSwitch.isChecked = LogUploader.isAutoUploadEnabled(this)
@@ -170,19 +173,25 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
 
     // ===== LOG 管理 =====
 
-    private val logPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted -> if (granted) doShareLog() }
-
     private fun shareLog() {
+        android.util.Log.d("HeliOBD", "shareLog() called, SDK=${Build.VERSION.SDK_INT}")
+        val file = LogUploader.latestLogFile(this)
+        if (file == null && !LogUploader.hasStoragePermission()) {
+            AlertDialog.Builder(this, R.style.Theme_HeliOBD_Dialog)
+                .setTitle("需要檔案存取權限")
+                .setMessage("為了讀取舊版 LOG 檔案（Download/HeliOBD_LOGS），需要授予「管理所有檔案」權限。\n\n請在設定頁開啟「允許管理所有檔案」。")
+                .setPositiveButton("前往設定") { _, _ ->
+                    LogUploader.requestStoragePermission(this)?.let { startActivity(it) }
+                }
+                .setNegativeButton("取消", null)
+                .show()
+            return
+        }
         doShareLog()
     }
 
     private fun doShareLog() {
         ObdLog.log("doShareLog start")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            LogUploader.clearPendingFlags(this)
-        }
         val file = LogUploader.latestLogFile(this)
         ObdLog.log("doShareLog file=${file?.absolutePath ?: "null"}")
         if (file == null) {

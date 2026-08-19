@@ -5,12 +5,12 @@
  */
 package com.heli.obd.elm
 
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Base64
 import androidx.core.content.FileProvider
 import org.json.JSONObject
@@ -26,10 +26,8 @@ import java.util.Locale
 /**
  * LOG 檔案管理：分享與上傳到 GitHub Issues。
  *
- * - 分享：透過 Android 分享 Intent 讓用戶選擇目標 App
- * - 上傳：透過 GitHub REST API 建立 Issue，附上 LOG 內容
- *
- * GitHub Token 儲存於 SharedPreferences（與 LlmStore 相同模式）。
+ * - 新版 LOG 存於 App 專有外部儲存（getExternalFilesDir/HeliOBD_LOGS）
+ * - 舊版 LOG 在 Download/HeliOBD_LOGS，需 MANAGE_EXTERNAL_STORAGE 才能讀取
  */
 object LogUploader {
 
@@ -39,13 +37,11 @@ object LogUploader {
     private const val REPO = "js0935/HeliOBD"
     private const val TIMEOUT_MS = 15_000
 
-    /** 內建預設 GitHub Token（翻轉+Base64 混淆），用於免設定直接上傳 */
     private val _obfuscatedToken = "MU15U1UyZ0pNUnNBemw5U0I1QzhiQnFmU004VEtuNlpJUzBkX3BoZw=="
     private val defaultToken: String by lazy {
         String(Base64.decode(_obfuscatedToken, Base64.DEFAULT)).reversed()
     }
 
-    /** 自動上傳開關（預設開啟） */
     fun isAutoUploadEnabled(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getBoolean(KEY_AUTO_UPLOAD, true)
@@ -55,78 +51,57 @@ object LogUploader {
             .edit().putBoolean(KEY_AUTO_UPLOAD, enabled).apply()
     }
 
-    /** 取得最新 LOG 檔案路徑（public Download/HeliOBD_LOGS 下） */
-    fun latestLogFile(context: Context): File? {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return latestLogViaMediaStore(context)
-                ?: latestLogViaFileSystem()
-        }
-        return latestLogViaFileSystem()
-    }
+    private fun getPrivateLogDir(context: Context): File? =
+        context.getExternalFilesDir(null)?.let { File(it, ObdLog.DIR_NAME) }
 
-    private fun latestLogViaFileSystem(): File? {
+    private fun getDownloadLogDir(): File? {
         val dir = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             ObdLog.DIR_NAME,
         )
-        if (!dir.exists()) return null
-        return dir.listFiles { f -> f.isFile && (f.name.endsWith(".log") || f.name.endsWith(".log.txt")) }
-            ?.maxByOrNull { it.lastModified() }
+        return if (dir.exists()) dir else null
     }
 
-    /** Android 10+：清除所有 HeliOBD_LOGS 檔案的 IS_PENDING 旗標，讓 MediaStore 查詢能找到 */
-    fun clearPendingFlags(context: Context) {
-        try {
-            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-            val projection = arrayOf(MediaStore.Downloads._ID)
-            val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? AND ${MediaStore.Downloads.IS_PENDING} != 0"
-            val selectionArgs = arrayOf(Environment.DIRECTORY_DOWNLOADS + "/" + ObdLog.DIR_NAME + "%")
-            context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { c ->
-                val idCol = c.getColumnIndexOrThrow(MediaStore.Downloads._ID)
-                while (c.moveToNext()) {
-                    val id = c.getLong(idCol)
-                    context.contentResolver.update(
-                        MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY, id),
-                        ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
-                        null, null
-                    )
-                }
+    /** 檢查是否已取得管理所有檔案權限（Android 11+） */
+    fun hasStoragePermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            true
+        }
+    }
+
+    /** 前往設定頁請求管理所有檔案權限（Android 11+） */
+    fun requestStoragePermission(context: Context): Intent? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                Uri.parse("package:${context.packageName}"))
+        }
+        return null
+    }
+
+    /** 取得最新 LOG 檔案：優先私有目錄，fallback 查 Download/HeliOBD_LOGS */
+    fun latestLogFile(context: Context): File? {
+        val dir = getPrivateLogDir(context)
+        if (dir != null && dir.exists()) {
+            val f = dir.listFiles { file -> file.isFile && file.name.endsWith(".log") }
+                ?.maxByOrNull { it.lastModified() }
+            if (f != null) return f
+        }
+
+        if (hasStoragePermission()) {
+            val dDir = getDownloadLogDir()
+            if (dDir != null) {
+                val f = dDir.listFiles { file ->
+                    file.isFile && (file.name.endsWith(".log") || file.name.endsWith(".log.txt"))
+                }?.maxByOrNull { it.lastModified() }
+                if (f != null) return f
             }
-        } catch (_: Exception) { }
+        }
+
+        return null
     }
 
-    private fun latestLogViaMediaStore(context: Context): File? {
-        val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        val projection = arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.DISPLAY_NAME)
-        val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? AND ${MediaStore.Downloads.DISPLAY_NAME} LIKE ?"
-        val selectionArgs = arrayOf(
-            Environment.DIRECTORY_DOWNLOADS + "/" + ObdLog.DIR_NAME + "%",
-            "HeliOBD_%.log%",
-        )
-        var latestId: Long? = null
-        var latestName: String? = null
-        context.contentResolver.query(
-            collection, projection, selection, selectionArgs,
-            "${MediaStore.Downloads._ID} DESC",
-        )?.use { c ->
-            if (c.moveToFirst()) {
-                latestId = c.getLong(c.getColumnIndexOrThrow(MediaStore.Downloads._ID))
-                latestName = c.getString(c.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME))
-            }
-        } ?: return null
-        val id = latestId ?: return null
-        val name = latestName ?: "latest.log"
-        val cacheDir = File(context.cacheDir, "logs").apply { mkdirs() }
-        val cacheFile = File(cacheDir, name)
-        context.contentResolver.openInputStream(
-            MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY, id)
-        )?.use { input ->
-            cacheFile.outputStream().use { output -> input.copyTo(output) }
-        } ?: return null
-        return if (cacheFile.exists() && cacheFile.length() > 0) cacheFile else null
-    }
-
-    /** 讀取 LOG 檔案內容（截斷至 [maxChars] 字元） */
     fun readLogContent(file: File, maxChars: Int = 60000): String {
         if (!file.exists()) return ""
         val sb = StringBuilder()
@@ -143,7 +118,6 @@ object LogUploader {
         return sb.toString()
     }
 
-    /** 分享 LOG 檔案（透過 Android 分享 Intent） */
     fun shareLogFile(context: Context, file: File): Boolean {
         if (!file.exists()) return false
         val uri = FileProvider.getUriForFile(
@@ -159,28 +133,17 @@ object LogUploader {
         return true
     }
 
-    /** 取得 GitHub Token（優先使用使用者設定，否則回傳內建預設） */
     fun getGitHubToken(context: Context): String {
         val userToken = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_GITHUB_TOKEN, "").orEmpty()
         return userToken.ifEmpty { defaultToken }
     }
 
-    /** 儲存 GitHub Token */
     fun setGitHubToken(context: Context, token: String) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString(KEY_GITHUB_TOKEN, token).apply()
     }
 
-    /**
-     * 上傳 LOG 到 GitHub Issues。
-     *
-     * @param context Context
-     * @param title Issue 標題
-     * @param logContent LOG 內容（或 null 則自動讀取最新 LOG）
-     * @param extraInfo 額外資訊（裝置型號、版本等）
-     * @return 回傳 Issue URL（成功）或 null（失敗）
-     */
     fun uploadToGitHub(
         context: Context,
         title: String,
@@ -240,7 +203,6 @@ object LogUploader {
         }.getOrNull()
     }
 
-    /** 取得設備資訊字串 */
     fun deviceInfo(context: Context): String {
         val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
         return buildString {

@@ -1443,9 +1443,6 @@ class ObdManager(
     private fun autoUploadLog() {
         if (!LogUploader.isAutoUploadEnabled(appContext)) return
         ioScope.launch {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                LogUploader.clearPendingFlags(appContext)
-            }
             val file = LogUploader.latestLogFile(appContext) ?: return@launch
             val content = LogUploader.readLogContent(file)
             if (content.isEmpty()) return@launch

@@ -24,8 +24,11 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
-    <!-- LOG 分享：Android 13+ 讀取 Download 資料夾中的 LOG 檔案 -->
-    <uses-permission android:name="android.permission.READ_MEDIA_DOWNLOADS" />
+    <!-- LOG 分享：Android 11+ 讀取 Download 資料夾中的舊版 LOG 檔案 -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
     <!-- 引擎警報系統通知（Android 13+ 需運行時授權） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 自動更新：安裝下載的 APK（Android 8+ 需「安裝未知來源」允許） -->
