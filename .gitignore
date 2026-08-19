@@ -20,3 +20,6 @@ build_err.txt
 
 # OS
 .DS_Store
+
+# Release APK
+HeliOBD.apk

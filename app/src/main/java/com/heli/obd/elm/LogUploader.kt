@@ -71,7 +71,7 @@ object LogUploader {
     private fun latestLogViaMediaStore(context: Context): File? {
         val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
         val projection = arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.DISPLAY_NAME)
-        val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? AND ${MediaStore.Downloads.DISPLAY_NAME} LIKE ? AND ${MediaStore.Downloads.IS_PENDING} = 0"
+        val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? AND ${MediaStore.Downloads.DISPLAY_NAME} LIKE ?"
         val selectionArgs = arrayOf(
             Environment.DIRECTORY_DOWNLOADS + "/" + ObdLog.DIR_NAME + "%",
             "%.log",
