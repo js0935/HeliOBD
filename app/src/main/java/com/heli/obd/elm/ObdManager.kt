@@ -15,6 +15,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
@@ -1442,6 +1443,9 @@ class ObdManager(
     private fun autoUploadLog() {
         if (!LogUploader.isAutoUploadEnabled(appContext)) return
         ioScope.launch {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                LogUploader.clearPendingFlags(appContext)
+            }
             val file = LogUploader.latestLogFile(appContext) ?: return@launch
             val content = LogUploader.readLogContent(file)
             if (content.isEmpty()) return@launch
