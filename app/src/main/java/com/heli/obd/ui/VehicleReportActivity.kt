@@ -63,7 +63,14 @@ class VehicleReportActivity : BaseActivity() {
         val busy = BusyUi.mark(btn, getString(R.string.busy_generating))
         lifecycleScope.launch {
             try {
-                val snapshot = withContext(Dispatchers.IO) { collectData() }
+                val snapshot = withContext(Dispatchers.IO) {
+                    if (!obd.isConnected()) {
+                        Snapshot(null, null, null, emptyList(), emptyList(), null, emptyList())
+                    } else {
+                        val ex = obd.readAllExtras()
+                        Snapshot(ex.vin, ex.calibrationId, ex.cvn, ex.dtcCodes, ex.pendingDtc, ex.imReadiness, ex.monitorTests)
+                    }
+                }
                 report = formatReport(snapshot)
                 reportText.text = report
                 if (snapshot.vin == null && snapshot.dtcCodes.isEmpty()) {
@@ -84,21 +91,6 @@ class VehicleReportActivity : BaseActivity() {
         val im: ImReadiness?,
         val monitorTests: List<MonitorTest>,
     )
-
-    private fun collectData(): Snapshot {
-        if (!obd.isConnected()) {
-            return Snapshot(null, null, null, emptyList(), emptyList(), null, emptyList())
-        }
-        return Snapshot(
-            vin = obd.readVin(),
-            calid = obd.readCalibrationId(),
-            cvn = obd.readCvn(),
-            dtcCodes = obd.readDtc(),
-            pendingCodes = obd.readPendingDtc(),
-            im = obd.readImReadiness(),
-            monitorTests = obd.readMonitorTests(),
-        )
-    }
 
     private fun formatReport(s: Snapshot): String {
         val sb = StringBuilder()

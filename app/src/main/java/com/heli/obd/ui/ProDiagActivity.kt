@@ -90,19 +90,18 @@ class ProDiagActivity : BaseActivity() {
         val busy = BusyUi.mark(btn, getString(R.string.busy_reading))
         lifecycleScope.launch {
             try {
-                val data = withContext(Dispatchers.IO) {
-                    ProDiagData(
-                        vin = obd.readVin(),
-                        calibrationId = obd.readCalibrationId(),
-                        cvn = obd.readCvn(),
-                        readiness = obd.readImReadiness(),
-                        freezeFrame = obd.readFreezeFrame(),
-                        monitorTests = obd.readMonitorTests(),
-                        confirmed = obd.readDtc(),
-                        pending = obd.readPendingDtc(),
-                        permanent = obd.readPermanentDtc(),
-                    )
-                }
+                val snapshot = withContext(Dispatchers.IO) { obd.readAllExtras() }
+                val data = ProDiagData(
+                    vin = snapshot.vin,
+                    calibrationId = snapshot.calibrationId,
+                    cvn = snapshot.cvn,
+                    readiness = snapshot.imReadiness,
+                    freezeFrame = snapshot.freezeFrame,
+                    monitorTests = snapshot.monitorTests,
+                    confirmed = snapshot.dtcCodes,
+                    pending = snapshot.pendingDtc,
+                    permanent = snapshot.permanentDtc,
+                )
                 render(data)
             } finally {
                 busy.done()

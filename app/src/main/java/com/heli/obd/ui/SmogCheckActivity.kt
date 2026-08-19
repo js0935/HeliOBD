@@ -80,7 +80,8 @@ class SmogCheckActivity : BaseActivity() {
         lifecycleScope.launch {
             try {
                 val (im, dtcCodes) = withContext(Dispatchers.IO) {
-                    obd.readImReadiness() to obd.readDtc()
+                    val ex = obd.readAllExtras()
+                    ex.imReadiness to ex.dtcCodes
                 }
                 if (im == null) {
                     verdictText.text = getString(R.string.smog_no_data)

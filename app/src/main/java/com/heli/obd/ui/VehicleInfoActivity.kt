@@ -69,15 +69,14 @@ class VehicleInfoActivity : BaseActivity() {
         val busy = BusyUi.mark(btn, getString(R.string.busy_reading))
         lifecycleScope.launch {
             try {
-                val data = withContext(Dispatchers.IO) {
-                    VehicleInfoData(
-                        vin = obd.readVin(),
-                        calibrationId = obd.readCalibrationId(),
-                        cvn = obd.readCvn(),
-                        ecuName = obd.readEcuName(),
-                        diag = obd.readConnectionDiag(),
-                    )
-                }
+                val snapshot = withContext(Dispatchers.IO) { obd.readAllExtras() }
+                val data = VehicleInfoData(
+                    vin = snapshot.vin,
+                    calibrationId = snapshot.calibrationId,
+                    cvn = snapshot.cvn,
+                    ecuName = snapshot.ecuName,
+                    diag = snapshot.connectionDiag,
+                )
                 render(data)
             } finally {
                 busy.done()

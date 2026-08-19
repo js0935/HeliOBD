@@ -146,6 +146,10 @@ class ObdManager(
     /** 預計算的 slow 層 PID 列表（短期/長期燃油修正/寬域AFR/燃油液位/環境溫度/機油溫度），supportPids 變更時重算 */
     private var cachedSlowPids: List<String> = emptyList()
 
+    /** I/M 就緒快取（mode 01 PID 01 變化極慢，避免重複讀取） */
+    @Volatile
+    private var cachedImReadiness: ImReadiness? = null
+
     /** 預計算的自訂 PID 分組（mode → pids），setCustomPids() 時重算 */
     private var groupedCustomPids: Map<String, List<PidStore.CustomPid>> = emptyMap()
 
@@ -185,6 +189,7 @@ class ObdManager(
     private fun resetExtrasCache() {
         extrasFailureCount.clear()
         unsupportedExtras.clear()
+        cachedImReadiness = null
     }
 
     /** 暫停即時數據輪詢；與 [resumePolling] 成對使用 */
@@ -202,6 +207,7 @@ class ObdManager(
      * 內部取得 [pollingLock]，確保 block 完成前不會與輪詢迴圈交錯送出命令。
      */
     private inline fun <T> withPollingPaused(block: () -> T): T {
+        if (pollingLock.isHeldByCurrentThread) return block()
         pollingPaused = true
         pollingLock.lock()
         try {
@@ -864,6 +870,15 @@ class ObdManager(
 
     /** 依 supportedPids 重新計算 medium/slow 快取列表（loadSupportedPids 成功後或斷線重置時呼叫） */
     private fun rebuildCachedPidLists() {
+        // 慢速協定（KWP/ISO9141）：精簡 medium 層（僅負載/節氣門/MAP），跳過 slow 層以降低輪詢延遲
+        if (isSlowProtocol) {
+            val slowMediumPids = listOf(
+                ObdConstants.PID_LOAD, ObdConstants.PID_THROTTLE, ObdConstants.PID_MAP,
+            )
+            cachedMediumPids = if (supportedPids == null) slowMediumPids else slowMediumPids.filter { isPidSupported(it) }
+            cachedSlowPids = emptyList()
+            return
+        }
         val allPids = listOf(
             ObdConstants.PID_LOAD, ObdConstants.PID_INTAKE, ObdConstants.PID_MAF,
             ObdConstants.PID_FUEL_RATE, ObdConstants.PID_TORQUE, ObdConstants.PID_MAP,
@@ -1277,9 +1292,10 @@ class ObdManager(
             return ObdDecoder.imReadiness("41 01 01 07 05 07 01")
         }
         if (!isConnected()) return null
+        cachedImReadiness?.let { return it }
         return withPollingPaused {
             val resp = sendPidRequest(ObdConstants.PID_STATUS)
-            resp?.let { ObdDecoder.imReadiness(it) }
+            resp?.let { ObdDecoder.imReadiness(it) }?.also { cachedImReadiness = it }
         }
     }
 
@@ -1500,6 +1516,175 @@ class ObdManager(
             }
             if (result.isNotEmpty()) recordExtrasSuccess(ObdConstants.MODE_MONITOR_TESTS)
             result
+        }
+    }
+
+    /** 批次診斷擴充資料快取（所有 extras 在單一 withPollingPaused 區塊內完成，避免反覆暫停/恢復輪詢） */
+    data class ExtrasSnapshot(
+        val dtcCodes: List<String>,
+        val pendingDtc: List<String>,
+        val permanentDtc: List<String>,
+        val freezeFrame: FreezeFrame?,
+        val imReadiness: ImReadiness?,
+        val vin: String?,
+        val calibrationId: String?,
+        val cvn: String?,
+        val ecuName: String?,
+        val monitorTests: List<MonitorTest>,
+        val connectionDiag: ConnectionDiag?,
+    )
+
+    /**
+     * 批次讀取所有診斷擴充資料（DTC / 凍結框 / I/M / VIN / CalID / CVN / ECU Name / MonitorTests / ConnectionDiag）。
+     * 所有呼叫在單一 [withPollingPaused] 區塊內完成，避免每個 extras 方法各自暫停/恢復輪詢造成的延遲。
+     */
+    fun readAllExtras(): ExtrasSnapshot {
+        if (demoMode) return ExtrasSnapshot(
+            dtcCodes = listOf("P0300"),
+            pendingDtc = listOf("P0301"),
+            permanentDtc = emptyList(),
+            freezeFrame = readFreezeFrame(),
+            imReadiness = readImReadiness(),
+            vin = "MOTODIAG-DEMO-VIN-0001",
+            calibrationId = "MOTODIAG-DEMO-CALID",
+            cvn = "ABCD1234",
+            ecuName = "HeliOBD-Demo-ECU",
+            monitorTests = readMonitorTests(),
+            connectionDiag = readConnectionDiag(),
+        )
+        if (!isConnected()) return ExtrasSnapshot(
+            dtcCodes = emptyList(), pendingDtc = emptyList(), permanentDtc = emptyList(),
+            freezeFrame = null, imReadiness = null, vin = null, calibrationId = null,
+            cvn = null, ecuName = null, monitorTests = emptyList(), connectionDiag = null,
+        )
+        return withPollingPaused {
+            ExtrasSnapshot(
+                dtcCodes = run {
+                    val resp = sendCommandWithPendingRetry(ObdConstants.MODE_DTC)
+                    resp?.let { ObdDecoder.dtcList(it, protocolNumber = protocolNumber) } ?: emptyList()
+                },
+                pendingDtc = run {
+                    val resp = sendCommandWithPendingRetry(ObdConstants.MODE_PENDING_DTC)
+                    resp?.let { ObdDecoder.dtcList(it, modeByte = 0x47, protocolNumber = protocolNumber) } ?: emptyList()
+                },
+                permanentDtc = run {
+                    if (isExtrasUnsupported(ObdConstants.MODE_PERMANENT_DTC)) return@run emptyList<String>()
+                    val resp = sendCommandWithPendingRetry(ObdConstants.MODE_PERMANENT_DTC)
+                    if (resp == null) {
+                        recordExtrasFailure(ObdConstants.MODE_PERMANENT_DTC)
+                        return@run emptyList<String>()
+                    }
+                    if (resp.contains("NO DATA") || resp.trim() == "?") {
+                        recordExtrasFailure(ObdConstants.MODE_PERMANENT_DTC)
+                        return@run emptyList<String>()
+                    }
+                    recordExtrasSuccess(ObdConstants.MODE_PERMANENT_DTC)
+                    ObdDecoder.dtcList(resp, modeByte = 0x4A, protocolNumber = protocolNumber)
+                },
+                freezeFrame = run {
+                    if (isExtrasUnsupported(ObdConstants.MODE_FREEZE_FRAME)) return@run null
+                    val triggerRaw = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_FREEZE_DTC)
+                    if (triggerRaw == null || !triggerRaw.trim().startsWith("41")) {
+                        recordExtrasFailure(ObdConstants.MODE_FREEZE_FRAME)
+                        return@run null
+                    }
+                    recordExtrasSuccess(ObdConstants.MODE_FREEZE_FRAME)
+                    val trigger = ObdDecoder.freezeDtc(triggerRaw)
+                    val intPids = ObdConstants.FREEZE_FRAME_PIDS.map { it.first }
+                    val intResponses = sendBatchMode01(intPids, mode = ObdConstants.MODE_FREEZE_FRAME)
+                    if (intResponses.values.none { it != null }) return@run null
+                    val values = ObdConstants.FREEZE_FRAME_PIDS.associate { (pid, labelRes) ->
+                        labelRes to when (pid) {
+                            ObdConstants.PID_COOLANT -> intResponses[pid]?.let { ObdDecoder.coolantTemp(it) }
+                            ObdConstants.PID_RPM -> intResponses[pid]?.let { ObdDecoder.rpm(it) }
+                            ObdConstants.PID_SPEED -> intResponses[pid]?.let { ObdDecoder.speed(it) }
+                            ObdConstants.PID_LOAD -> intResponses[pid]?.let { ObdDecoder.engineLoad(it) }
+                            ObdConstants.PID_INTAKE -> intResponses[pid]?.let { ObdDecoder.intakeTemp(it) }
+                            ObdConstants.PID_MAP -> intResponses[pid]?.let { ObdDecoder.manifoldPressure(it) }
+                            ObdConstants.PID_THROTTLE -> intResponses[pid]?.let { ObdDecoder.throttlePosition(it) }
+                            ObdConstants.PID_FUEL_LEVEL -> intResponses[pid]?.let { ObdDecoder.fuelLevel(it) }
+                            else -> null
+                        }
+                    }
+                    val floatPids = ObdConstants.FREEZE_FRAME_FLOAT_PIDS.map { it.first }
+                    val floatResponses = sendBatchMode01(floatPids, mode = ObdConstants.MODE_FREEZE_FRAME)
+                    val floatValues = ObdConstants.FREEZE_FRAME_FLOAT_PIDS.associate { (pid, labelRes) ->
+                        labelRes to when (pid) {
+                            ObdConstants.PID_MAF -> floatResponses[pid]?.let { ObdDecoder.maf(it) }
+                            ObdConstants.PID_TIMING_ADVANCE -> floatResponses[pid]?.let { ObdDecoder.timingAdvance(it) }
+                            ObdConstants.PID_MODULE_VOLTAGE -> floatResponses[pid]?.let { ObdDecoder.moduleVoltage(it) }
+                            ObdConstants.PID_SHORT_FUEL_TRIM -> floatResponses[pid]?.let { ObdDecoder.fuelTrim(it) }
+                            ObdConstants.PID_WIDEBAND_AFR -> floatResponses[pid]?.let { ObdDecoder.widebandAfr(it) }
+                            else -> null
+                        }
+                    }
+                    FreezeFrame(trigger, values, floatValues)
+                },
+                imReadiness = run {
+                    cachedImReadiness?.let { return@run it }
+                    val resp = sendPidRequest(ObdConstants.PID_STATUS)
+                    resp?.let { ObdDecoder.imReadiness(it) }?.also { cachedImReadiness = it }
+                },
+                vin = run {
+                    val cmd = mode09Command("02")
+                    val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.vin(it) } }
+                    var result = decode(sendRawCommand(cmd))
+                    if (result == null && udsMode) {
+                        result = withExtendedSession { decode(sendRawCommand(cmd)) }
+                    }
+                    result
+                },
+                calibrationId = run {
+                    if (isExtrasUnsupported("090A")) return@run null
+                    val cmd = mode09Command("0A")
+                    val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.calibrationId(it) } }
+                    var result = decode(sendRawCommand(cmd))
+                    if (result == null && udsMode) {
+                        result = withExtendedSession { decode(sendRawCommand(cmd)) }
+                    }
+                    if (result != null) recordExtrasSuccess("090A") else recordExtrasFailure("090A")
+                    result
+                },
+                cvn = run {
+                    if (isExtrasUnsupported("090B")) return@run null
+                    val resp = sendCommand(mode09Command("0B"))
+                    val result = resp?.let { mode09Decode(it) }?.let { ObdDecoder.cvn(it) }
+                    if (result != null) recordExtrasSuccess("090B") else recordExtrasFailure("090B")
+                    result
+                },
+                ecuName = run {
+                    val cmd = mode09Command("0D")
+                    val decode: (String?) -> String? = { r -> r?.let { mode09Decode(it) }?.let { ObdDecoder.ecuName(it) } }
+                    var result = decode(sendRawCommand(cmd))
+                    if (result == null && udsMode) {
+                        result = withExtendedSession { decode(sendRawCommand(cmd)) }
+                    }
+                    result
+                },
+                monitorTests = run {
+                    if (isExtrasUnsupported(ObdConstants.MODE_MONITOR_TESTS)) return@run emptyList()
+                    val result = mutableListOf<MonitorTest>()
+                    for (tid in ObdConstants.MONITOR_TEST_TIDS) {
+                        val resp = sendCommand(ObdConstants.MODE_MONITOR_TESTS + tid)
+                        if (resp != null) {
+                            if (!resp.trim().startsWith("46")) {
+                                recordExtrasFailure(ObdConstants.MODE_MONITOR_TESTS)
+                                break
+                            }
+                            result += ObdDecoder.monitorTests(resp)
+                        }
+                    }
+                    if (result.isNotEmpty()) recordExtrasSuccess(ObdConstants.MODE_MONITOR_TESTS)
+                    result
+                },
+                connectionDiag = ConnectionDiag(
+                    version = sendCommand(ObdConstants.CMD_INFO)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+                    deviceDesc = sendCommand(ObdConstants.CMD_DEVICE_DESC)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+                    voltage = sendCommand(ObdConstants.CMD_VOLTAGE)?.let { ObdDecoder.voltage(it) },
+                    protocol = sendCommand(ObdConstants.CMD_DESCRIBE_PROTOCOL)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+                    protocolNumber = sendCommand(ObdConstants.CMD_PROTOCOL_NUMBER)?.let { lastLine(it) }?.takeIf { it.isNotBlank() },
+                ),
+            )
         }
     }
 

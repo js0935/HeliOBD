@@ -110,28 +110,23 @@ class DtcActivity : BaseActivity(), ObdManager.Listener {
         val busy = BusyUi.mark(readBtn, getString(R.string.busy_reading))
         lifecycleScope.launch {
             try {
-                val codes: List<String>
-                val pending: List<String>
-                val permanent: List<String>
+                val snapshot = withContext(Dispatchers.IO) { obd.readAllExtras() }
                 withContext(Dispatchers.IO) {
-                    codes = obd.readDtc()
-                    pending = obd.readPendingDtc()
-                    permanent = obd.readPermanentDtc()
-                    freezeFrame = obd.readFreezeFrame()
-                    imReadiness = obd.readImReadiness()
-                    vin = obd.readVin()
-                    calid = obd.readCalibrationId()
-                    cvn = obd.readCvn()
-                    monitorTests = obd.readMonitorTests()
                     DtcDatabase.ensureReady(applicationContext)
                     descOverrides =
-                        (codes + pending + permanent).distinct()
+                        (snapshot.dtcCodes + snapshot.pendingDtc + snapshot.permanentDtc).distinct()
                             .filter { ObdConstants.dtcDescriptionRes(it) == R.string.dtc_unknown }
                             .associateWith { DtcDatabase.description(it) }
                 }
-                storedCodes = codes
-                pendingCodes = pending
-                permanentCodes = permanent
+                storedCodes = snapshot.dtcCodes
+                pendingCodes = snapshot.pendingDtc
+                permanentCodes = snapshot.permanentDtc
+                freezeFrame = snapshot.freezeFrame
+                imReadiness = snapshot.imReadiness
+                vin = snapshot.vin
+                calid = snapshot.calibrationId
+                cvn = snapshot.cvn
+                monitorTests = snapshot.monitorTests
                 renderDtcTab(currentTab)
                 renderFreezeFrame(freezeFrame)
                 renderImReadiness(imReadiness)
