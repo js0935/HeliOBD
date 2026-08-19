@@ -70,7 +70,7 @@ object LogUploader {
             ObdLog.DIR_NAME,
         )
         if (!dir.exists()) return null
-        return dir.listFiles { f -> f.isFile && f.name.endsWith(".log") }
+        return dir.listFiles { f -> f.isFile && (f.name.endsWith(".log") || f.name.endsWith(".log.txt")) }
             ?.maxByOrNull { it.lastModified() }
     }
 
@@ -101,7 +101,7 @@ object LogUploader {
         val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? AND ${MediaStore.Downloads.DISPLAY_NAME} LIKE ?"
         val selectionArgs = arrayOf(
             Environment.DIRECTORY_DOWNLOADS + "/" + ObdLog.DIR_NAME + "%",
-            "%.log",
+            "HeliOBD_%.log%",
         )
         var latestId: Long? = null
         var latestName: String? = null
