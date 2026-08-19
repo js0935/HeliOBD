@@ -5,8 +5,10 @@
  */
 package com.heli.obd.ui
 
+import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
@@ -21,6 +23,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.heli.obd.App
@@ -170,7 +173,24 @@ class SettingsActivity : BaseActivity(), ObdManager.Listener {
 
     // ===== LOG 管理 =====
 
+    private val logPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> if (granted) doShareLog() }
+
     private fun shareLog() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val perm = "android.permission.READ_MEDIA_DOWNLOADS"
+            if (ContextCompat.checkSelfPermission(this, perm)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                logPermissionLauncher.launch(perm)
+                return
+            }
+        }
+        doShareLog()
+    }
+
+    private fun doShareLog() {
         val file = LogUploader.latestLogFile(this)
         if (file == null) {
             Toast.makeText(this, R.string.log_no_file, Toast.LENGTH_SHORT).show()
