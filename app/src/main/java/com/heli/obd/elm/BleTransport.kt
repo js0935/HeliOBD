@@ -43,7 +43,7 @@ class BleTransport : ObdTransport {
         val SERVICE_UUID = UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
         val WRITE_UUID = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
         val NOTIFY_UUID = UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb")
-        const val CONNECT_TIMEOUT_MS = 15_000L
+        const val CONNECT_TIMEOUT_MS = 10_000L
         const val WRITE_TIMEOUT_MS = 2_000L
     }
 

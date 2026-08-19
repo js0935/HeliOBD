@@ -173,7 +173,7 @@ class ObdManager(
     private fun recordExtrasFailure(modeCmd: String) {
         val count = (extrasFailureCount[modeCmd] ?: 0) + 1
         extrasFailureCount[modeCmd] = count
-        if (count >= 2) unsupportedExtras.add(modeCmd)
+        if (count >= 1) unsupportedExtras.add(modeCmd)
     }
 
     private fun recordExtrasSuccess(modeCmd: String) {
@@ -923,7 +923,8 @@ class ObdManager(
                             intervalMs = if (focusKey != null) {
                                 if (isSlowProtocol) 60L else 120L
                             } else if (isSlowProtocol) {
-                                elapsed.coerceAtMost(300)
+                                // 慢速協定（KWP）：等待實際耗時 + 基礎間距，避免指令堆疊
+                                (elapsed + ObdConstants.POLL_INTERVAL_MS_SLOW).coerceAtMost(ObdConstants.POLL_INTERVAL_MS_SLOW * 3)
                             } else {
                                 if (elapsed > intervalMs * 0.8) {
                                     (elapsed * 1.5).toLong().coerceAtMost(ObdConstants.POLL_INTERVAL_MS * 4)
@@ -1566,14 +1567,26 @@ class ObdManager(
         if (!isConnected()) return emptyList()
         return withPollingPaused {
             val found = mutableListOf<EcuModule>()
+            var lastBitmask: String? = null
+            var sameCount = 0
             for ((header, nameRes) in ObdConstants.ECU_HEADERS) {
                 sendCommand(ObdConstants.CMD_SET_HEADER + header)
                 val resp = sendCommand(ObdConstants.MODE_CURRENT_DATA + ObdConstants.PID_SUPPORTED)
                 if (resp?.startsWith("41 00") == true) {
                     found.add(EcuModule(header, nameRes))
+                    val bitmask = resp.removePrefix("41 00").trim()
+                    if (bitmask == lastBitmask) {
+                        sameCount++
+                        if (sameCount >= 2) {
+                            ObdLog.log("ECU scan: 連續${sameCount + 1}個相同bitmask，提前終止")
+                            break
+                        }
+                    } else {
+                        lastBitmask = bitmask
+                        sameCount = 0
+                    }
                 }
             }
-            // 重設 header 至 OBD-II 預設廣播（7DF），讓後續輪詢回到標準 header
             sendCommand(ObdConstants.CMD_SET_HEADER + "7DF")
             found
         }
